@@ -187,7 +187,7 @@ export default class MenuBuilder {
                               click: () => {
                                   this.mainWindow.show();
                               },
-                              label: 'Feishin',
+                              label: 'Aoide',
                           },
                       ]
                     : undefined,

@@ -1,5 +1,5 @@
-appId: org.jeffvli.feishin
-productName: Feishin
+appId: com.gabereglat.aoide.desktop
+productName: Aoide
 artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 electronVersion: 41.7.0
 directories:
@@ -47,8 +47,8 @@ mac:
     gatekeeperAssess: false
     notarize: false
     extendInfo:
-        NSAudioCaptureUsageDescription: 'System audio access is required for mpv visualizer capture in Feishin'
-        NSLocalNetworkUsageDescription: 'Local network is necessary for accessing servers hosted on the same system as Feishin'
+        NSAudioCaptureUsageDescription: 'System audio access is required for mpv visualizer capture in Aoide'
+        NSLocalNetworkUsageDescription: 'Local network is necessary for accessing servers hosted on the same system as Aoide'
 
 dmg:
     contents: [{ x: 130, y: 220 }, { x: 410, y: 220, type: link, path: /Applications }]
@@ -69,7 +69,7 @@ npmRebuild: false
 
 publish:
     provider: s3
-    bucket: feishin-nightly
+    bucket: aoide-nightly
     channel: alpha
     region: auto
     endpoint: https://065f090c64de2dc707dd70ac72db9669.r2.cloudflarestorage.com

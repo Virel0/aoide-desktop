@@ -47,14 +47,14 @@ const ALPHA_UPDATER_CONFIG: {
 } = {
     bucket: '',
     channel: 'alpha',
-    endpoint: 'https://feishin-nightly-bucket.jeffvli.org',
+    endpoint: '',
     provider: 's3',
 };
 
 const GITHUB_UPDATER_CONFIG = {
-    owner: 'jeffvli',
+    owner: 'Virel0',
     provider: 'github' as const,
-    repo: 'feishin',
+    repo: 'aoide-desktop',
 };
 
 type UpdaterInstance = AppImageUpdater | MacUpdater | NsisUpdater | typeof autoUpdater;
@@ -337,7 +337,7 @@ function createGithubUpdaterInstance(
 }
 
 protocol.registerSchemesAsPrivileged([
-    { privileges: { bypassCSP: true, corsEnabled: true }, scheme: 'feishin' },
+    { privileges: { bypassCSP: true, corsEnabled: true }, scheme: 'aoide' },
 ]);
 
 process.on('uncaughtException', (error: any) => {
@@ -576,7 +576,7 @@ const createTray = () => {
         });
     }
 
-    tray.setToolTip('Feishin');
+    tray.setToolTip('Aoide');
     tray.setContextMenu(contextMenu);
 };
 
@@ -831,7 +831,7 @@ async function createWindow(first = true): Promise<void> {
     });
 
     if (isWindows()) {
-        app.setAppUserModelId('org.jeffvli.feishin');
+        app.setAppUserModelId('com.gabereglat.aoide.desktop');
     }
 
     menuBuilder = new MenuBuilder(mainWindow);
@@ -1134,7 +1134,7 @@ if (!singleInstance) {
                 version: packageJson.version,
             });
 
-            protocol.handle('feishin', async () => {
+            protocol.handle('aoide', async () => {
                 const filePath = store.get('local_font_path');
                 if (typeof filePath !== 'string') {
                     getMainWindow()?.webContents.send('custom-font-error', filePath);

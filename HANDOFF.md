@@ -89,3 +89,29 @@ a shared file is a line that conflicts.
 Build order and the reasoning behind each step: `docs/aoide-integration.md`. The first
 two — the sidecar client and a local store with an op log — are the bulk of the work.
 Everything after that is screens.
+
+## The rename, and why it was step zero
+
+The target machine already has upstream Feishin installed, so this fork was given its
+own identity before anything was built. Not cosmetic — four of these are collisions an
+installed Feishin would actually lose or win:
+
+| | was | now |
+|---|---|---|
+| appId / desktop id | `org.jeffvli.feishin` | `com.gabereglat.aoide.desktop` |
+| product name | `Feishin` | `Aoide` |
+| package name | `feishin` | `aoide-desktop` |
+| MPRIS bus name | `Feishin` | `aoide` |
+| URL scheme | `feishin://` | `aoide://` |
+| update source | `jeffvli/feishin` | `Virel0/aoide-desktop` |
+
+The update source is the dangerous one: left alone, the auto-updater and the in-app
+release check would have offered upstream Feishin builds as updates *to this app*. The
+alpha channel's S3 endpoint was blanked for the same reason. MPRIS is the one that
+would have been merely baffling — two players claiming the same bus name means media
+keys and `playerctl` hit whichever registered first.
+
+Deliberately left alone: `media/feishin.icon` (artwork, cosmetic), the Discord
+display-type enum value `'feishin'` (persisted in settings — renaming it silently
+invalidates a stored preference), and the body of `README.md` (upstream's own
+documentation, kept intact as the fork notice says).

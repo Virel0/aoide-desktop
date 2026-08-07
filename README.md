@@ -6,6 +6,12 @@
 > [docs/aoide-integration.md](docs/aoide-integration.md) for what is different and why.
 >
 > GPL-3.0, like its upstream. Distributing a build obliges you to offer the source.
+>
+> **Build it from source** — `pnpm install && pnpm dev`. The AppImage, Flathub, and
+> Docker instructions below are Feishin's own, and they install *Feishin*, not this.
+> This fork ships under its own identity (`Aoide`, `com.gabereglat.aoide.desktop`) so
+> the two can sit side by side without fighting over settings, the MPRIS bus, or the
+> `aoide://` URL scheme.
 
 <img src="assets/icons/icon.png" alt="logo" title="feishin" align="right" height="60px" width="60px" />
 
