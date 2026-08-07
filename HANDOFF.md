@@ -1,13 +1,14 @@
 # Handoff
 
-Three pieces, three conversations. This one is the desktop client, which does not
-exist yet beyond a fork and a plan.
+Three pieces, three conversations. This one is the desktop client: forked, renamed,
+packaged, and confirmed installed and running on the target machine — but it is still
+Feishin. None of the Aoide half exists yet.
 
 | | where | repo | state |
 | --- | --- | --- | --- |
 | **Aoide iOS** | `~/Jelly music` | `Virel0/aoide` (private) | shipped, on the phone |
 | **Aoide sidecar** | *(other chat)* | `Virel0/aoide-sidecar` (public) | working, syncing |
-| **Aoide desktop** | `~/aoide-desktop` | `Virel0/aoide-desktop` (private) | forked, nothing built |
+| **Aoide desktop** | `~/aoide-desktop` | `Virel0/aoide-desktop` (private) | installs and runs on CachyOS; no sync yet |
 
 The specification both existing implementations were written against is
 `docs/sync-design.md` — a copy sits in this repo. `docs/aoide-integration.md` is the
