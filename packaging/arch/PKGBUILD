@@ -50,6 +50,19 @@ _commit="$(git -C "$_repo" rev-parse --short HEAD 2>/dev/null || printf 'unknown
 pkgver="${_version:-0}.r${_revision}.g${_commit}"
 
 build() {
+    # electron-builder walks the whole project root looking for node modules, so
+    # if makepkg's pkg/ is sitting inside the checkout it descends into a
+    # directory written under fakeroot and fails with a bare EACCES that names
+    # nothing useful. ./build.sh sets BUILDDIR and PKGDEST to avoid it; refuse
+    # here rather than let it fail ten minutes into a build.
+    if [[ $pkgdir == "$_repo"/* ]]; then
+        echo "error: makepkg's pkgdir is inside the repository:" >&2
+        echo "         $pkgdir" >&2
+        echo "       electron-builder will walk into it and fail. Use ./build.sh," >&2
+        echo "       or set BUILDDIR to somewhere outside $_repo." >&2
+        return 1
+    fi
+
     cd "$_repo"
     pnpm install --frozen-lockfile
     pnpm run build:electron

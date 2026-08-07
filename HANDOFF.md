@@ -95,8 +95,15 @@ Everything after that is screens.
 
 ```
 sudo pacman -Syu nodejs pnpm
-cd packaging/arch && makepkg -si
+cd packaging/arch && ./build.sh
 ```
+
+**Use `./build.sh`, not `makepkg` directly.** makepkg puts `src/` and `pkg/` next to
+the PKGBUILD, which here means inside the checkout — and electron-builder walks the
+whole project root looking for node modules, so it descends into a `pkg/` written
+under fakeroot and dies with a bare `EACCES: permission denied, scandir`. The script
+sets `BUILDDIR` and `PKGDEST` to move both out of the tree. The PKGBUILD refuses to
+build if it detects the broken layout, rather than failing ten minutes in.
 
 The first line is not redundant with `makepkg -s`. makepkg resolves dependencies
 against **pacman's database only**, so a Node installed through nvm, `n`, or corepack
