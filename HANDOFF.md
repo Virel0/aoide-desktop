@@ -67,8 +67,9 @@ too, but they are the ones worth carrying across.
 
 - Phone: `Phone`, `11111111-2222-4333-8444-555555555555`. Simulator: iPhone 17,
   `00000000-0000-4000-8000-000000000000`.
-- Server `<private host>`, Jellyfin 10.11.11. **This is why `Virel0/aoide`
-  stays private** — the hostname is in three tracked files.
+- Jellyfin 10.11.11, on a private host. The hostname is deliberately **not** written
+  down here — it is in three tracked files in `Virel0/aoide`, which is why that
+  repository stays private. Keep this one free of it so it stays publishable.
 - iOS DEBUG launch arguments, for looking at things without signing in:
   `-AoideUIHarness` (component layouts), `-AoideTabPreview` (the tab bar against an
   unresolvable host), `-AoidePlaybackProbe` (plays a synthesised tone through the real
