@@ -8,7 +8,9 @@
 > GPL-3.0, like its upstream. Distributing a build obliges you to offer the source.
 >
 > **On Arch** (including CachyOS), install it as a real package:
-> `cd packaging/arch && makepkg -si`. That pulls in mpv, puts Aoide in your
+> `sudo pacman -Syu nodejs pnpm`, then `cd packaging/arch && makepkg -si`. makepkg
+> resolves against pacman's database only, so a Node from nvm or corepack will not
+> count. That pulls in mpv, puts Aoide in your
 > application launcher, and lets `pacman -R aoide` remove it again. For development
 > instead, `pnpm install && pnpm dev`.
 >

@@ -94,8 +94,14 @@ Everything after that is screens.
 ## Installing it (Arch / CachyOS)
 
 ```
+sudo pacman -Syu nodejs pnpm
 cd packaging/arch && makepkg -si
 ```
+
+The first line is not redundant with `makepkg -s`. makepkg resolves dependencies
+against **pacman's database only**, so a Node installed through nvm, `n`, or corepack
+is invisible to it and it fails with "Could not resolve all dependencies". Both
+packages are in `extra`.
 
 A local package, not an AUR one — it builds from the checkout it sits in, because
 this repository is private and there is nothing for makepkg to fetch. That is why it
