@@ -8,14 +8,18 @@
 > GPL-3.0, like its upstream. Distributing a build obliges you to offer the source.
 >
 > **On Arch** (including CachyOS), install it as a real package:
-> `sudo pacman -Syu nodejs pnpm`, then `cd packaging/arch && ./build.sh`. Use that
-> script rather than calling makepkg directly — it keeps makepkg's scratch
+>
+> ```sh
+> sudo pacman -Syu nodejs pnpm
+> cd packaging/arch && ./build.sh
+> ```
+>
+> That pulls in mpv, puts Aoide in your application launcher, and lets
+> `pacman -R aoide` remove it again. Two things the commands above are doing for a
+> reason: makepkg resolves dependencies against pacman's database alone, so a Node
+> from nvm or corepack does not count; and `build.sh` keeps makepkg's scratch
 > directories out of the checkout, which electron-builder otherwise walks into and
-> fails on. makepkg
-> resolves against pacman's database only, so a Node from nvm or corepack will not
-> count. That pulls in mpv, puts Aoide in your
-> application launcher, and lets `pacman -R aoide` remove it again. For development
-> instead, `pnpm install && pnpm dev`.
+> fails on. For development instead, `pnpm install && pnpm dev`.
 >
 > The AppImage, Flathub, and Docker instructions below are Feishin's own, and they
 > install *Feishin*, not this.

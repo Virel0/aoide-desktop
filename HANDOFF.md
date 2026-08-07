@@ -118,9 +118,9 @@ the PKGBUILD needs no change.
 
 A local package, not an AUR one — it builds from the checkout it sits in, because
 this repository is private and there is nothing for makepkg to fetch. That is why it
-uses `$startdir`, which a published AUR package must never do. Going to the AUR means
-a real `source=()`, a public repository, and rewriting `b2c8c4d8` to scrub the
-hostname that was committed in it.
+uses `$startdir`, which a published AUR package must never do. Going to the AUR needs
+a real `source=()` and a public repository; the hostname that used to block that has
+been scrubbed from every commit, so the decision is now only whether to publish.
 
 Things that were found by building it rather than by reasoning about it:
 
