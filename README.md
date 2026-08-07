@@ -1,3 +1,12 @@
+> ### This is a fork
+>
+> [Feishin](https://github.com/jeffvli/feishin) with the Aoide sidecar added: local
+> playlists, smart playlists, real play history, and sync with the Aoide iOS app.
+> Everything below is Feishin's own documentation and still applies — see
+> [docs/aoide-integration.md](docs/aoide-integration.md) for what is different and why.
+>
+> GPL-3.0, like its upstream. Distributing a build obliges you to offer the source.
+
 <img src="assets/icons/icon.png" alt="logo" title="feishin" align="right" height="60px" width="60px" />
 
 # Feishin
