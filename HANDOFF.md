@@ -63,6 +63,11 @@ too, but they are the ones worth carrying across.
   summary. Do not summarise an error before it has been useful.
 - **When a batch operation fails as a whole, bisect to find the offender** rather than
   retrying it forever — and blame nothing if the fault stops reproducing alone.
+- **`cmd | tail` reports `tail`'s exit code, not `cmd`'s.** A pipeline exits with its
+  last command, so piping a checker into `tail` for readability turns every failure
+  into a pass. This has now silently reported success over a broken build twice: once
+  on iOS with a test target that would not compile, once here with thirteen type
+  errors in a test file. Capture the exit code directly, or `set -o pipefail`.
 
 ## Environment
 
@@ -81,6 +86,9 @@ too, but they are the ones worth carrying across.
 ## Starting here
 
 `pnpm install` then `pnpm dev`. Electron 41, React 19, TypeScript, Zustand, axios.
+`pnpm test` runs vitest over `src/renderer/aoide/**` only — Feishin ships no tests, and
+putting its renderer under a runner would mean standing up jsdom and Electron's preload
+bridge for code that is not ours to verify.
 Feishin's Jellyfin client is in `src/renderer/api/jellyfin/` and already holds the
 credentials the sidecar needs — reuse them rather than configuring a second server.
 

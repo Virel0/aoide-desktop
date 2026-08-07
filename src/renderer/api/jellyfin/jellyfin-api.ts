@@ -459,7 +459,10 @@ const parsePath = (fullPath: string) => {
 };
 
 export const createAuthHeader = (): string => {
-    return `MediaBrowser Client="Feishin", Device="${getClientType()}", DeviceId="${
+    // The name Jellyfin shows in Dashboard → Devices, and the one the sidecar
+    // sees. Left as "Feishin" it would be the one place the rename did not
+    // reach, on the screen where telling two clients apart actually matters.
+    return `MediaBrowser Client="Aoide", Device="${getClientType()}", DeviceId="${
         useAuthStore.getState().deviceId
     }", Version="${packageJson.version}"`;
 };
