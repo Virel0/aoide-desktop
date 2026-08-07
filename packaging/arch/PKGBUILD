@@ -32,19 +32,22 @@ options=('!strip' '!debug')
 source=()
 sha256sums=()
 
-_repo="$(git -C "$startdir" rev-parse --show-toplevel)"
+_repo="$(git -C "$startdir" rev-parse --show-toplevel 2>/dev/null || printf '%s/../..' "$startdir")"
 _appid='com.gabereglat.aoide.desktop'
 
-pkgver() {
-    cd "$_repo"
-    # Upstream's version, then how far past it this fork is. Rebuilding after a
-    # commit produces a higher version, so pacman treats it as an upgrade rather
-    # than refusing to reinstall the same one.
-    printf '%s.r%s.g%s' \
-        "$(node -p 'require("./package.json").version')" \
-        "$(git rev-list --count HEAD)" \
-        "$(git rev-parse --short HEAD)"
-}
+# Upstream's version, then how far past it this fork is, so rebuilding after a
+# commit produces a higher version and pacman treats it as an upgrade rather than
+# refusing to reinstall the same one.
+#
+# Computed here rather than in a pkgver() function on purpose. makepkg *edits the
+# PKGBUILD in place* to record what pkgver() returned, which would leave a tracked
+# file modified after every build and conflict on the next `git pull`. Read with
+# sed rather than node so it does not depend on makedepends being installed yet —
+# this runs when makepkg first parses the file.
+_version="$(sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$_repo/package.json" | head -n1)"
+_revision="$(git -C "$_repo" rev-list --count HEAD 2>/dev/null || printf '0')"
+_commit="$(git -C "$_repo" rev-parse --short HEAD 2>/dev/null || printf 'unknown')"
+pkgver="${_version:-0}.r${_revision}.g${_commit}"
 
 build() {
     cd "$_repo"

@@ -1,7 +1,7 @@
 {
     "name": "aoide-desktop",
     "version": "1.15.1",
-    "description": "Aoide for Linux \u2014 a desktop client for the Aoide/Jellyfin music setup.",
+    "description": "Aoide for Linux — a desktop client for the Aoide/Jellyfin music setup.",
     "keywords": [
         "subsonic",
         "navidrome",
