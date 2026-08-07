@@ -15,6 +15,10 @@ export default defineConfig({
     },
     test: {
         environment: 'node',
-        include: ['src/main/features/aoide/**/*.test.ts', 'src/renderer/aoide/**/*.test.ts'],
+        include: [
+            'src/main/features/aoide/**/*.test.ts',
+            'src/renderer/aoide/**/*.test.ts',
+            'src/shared/aoide/**/*.test.ts',
+        ],
     },
 });
