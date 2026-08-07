@@ -4,6 +4,17 @@ import type { DatabaseSync } from 'node:sqlite';
 import { randomUUID } from 'node:crypto';
 
 import { CurationDatabase, SERVER_CURSOR_KEY } from './database';
+import {
+    correctForSkew,
+    correctStamps,
+    FIELD_STAMPS_COLUMN,
+    FIELD_STAMPS_KEY,
+    mergeRows,
+    PER_FIELD_ENTITIES,
+    Stamps,
+    stampsFromPayload,
+    stampsFromRow,
+} from './merge';
 
 /**
  * Which table each syncable entity lives in, and what identifies a row.
@@ -63,6 +74,67 @@ export class CurationStore {
     constructor(database: CurationDatabase) {
         this.db = database.db;
         this.deviceId = database.deviceId;
+    }
+
+    /**
+     * Apply an op that came from another device.
+     *
+     * **Writes the row and appends nothing to the op log.** That asymmetry is
+     * the point: an inbound change that produced an outbound op would echo back
+     * to the server, arrive at every other device, and echo again. The op log
+     * is for changes *this* device made.
+     *
+     * `receivedAt` is the server's own clock reading for this op, used to
+     * detect skew. The contract does not currently carry it — when it is
+     * absent nothing is corrected, because a single reference cannot tell a
+     * fast writer from a slow server.
+     */
+    applyRemote(op: SyncOp, receivedAt?: number): 'applied' | 'ignored' {
+        const { key, softDeletes } = ENTITIES[op.entity];
+        const now = Date.now();
+
+        const incoming = fromPayload(op.payload);
+        const id = incoming[key];
+        if (typeof id !== 'string' || id.length === 0) return 'ignored';
+
+        incoming.updated_at = correctForSkew(Number(incoming.updated_at ?? 0), receivedAt, now);
+        if (softDeletes && op.operation === 'delete') incoming.deleted = 1;
+
+        // Append-only, so there is nothing to merge and nothing to overwrite.
+        // Re-applying the same event must not double-count a play.
+        if (op.entity === 'play_events') {
+            const already = this.db.prepare('SELECT 1 FROM play_events WHERE id = ?').get(id) as
+                | undefined
+                | { 1: number };
+            if (already) return 'ignored';
+            this.inTransaction(() => this.upsertRow(op.entity, incoming));
+            return 'applied';
+        }
+
+        const existing = this.row(op.entity, id);
+
+        if (!existing) {
+            this.inTransaction(() => this.upsertRow(op.entity, incoming));
+            return 'applied';
+        }
+
+        const merged = mergeRows({
+            entity: op.entity,
+            existing,
+            existingStamps: stampsFromRow(existing),
+            incoming,
+            incomingStamps: correctStamps(stampsFromPayload(op.payload), receivedAt, now),
+        });
+
+        if (!merged.changed) return 'ignored';
+
+        const row = { ...merged.row };
+        if (PER_FIELD_ENTITIES.has(op.entity)) {
+            row[FIELD_STAMPS_COLUMN] = merged.stamps ? JSON.stringify(merged.stamps) : null;
+        }
+
+        this.inTransaction(() => this.upsertRow(op.entity, row));
+        return 'applied';
     }
 
     /** Rows of a table that have not been soft-deleted. */
@@ -181,7 +253,18 @@ export class CurationStore {
             throw new Error(`${entity} rows are append-only and cannot be deleted`);
         }
 
-        const now = Date.now();
+        // Per-row monotonic, not simply Date.now(). Two edits to one row inside
+        // the same millisecond otherwise carry the same `updated_at`, and the
+        // second is then indistinguishable from the first: every other device
+        // sees a tie, keeps what it has, and drops the newer write silently.
+        // A delete issued straight after a create disappears exactly this way.
+        //
+        // Scoped to the row rather than the device on purpose. A global
+        // monotonic clock would run ahead of real time during a bulk import —
+        // a thousand rows, a thousand milliseconds — and a device that believes
+        // it is in the future starts having its own writes skew-corrected.
+        const previous = this.row(entity, id);
+        const now = Math.max(Date.now(), Number(previous?.updated_at ?? 0) + 1);
         const row: CurationRow = {
             ...values,
             origin_device: this.deviceId,
@@ -190,6 +273,17 @@ export class CurationStore {
             updated_at: now,
             ...(softDeletes ? { deleted: operation === 'delete' ? 1 : 0 } : {}),
         };
+
+        // Only the fields this edit actually changed get today's stamp. Stamping
+        // every field on every save would make the last person to touch a
+        // playlist win its description too, which is the whole thing per-field
+        // merging exists to prevent.
+        const stamps = PER_FIELD_ENTITIES.has(entity)
+            ? restampChangedFields(previous, row, now)
+            : null;
+        if (PER_FIELD_ENTITIES.has(entity)) {
+            row[FIELD_STAMPS_COLUMN] = stamps ? JSON.stringify(stamps) : null;
+        }
 
         const op: SyncOp = {
             createdAt: now,
@@ -200,7 +294,7 @@ export class CurationStore {
             // which is what makes retry-after-timeout safe — and a client will
             // retry after a timeout.
             opId: randomUUID(),
-            payload: row as Record<string, unknown>,
+            payload: toPayload(row, stamps),
         };
 
         this.inTransaction(() => {
@@ -262,6 +356,13 @@ export class CurationStore {
         }
     }
 
+    private row(entity: SyncEntity, id: string): CurationRow | undefined {
+        const { key } = ENTITIES[entity];
+        return this.db.prepare(`SELECT * FROM ${entity} WHERE ${key} = ?`).get(id) as
+            | CurationRow
+            | undefined;
+    }
+
     private upsertRow(entity: SyncEntity, row: CurationRow): void {
         const { key } = ENTITIES[entity];
         // Column names come from the table itself, never from the row, so a
@@ -285,6 +386,61 @@ export class CurationStore {
             .run(...present.map((column) => normalise(row[column])));
     }
 }
+
+const STRUCTURAL_COLUMNS = new Set([
+    'device_id',
+    FIELD_STAMPS_COLUMN,
+    'id',
+    'origin_device',
+    'updated_at',
+]);
+
+/**
+ * Stamp only the fields whose value actually changed.
+ *
+ * Fields that did not change keep the stamp they had, falling back to the row's
+ * previous `updated_at` for a row written before any stamps existed. Stamping
+ * every field on every save would make the last person to touch a playlist win
+ * its description too, which is the whole thing per-field merging prevents.
+ */
+const restampChangedFields = (
+    previous: CurationRow | undefined,
+    row: CurationRow,
+    now: number,
+): null | Stamps => {
+    const previousStamps = previous ? stampsFromRow(previous) : {};
+    const previousAt = Number(previous?.updated_at ?? 0);
+
+    const stamps: Stamps = {};
+    for (const [field, value] of Object.entries(row)) {
+        if (STRUCTURAL_COLUMNS.has(field)) continue;
+        const unchanged = previous !== undefined && previous[field] === value;
+        stamps[field] = unchanged ? (previousStamps[field] ?? previousAt) : now;
+    }
+
+    // Nothing to say beyond the row's own timestamp — a brand new row, or an
+    // edit that touched everything. Storing a map here would make applying the
+    // same op twice produce a different row the second time.
+    return Object.values(stamps).some((stamp) => stamp !== now) ? stamps : null;
+};
+
+/**
+ * A stored row as it travels: the local stamp *column* becomes the wire's
+ * `fieldUpdatedAt` *key*, and is omitted entirely when it says nothing.
+ */
+const toPayload = (row: CurationRow, stamps: null | Stamps): Record<string, unknown> => {
+    const payload: Record<string, unknown> = { ...row };
+    delete payload[FIELD_STAMPS_COLUMN];
+    if (stamps) payload[FIELD_STAMPS_KEY] = stamps;
+    return payload;
+};
+
+/** The reverse: a wire payload as a row, with the stamp key stripped back off. */
+const fromPayload = (payload: Record<string, unknown>): CurationRow => {
+    const row = { ...payload } as CurationRow;
+    delete row[FIELD_STAMPS_KEY];
+    return row;
+};
 
 /** SQLite takes no booleans; everything else passes through untouched. */
 const normalise = (value: boolean | null | number | string): null | number | string =>

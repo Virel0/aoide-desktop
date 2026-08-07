@@ -41,6 +41,10 @@ export const MIGRATIONS: ReadonlyArray<(db: DatabaseSync) => void> = [
                 image_hash    TEXT,
                 image_mime    TEXT,
                 updated_at    INTEGER NOT NULL,
+                -- Per-field last-writer-wins stamps, JSON, null when they say
+                -- nothing beyond updated_at. Two devices editing the name and
+                -- the description of one playlist must both win.
+                field_updated_at TEXT,
                 deleted       INTEGER NOT NULL DEFAULT 0,
                 origin_device TEXT NOT NULL
             );
@@ -67,6 +71,7 @@ export const MIGRATIONS: ReadonlyArray<(db: DatabaseSync) => void> = [
                 parent_id     TEXT,
                 sort_index    TEXT NOT NULL,
                 updated_at    INTEGER NOT NULL,
+                field_updated_at TEXT,
                 deleted       INTEGER NOT NULL DEFAULT 0,
                 origin_device TEXT NOT NULL
             );

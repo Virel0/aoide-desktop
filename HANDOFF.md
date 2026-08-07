@@ -63,11 +63,32 @@ too, but they are the ones worth carrying across.
   summary. Do not summarise an error before it has been useful.
 - **When a batch operation fails as a whole, bisect to find the offender** rather than
   retrying it forever — and blame nothing if the fault stops reproducing alone.
+- **Two edits to one row inside the same millisecond are indistinguishable, and
+  the second one vanishes.** Both carry the same `updated_at`, so every other
+  device sees a tie, keeps what it has, and drops the newer write with no error.
+  A delete issued straight after a create disappears exactly this way. Timestamps
+  are now per-row monotonic — `max(now, thatRow.updated_at + 1)`. Scoped to the
+  row, never to the device: a global monotonic clock runs ahead of real time
+  during a bulk import (a thousand rows, a thousand milliseconds) and a device
+  that believes it is in the future starts skew-correcting its own writes.
 - **`cmd | tail` reports `tail`'s exit code, not `cmd`'s.** A pipeline exits with its
   last command, so piping a checker into `tail` for readability turns every failure
   into a pass. This has now silently reported success over a broken build twice: once
   on iOS with a test target that would not compile, once here with thirteen type
   errors in a test file. Capture the exit code directly, or `set -o pipefail`.
+
+## Open question for the sidecar
+
+`docs/sync-design.md` says clock skew is handled with the server's `receivedAt`,
+and **the wire contract has no such field** — neither the pull response nor the op
+shape carries one. The desktop client therefore corrects nothing when it is absent,
+because correcting against the local clock alone is precisely the failure the rule
+exists to prevent: it cannot tell a fast writer from a slow server, and a NAS
+without a real-time clock is a slow server.
+
+If the sidecar can attach its own receipt time to each op on pull, skew correction
+starts working on this client with no further change — `correctForSkew` already
+takes it. Until then the protection is dormant, on every client.
 
 ## Environment
 
