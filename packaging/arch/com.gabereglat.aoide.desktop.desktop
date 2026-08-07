@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Aoide
+GenericName=Music player
+Comment=Jellyfin music, with local playlists and history that sync with the phone
+Exec=/usr/bin/aoide %U
+TryExec=/usr/bin/aoide
+Icon=com.gabereglat.aoide.desktop
+Terminal=false
+Categories=AudioVideo;Audio;Player;Music;
+Keywords=Jellyfin;Aoide;Music;
+MimeType=x-scheme-handler/aoide;
+StartupWMClass=aoide
+SingleMainWindow=true

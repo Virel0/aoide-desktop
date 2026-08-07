@@ -91,6 +91,37 @@ Build order and the reasoning behind each step: `docs/aoide-integration.md`. The
 two — the sidecar client and a local store with an op log — are the bulk of the work.
 Everything after that is screens.
 
+## Installing it (Arch / CachyOS)
+
+```
+cd packaging/arch && makepkg -si
+```
+
+A local package, not an AUR one — it builds from the checkout it sits in, because
+this repository is private and there is nothing for makepkg to fetch. That is why it
+uses `$startdir`, which a published AUR package must never do. Going to the AUR means
+a real `source=()`, a public repository, and rewriting `b2c8c4d8` to scrub the
+hostname that was committed in it.
+
+Things that were found by building it rather than by reasoning about it:
+
+- **The executable was `aoide-desktop`, not `Aoide`.** electron-builder derives it
+  from package.json `name`, not `productName`. `executableName: aoide` is now pinned
+  in all three builder configs so it cannot drift, and the PKGBUILD still checks
+  rather than assumes — a symlink pointing at nothing starts nothing.
+- **`chrome-sandbox` must be setuid root** (`chmod 4755`) or Electron refuses to
+  start, blaming the sandbox rather than the permissions.
+- **`options=('!strip')`** — Electron ships prebuilt binaries and stripping breaks
+  them.
+- **Building rewrites a tracked file.** `afterAllArtifactBuild` runs
+  `scripts/update-app-stream.mjs`, which rewrites the metainfo release list and
+  stamps today's date. Every build leaves the tree dirty; that is the hook, not a
+  mistake.
+
+mpv is a hard dependency rather than an optdepend on purpose. The web backend plays
+audio without it, but mpv is what gives gapless playback and the wider format
+support, and the point of packaging this was that one install gets the good version.
+
 ## The rename, and why it was step zero
 
 The target machine already has upstream Feishin installed, so this fork was given its

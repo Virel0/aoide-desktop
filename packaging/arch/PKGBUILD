@@ -1,0 +1,106 @@
+# Maintainer: Virel0
+#
+# A deliberately *local* package. It builds from the checkout it sits in rather
+# than fetching a source tarball, because this repository is private and there
+# is nothing for makepkg to download. That is why it uses $startdir, which a
+# published AUR package must never do.
+#
+# Turning this into an AUR package later means replacing the $_repo lookup with
+# a real source=() entry and making the repository public — see
+# docs/aoide-integration.md for what that involves.
+#
+#   cd packaging/arch && makepkg -si
+
+pkgname=aoide
+pkgrel=1
+pkgdesc="Aoide for Linux — a Jellyfin music client with local playlists, play history, and sync with the Aoide iOS app"
+arch=('x86_64')
+url="https://github.com/Virel0/aoide-desktop"
+license=('GPL-3.0-or-later')
+
+# Electron is bundled by electron-builder, so these are the shared libraries it
+# expects to find rather than a runtime. mpv is a real dependency and not an
+# optdepend on purpose: the web backend plays audio without it, but mpv is what
+# gives gapless playback and the wider format support, and the point of
+# packaging this was that one install should get you the good version.
+depends=('gtk3' 'nss' 'alsa-lib' 'libxss' 'libnotify' 'mpv')
+makedepends=('nodejs' 'pnpm' 'git')
+
+# Electron ships prebuilt binaries. Stripping them breaks the app.
+options=('!strip' '!debug')
+
+source=()
+sha256sums=()
+
+_repo="$(git -C "$startdir" rev-parse --show-toplevel)"
+_appid='com.gabereglat.aoide.desktop'
+
+pkgver() {
+    cd "$_repo"
+    # Upstream's version, then how far past it this fork is. Rebuilding after a
+    # commit produces a higher version, so pacman treats it as an upgrade rather
+    # than refusing to reinstall the same one.
+    printf '%s.r%s.g%s' \
+        "$(node -p 'require("./package.json").version')" \
+        "$(git rev-list --count HEAD)" \
+        "$(git rev-parse --short HEAD)"
+}
+
+build() {
+    cd "$_repo"
+    pnpm install --frozen-lockfile
+    pnpm run build:electron
+    # `dir` stops at the unpacked tree — no AppImage, no deb. pacman owns the
+    # files from here, so building an installer to unpack would be a detour.
+    pnpm exec electron-builder --linux dir --publish never
+}
+
+package() {
+    # electron-builder only omits the architecture for x86_64.
+    local _unpacked="$_repo/dist/linux-unpacked"
+    [[ $CARCH == 'x86_64' ]] || _unpacked="$_repo/dist/linux-$CARCH-unpacked"
+
+    if [[ ! -d $_unpacked ]]; then
+        echo "error: expected $_unpacked, which the build did not produce" >&2
+        return 1
+    fi
+
+    install -dm755 "$pkgdir/opt/$pkgname"
+    cp -a "$_unpacked/." "$pkgdir/opt/$pkgname/"
+
+    # Chromium's sandbox helper has to be setuid root or Electron refuses to
+    # start on a stock kernel, with an error that blames the sandbox rather than
+    # the permissions. Every Electron package on Arch does this.
+    chmod 4755 "$pkgdir/opt/$pkgname/chrome-sandbox"
+
+    # electron-builder.yml pins `executableName: aoide`, so this should always
+    # be the first candidate. It is checked rather than assumed because the
+    # default is derived from package.json `name` — which produced
+    # `aoide-desktop` here, and a symlink pointing at nothing starts nothing.
+    local _candidate _bin=''
+    for _candidate in "$pkgname" 'aoide-desktop' 'Aoide'; do
+        if [[ -x $_unpacked/$_candidate ]]; then
+            _bin=$_candidate
+            break
+        fi
+    done
+    if [[ -z $_bin ]]; then
+        echo "error: no executable in $_unpacked; found:" >&2
+        find "$_unpacked" -maxdepth 1 -type f -executable -printf '  %f\n' >&2
+        return 1
+    fi
+
+    install -dm755 "$pkgdir/usr/bin"
+    ln -s "/opt/$pkgname/$_bin" "$pkgdir/usr/bin/$pkgname"
+
+    install -Dm644 "$startdir/$_appid.desktop" \
+        "$pkgdir/usr/share/applications/$_appid.desktop"
+    install -Dm644 "$_repo/$_appid.metainfo.xml" \
+        "$pkgdir/usr/share/metainfo/$_appid.metainfo.xml"
+
+    local _size
+    for _size in 16 24 32 48 64 72 96 128 256 512 1024; do
+        install -Dm644 "$_repo/assets/icons/${_size}x${_size}.png" \
+            "$pkgdir/usr/share/icons/hicolor/${_size}x${_size}/apps/$_appid.png"
+    done
+}
