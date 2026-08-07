@@ -1,0 +1,14 @@
+/*
+ * See the note in `aoide-dark-overrides.css` for why this lives in a stylesheet
+ * rather than in the theme configuration, and why the selector is `html[...]`.
+ *
+ * The light theme leans on this harder than the dark one does. Its cards are
+ * white on a #F6F7F9 page — the iOS grouped-background relationship — which is
+ * only a 1.07:1 step, so the hairline is doing most of the work of saying where
+ * a panel ends. Composited over the page it reaches #E1DEF6, contrast 1.23:1
+ * against stock Feishin's 5% black at 1.12:1: roughly twice the separation, and
+ * violet rather than grey.
+ */
+html:root[data-theme='aoideLight'] {
+    --theme-colors-border: rgb(98 68 229 / 14%);
+}

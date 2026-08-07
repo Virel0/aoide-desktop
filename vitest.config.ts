@@ -19,6 +19,7 @@ export default defineConfig({
             'src/main/features/aoide/**/*.test.ts',
             'src/renderer/aoide/**/*.test.ts',
             'src/shared/aoide/**/*.test.ts',
+            'src/shared/themes/aoide/**/*.test.ts',
         ],
     },
 });

@@ -5,7 +5,7 @@ import type { CurationRow } from './curation-store';
 /**
  * Conflict resolution.
  *
- * Last-writer-wins on `updated_at`, with `origin_device` as a deterministic
+ * Last-writer-wins on `updatedAt`, with `originDevice` as a deterministic
  * tiebreak when two clocks agree. **Which side wins is arbitrary; that every
  * device independently reaches the same answer is not.** Two devices resolving
  * one conflict differently diverge permanently, and nothing afterwards notices.
@@ -14,8 +14,19 @@ import type { CurationRow } from './curation-store';
  * reads, no database, nothing a second device could see differently.
  */
 
-/** Where per-field stamps live locally (a column) and on the wire (a payload key). */
-export const FIELD_STAMPS_COLUMN = 'field_updated_at';
+/**
+ * Where per-field stamps live locally (a column) and on the wire (a payload
+ * key).
+ *
+ * The two strings are equal, and both names are kept anyway. The wire key is
+ * fixed by the phone and by every op already in a log; the column name is this
+ * client's own and equals it only because the whole schema was brought to the
+ * phone's spelling. They are also not the same *shape* — the column holds JSON
+ * text, the payload key holds an object — so the conversion between them stays
+ * real work even now that it no longer renames anything. Collapsing them into
+ * one constant would make a future column rename silently rewrite the wire.
+ */
+export const FIELD_STAMPS_COLUMN = 'fieldUpdatedAt';
 export const FIELD_STAMPS_KEY = 'fieldUpdatedAt';
 
 /**
@@ -33,7 +44,21 @@ export const FIELD_STAMPS_KEY = 'fieldUpdatedAt';
 export const PER_FIELD_ENTITIES: ReadonlySet<SyncEntity> = new Set(['folders', 'playlists']);
 
 /** Columns that carry the merge rather than being merged. */
-const STRUCTURAL = new Set(['device_id', FIELD_STAMPS_COLUMN, 'id', 'origin_device', 'updated_at']);
+// The phone's `FieldStamped.metadataColumns`, exactly: id, updatedAt, deleted,
+// originDevice, fieldUpdatedAt. `deleted` belongs here and not among the merged
+// fields — it describes the write rather than any one field, so the row-level
+// comparison decides it. Merging it per field instead makes a delete racing a
+// rename resolve one way here and the other way on the phone, and the two then
+// disagree about whether a playlist exists, permanently. `deviceId` is this
+// client's addition, the primary key of a table that never merges per field.
+export const METADATA_COLUMNS: ReadonlySet<string> = new Set([
+    'deleted',
+    'deviceId',
+    FIELD_STAMPS_COLUMN,
+    'id',
+    'originDevice',
+    'updatedAt',
+]);
 
 export interface MergeInput {
     entity: SyncEntity;
@@ -48,7 +73,7 @@ export interface MergeResult {
     /** False when the merge produced exactly what was already stored. */
     changed: boolean;
     row: CurationRow;
-    /** Null when the stamps carry no information beyond the row's own `updated_at`. */
+    /** Null when the stamps carry no information beyond the row's own `updatedAt`. */
     stamps: null | Stamps;
 }
 
@@ -103,13 +128,13 @@ export const rowWinner = (
     incoming: CurationRow,
     existing: CurationRow,
 ): 'existing' | 'incoming' => {
-    const incomingAt = Number(incoming.updated_at ?? 0);
-    const existingAt = Number(existing.updated_at ?? 0);
+    const incomingAt = Number(incoming.updatedAt ?? 0);
+    const existingAt = Number(existing.updatedAt ?? 0);
 
     if (incomingAt !== existingAt) return incomingAt > existingAt ? 'incoming' : 'existing';
 
-    const incomingDevice = String(incoming.origin_device ?? '');
-    const existingDevice = String(existing.origin_device ?? '');
+    const incomingDevice = String(incoming.originDevice ?? '');
+    const existingDevice = String(existing.originDevice ?? '');
 
     // Same clock, same device: this is the same write arriving again. Keeping
     // what is stored is what makes replaying an op a no-op.
@@ -139,7 +164,7 @@ export const stampsFromRow = (row: CurationRow): Stamps => {
         return stampsFromPayload({ [FIELD_STAMPS_KEY]: JSON.parse(raw) });
     } catch {
         // A stamp map that will not parse is not worth failing a sync over. The
-        // row still has its own `updated_at`, which is exactly what a row
+        // row still has its own `updatedAt`, which is exactly what a row
         // written before per-field merging falls back to.
         return {};
     }
@@ -160,11 +185,11 @@ export const mergeRows = ({
             : { changed: false, row: existing, stamps: null };
     }
 
-    const incomingAt = Number(incoming.updated_at ?? 0);
-    const existingAt = Number(existing.updated_at ?? 0);
+    const incomingAt = Number(incoming.updatedAt ?? 0);
+    const existingAt = Number(existing.updatedAt ?? 0);
     const fields = new Set(
         [...Object.keys(existing), ...Object.keys(incoming)].filter(
-            (column) => !STRUCTURAL.has(column),
+            (column) => !METADATA_COLUMNS.has(column),
         ),
     );
 
@@ -172,7 +197,7 @@ export const mergeRows = ({
     const stamps: Stamps = {};
 
     for (const field of fields) {
-        // A row without the map falls back to its own `updated_at` for every
+        // A row without the map falls back to its own `updatedAt` for every
         // field, so ops already in the log and devices on older builds keep
         // working with no migration.
         const incomingStamp = incomingStamps[field] ?? incomingAt;
@@ -206,14 +231,19 @@ export const mergeRows = ({
         stamps[field] = Math.max(incomingStamp, existingStamp);
     }
 
-    row.updated_at = Math.max(incomingAt, existingAt);
-    row.origin_device = (winner === 'incoming' ? incoming : existing).origin_device;
+    // The metadata all follows the row-level winner together. Taking `deleted`
+    // from one side and `originDevice` from the other would describe a write
+    // that never happened.
+    const metadataFrom = winner === 'incoming' ? incoming : existing;
+    row.updatedAt = Math.max(incomingAt, existingAt);
+    row.originDevice = metadataFrom.originDevice;
+    if ('deleted' in metadataFrom) row.deleted = metadataFrom.deleted;
 
     // A map that says nothing beyond the row's own timestamp is stored as
     // nothing. Synthesising one out of two unstamped rows makes applying the
     // same op twice produce a different row the second time, which breaks the
     // idempotency the whole retry story rests on.
-    const informative = Object.values(stamps).some((stamp) => stamp !== row.updated_at);
+    const informative = Object.values(stamps).some((stamp) => stamp !== row.updatedAt);
 
     return {
         changed: !sameRow(row, existing),

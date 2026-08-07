@@ -16,11 +16,128 @@ afterEach(() => database.close());
 const playlist = (overrides: Record<string, unknown> = {}) => ({
     id: 'playlist-1',
     name: 'Driving',
-    sort_index: 'a0',
+    sortIndex: 'a0',
     ...overrides,
 });
 
+/**
+ * Every column of every table that ever appears in a payload, transcribed from
+ * `CurationKit/Schema.swift` migrations v1 through v7.
+ *
+ * A payload is the row on both clients, so these names are the wire and this is
+ * the contract with the phone rather than a restatement of the migration. The
+ * end-to-end proof lives in `apply-remote.test.ts`, which drives a real phone
+ * payload through `applyRemote` — but that exercises `playlists` alone, and a
+ * column mis-spelled in `playlist_items` or `queue_state` would surface as a
+ * device that syncs playlists and silently loses their contents.
+ *
+ * `ops`, `quarantined_ops`, `image_blobs` and `sync_state` are absent on
+ * purpose: their rows never travel, so they answer to nobody's spelling.
+ */
+const PHONE_COLUMNS: Record<string, string[]> = {
+    folders: [
+        'id',
+        'name',
+        'parentId',
+        'sortIndex',
+        'updatedAt',
+        'deleted',
+        'originDevice',
+        'fieldUpdatedAt',
+    ],
+    likes: ['id', 'jellyfinId', 'contentKey', 'liked', 'updatedAt', 'deleted', 'originDevice'],
+    play_events: [
+        'id',
+        'jellyfinId',
+        'contentKey',
+        'startedAt',
+        'endedAt',
+        'msPlayed',
+        'completed',
+        'skipped',
+        'source',
+        'originDevice',
+    ],
+    playlist_items: [
+        'id',
+        'playlistId',
+        'jellyfinId',
+        'contentKey',
+        'position',
+        'updatedAt',
+        'deleted',
+        'originDevice',
+    ],
+    playlists: [
+        'id',
+        'name',
+        'notes',
+        'folderId',
+        'isSmart',
+        'smartRules',
+        'sortIndex',
+        'updatedAt',
+        'deleted',
+        'originDevice',
+        'fieldUpdatedAt',
+        'sourceJellyfinId',
+        'artworkItemId',
+        'imageHash',
+        'imageMime',
+    ],
+    queue_state: [
+        'deviceId',
+        'deviceName',
+        'trackIds',
+        'position',
+        'elapsedMs',
+        'updatedAt',
+        'originDevice',
+    ],
+    // Local, and matching the phone anyway: the shared play/skip SQL is
+    // interpolated against these names on both clients.
+    tracks: [
+        'jellyfinId',
+        'contentKey',
+        'musicbrainzId',
+        'title',
+        'artist',
+        'album',
+        'albumArtist',
+        'durationMs',
+        'year',
+        'genres',
+        'lastSeenAt',
+        'albumId',
+    ],
+};
+
 describe('the schema', () => {
+    it('spells every travelling column the way the phone does', () => {
+        for (const [table, expected] of Object.entries(PHONE_COLUMNS)) {
+            const actual = (
+                database.db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>
+            ).map((column) => column.name);
+
+            // Sorted, and labelled with the table: declaration order is a local
+            // matter, and an unlabelled diff of two long string arrays says
+            // nothing about which table it came from.
+            expect([table, [...actual].sort()]).toEqual([table, [...expected].sort()]);
+        }
+    });
+
+    it('keeps the tables that never travel under their own names', () => {
+        // Plural snake_case tables, matching the sidecar's allow-list, with
+        // snake_case columns nobody else ever reads. Only the columns above are
+        // the phone's; nothing here is.
+        const columns = (
+            database.db.prepare('PRAGMA table_info(image_blobs)').all() as Array<{ name: string }>
+        ).map((column) => column.name);
+
+        expect(columns).toContain('sha256');
+        expect(columns).toContain('created_at');
+    });
+
     it('mints a stable device id and keeps it across opens', () => {
         expect(database.deviceId).toMatch(/^[0-9a-f-]{36}$/);
         // Reopening the same file must not re-mint it — a device that changes
@@ -85,20 +202,20 @@ describe('record', () => {
         const before = Date.now();
         const { row } = store.record('playlists', playlist());
 
-        expect(row.origin_device).toBe(database.deviceId);
-        expect(Number(row.updated_at)).toBeGreaterThanOrEqual(before);
+        expect(row.originDevice).toBe(database.deviceId);
+        expect(Number(row.updatedAt)).toBeGreaterThanOrEqual(before);
     });
 
     it('carries the whole row in the payload, so a receiver needs no history', () => {
-        const { op } = store.record('playlists', playlist({ description: 'for the motorway' }));
+        const { op } = store.record('playlists', playlist({ notes: 'for the motorway' }));
 
         expect(op.payload).toMatchObject({
-            description: 'for the motorway',
             id: 'playlist-1',
             name: 'Driving',
-            sort_index: 'a0',
+            notes: 'for the motorway',
+            sortIndex: 'a0',
         });
-        expect(op.payload.origin_device).toBe(database.deviceId);
+        expect(op.payload.originDevice).toBe(database.deviceId);
     });
 
     it('gives every op a distinct idempotency key', () => {
@@ -147,11 +264,11 @@ describe('record', () => {
                 store.record(
                     'play_events',
                     {
-                        content_key: 'k',
+                        contentKey: 'k',
                         id: 'event-1',
-                        jellyfin_id: 'track-1',
-                        ms_played: 1000,
-                        started_at: 1,
+                        jellyfinId: 'track-1',
+                        msPlayed: 1000,
+                        startedAt: 1,
                     },
                     'delete',
                 ),
@@ -185,9 +302,9 @@ describe('the op log', () => {
     });
 
     it('round-trips the payload through JSON unchanged', () => {
-        store.record('playlists', playlist({ description: 'quotes " and \\ backslashes' }));
+        store.record('playlists', playlist({ notes: 'quotes " and \\ backslashes' }));
 
-        expect(store.pendingOps()[0].payload.description).toBe('quotes " and \\ backslashes');
+        expect(store.pendingOps()[0].payload.notes).toBe('quotes " and \\ backslashes');
     });
 });
 
@@ -248,22 +365,22 @@ describe('the cursor', () => {
 describe('queue_state', () => {
     it('is keyed by device, so each device has exactly one', () => {
         store.record('queue_state', {
-            device_id: 'device-a',
-            device_name: 'Laptop',
-            elapsed_ms: 0,
+            deviceId: 'device-a',
+            deviceName: 'Laptop',
+            elapsedMs: 0,
             position: 0,
-            track_ids: '["t1"]',
+            trackIds: '["t1"]',
         });
         store.record('queue_state', {
-            device_id: 'device-a',
-            device_name: 'Laptop',
-            elapsed_ms: 5000,
+            deviceId: 'device-a',
+            deviceName: 'Laptop',
+            elapsedMs: 5000,
             position: 1,
-            track_ids: '["t1","t2"]',
+            trackIds: '["t1","t2"]',
         });
 
         const rows = store.live('queue_state');
         expect(rows).toHaveLength(1);
-        expect(rows[0].elapsed_ms).toBe(5000);
+        expect(rows[0].elapsedMs).toBe(5000);
     });
 });

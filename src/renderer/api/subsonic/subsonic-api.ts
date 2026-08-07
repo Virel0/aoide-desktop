@@ -530,8 +530,14 @@ export const ssApiClient = (args: {
                     'Content-Type': 'application/json',
                 };
                 request.data = body;
+                // `c` is the client name the server displays — Navidrome lists it
+                // under Players, the same role Jellyfin's Dashboard → Devices plays
+                // for createAuthHeader. Renaming it here rather than leaving the
+                // Subsonic half of the app still calling itself Feishin. The cost
+                // is that Navidrome keys per-player transcoding settings by this
+                // name, so it creates a fresh player entry on first use.
                 request.params = {
-                    c: 'Feishin',
+                    c: 'Aoide',
                     f: 'json',
                     v: '1.13.0',
                     ...authParams,
@@ -543,7 +549,7 @@ export const ssApiClient = (args: {
                 headers['Content-Type'] = 'application/x-www-form-urlencoded';
                 request.method = 'POST';
                 const data = {
-                    c: 'Feishin',
+                    c: 'Aoide',
                     f: 'json',
                     v: '1.13.0',
                     ...authParams,
@@ -552,7 +558,7 @@ export const ssApiClient = (args: {
                 request.data = qs.stringify(data, { arrayFormat: 'repeat' });
             } else {
                 const data = {
-                    c: 'Feishin',
+                    c: 'Aoide',
                     f: 'json',
                     v: '1.13.0',
                     ...authParams,

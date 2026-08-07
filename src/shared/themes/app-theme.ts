@@ -3,6 +3,8 @@ import merge from 'lodash/merge';
 import { AppThemeConfiguration } from './app-theme-types';
 import { AppTheme } from './app-theme-types';
 
+import { aoideDark } from '/@/shared/themes/aoide-dark/aoide-dark';
+import { aoideLight } from '/@/shared/themes/aoide-light/aoide-light';
 import { ayuDark } from '/@/shared/themes/ayu-dark/ayu-dark';
 import { ayuLight } from '/@/shared/themes/ayu-light/ayu-light';
 import { catppuccinLatte } from '/@/shared/themes/catppuccin-latte/catppuccin-latte';
@@ -38,6 +40,8 @@ import { vscodeLightPlus } from '/@/shared/themes/vscode-light-plus/vscode-light
 import { zenburn } from '/@/shared/themes/zenburn/zenburn';
 
 export const appTheme: Record<AppTheme, AppThemeConfiguration> = {
+    [AppTheme.AOIDE_DARK]: aoideDark,
+    [AppTheme.AOIDE_LIGHT]: aoideLight,
     [AppTheme.AYU_DARK]: ayuDark,
     [AppTheme.AYU_LIGHT]: ayuLight,
     [AppTheme.CATPPUCCIN_LATTE]: catppuccinLatte,
@@ -87,7 +91,11 @@ const resolveThemeConfig = (theme: string): AppThemeConfiguration | undefined =>
 };
 
 export const getAppTheme = (theme: AppTheme | string): AppThemeConfiguration => {
-    const themeConfig = resolveThemeConfig(theme) ?? appTheme[AppTheme.DEFAULT_DARK];
+    // Falls back to Aoide Dark rather than Feishin's own dark theme so that a
+    // stored id which no longer resolves — a custom theme file that has been
+    // deleted, most likely — lands on the same palette a fresh install gets
+    // instead of silently reverting the app to looking like upstream.
+    const themeConfig = resolveThemeConfig(theme) ?? appTheme[AppTheme.AOIDE_DARK];
 
     return {
         app: merge({}, defaultTheme.app, themeConfig.app),

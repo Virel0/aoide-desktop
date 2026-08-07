@@ -1,0 +1,38 @@
+{
+  "fill" : {
+    "automatic-gradient" : "display-p3:0.45490,0.35294,0.82353,1.00000"
+  },
+  "groups" : [
+    {
+      "hidden" : false,
+      "layers" : [
+        {
+          "hidden" : false,
+          "image-name" : "aoide.png",
+          "name" : "aoide",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : false,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [],
+    "squares" : [
+      "macOS"
+    ]
+  }
+}

@@ -3,13 +3,27 @@ import { ipcMain } from 'electron';
 
 import log from '/@/main/logger';
 
-const FEISHIN_DISCORD_APPLICATION_ID = '1165957668758900787';
+/**
+ * Upstream Feishin's registered Discord application, kept as the fallback.
+ *
+ * A Discord application id belongs to whoever registered it, and the name
+ * Discord shows beside your status is that application's name — so with this
+ * id, Rich Presence announces "Feishin" no matter what the window says. It is
+ * the one place the rename cannot reach from inside the code: fixing it means
+ * registering an Aoide application at discord.com/developers and putting its id
+ * in Settings, which is a human step with an account behind it.
+ *
+ * Left working rather than blanked. Presence under the wrong name is a smaller
+ * problem than a feature that silently stops, and the setting to override it is
+ * already there.
+ */
+const FALLBACK_DISCORD_APPLICATION_ID = '1165957668758900787';
 
 let client: Client | null = null;
 
 const createClient = async (clientId?: string) => {
     client = new Client({
-        clientId: clientId || FEISHIN_DISCORD_APPLICATION_ID,
+        clientId: clientId || FALLBACK_DISCORD_APPLICATION_ID,
     });
 
     await client.login();

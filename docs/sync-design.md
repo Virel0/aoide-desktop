@@ -345,6 +345,28 @@ silently.
 The contract above was written before either side existed. Where the running system
 differs, the running system is right.
 
+- **The `Schema` section above is snake_case and the running system is camelCase.**
+  A payload is the row, and iOS encodes the record — so the payload keys *are* its
+  column names: `sortIndex`, `updatedAt`, `originDevice`, `imageHash`. The prose field
+  on a playlist is `notes`, not `description`, and there are three columns this
+  document never mentions: `sourceJellyfinId`, `artworkItemId`, `albumId`. The desktop
+  client was written from the SQL above and could not apply a single inbound playlist
+  op until it was corrected — the row failed `NOT NULL` on the columns it could not
+  find. Read `CurationKit/Schema.swift` rather than this section.
+- **Booleans travel as JSON `true`/`false`, not as 0 and 1.** Swift encodes `Bool` that
+  way and `JSONDecoder` refuses a number where it wants one, so a client backed by
+  SQLite — which has no boolean type — has to convert on the way out. It fails
+  silently and permanently in the worst direction: the push is accepted, the local row
+  is valid, and the phone quarantines the op, never to retry it. Affects `deleted`,
+  `isSmart`, `completed`, `skipped`, `liked`.
+- **The payload must be read back from storage, not assembled from what the caller
+  passed.** A column filled by a `DEFAULT` is absent from a payload built out of the
+  caller's values, and the phone's records declare those fields non-optional, so the
+  op does not decode.
+- **`play_events` is append-only but not write-once.** A long listen is written twice
+  under one id — an open row at playback start, the finished row at the end — and the
+  copy with the later `endedAt` wins, strictly. Treating the table as write-once keeps
+  the 0 ms copy of every long play forever.
 - **Entity names are translated at the wire boundary.** The store's tables are
   singular camelCase because the record types are; the sidecar's allow-list is plural
   snake_case (`playlists`, `playlist_items`, `folders`, `likes`, `play_events`,

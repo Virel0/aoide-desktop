@@ -312,32 +312,38 @@ export default class MenuBuilder {
                 },
             ],
         };
+        // Help points at this fork, not upstream: a fault in this build is nobody
+        // else's to fix, and a report filed on jeffvli/feishin against code they
+        // never wrote is noise for them and a dead end for whoever filed it. The
+        // fork's own README opens with a notice crediting Feishin, so the
+        // attribution survives the redirect. buildDefaultTemplate carries the same
+        // four entries — keep them in step.
         const subMenuHelp: MenuItemConstructorOptions = {
             role: 'help',
             submenu: [
                 {
                     click() {
-                        shell.openExternal('https://github.com/jeffvli/feishin');
+                        shell.openExternal('https://github.com/Virel0/aoide-desktop');
                     },
                     label: 'Learn More',
                 },
                 {
                     click() {
                         shell.openExternal(
-                            'https://github.com/jeffvli/feishin?tab=readme-ov-file#getting-started',
+                            'https://github.com/Virel0/aoide-desktop?tab=readme-ov-file#getting-started',
                         );
                     },
                     label: 'Documentation',
                 },
                 {
                     click() {
-                        shell.openExternal('https://github.com/jeffvli/feishin/discussions');
+                        shell.openExternal('https://github.com/Virel0/aoide-desktop/discussions');
                     },
                     label: 'Community Discussions',
                 },
                 {
                     click() {
-                        shell.openExternal('https://github.com/jeffvli/feishin/issues');
+                        shell.openExternal('https://github.com/Virel0/aoide-desktop/issues');
                     },
                     label: 'Search Issues',
                 },
@@ -431,30 +437,34 @@ export default class MenuBuilder {
             },
             {
                 label: 'Help',
+                // Same four destinations as buildDarwinTemplate's help menu, and
+                // for the same reason — see the comment there.
                 submenu: [
                     {
                         click() {
-                            shell.openExternal('https://github.com/jeffvli/feishin');
+                            shell.openExternal('https://github.com/Virel0/aoide-desktop');
                         },
                         label: 'Learn More',
                     },
                     {
                         click() {
                             shell.openExternal(
-                                'https://github.com/jeffvli/feishin?tab=readme-ov-file#getting-started',
+                                'https://github.com/Virel0/aoide-desktop?tab=readme-ov-file#getting-started',
                             );
                         },
                         label: 'Documentation',
                     },
                     {
                         click() {
-                            shell.openExternal('https://github.com/jeffvli/feishin/discussions');
+                            shell.openExternal(
+                                'https://github.com/Virel0/aoide-desktop/discussions',
+                            );
                         },
                         label: 'Community Discussions',
                     },
                     {
                         click() {
-                            shell.openExternal('https://github.com/jeffvli/feishin/issues');
+                            shell.openExternal('https://github.com/Virel0/aoide-desktop/issues');
                         },
                         label: 'Search Issues',
                     },

@@ -135,7 +135,11 @@ export const DiscordSettings = memo(() => {
                     aria-label={t('setting.discordDisplayType')}
                     clearable={false}
                     data={[
-                        { label: 'Feishin', value: DiscordDisplayType.FEISHIN },
+                        // The label is what the user reads; the value is a stored
+                        // preference and stays 'feishin' forever. Renaming it would
+                        // silently fail the settings schema on an existing install
+                        // and reset everyone's choice.
+                        { label: 'Aoide', value: DiscordDisplayType.FEISHIN },
                         {
                             label: t('setting.discordDisplayType', {
                                 context: 'songname',

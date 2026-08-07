@@ -3,6 +3,8 @@ import type { MantineThemeOverride } from '@mantine/core';
 import { CSSProperties } from 'react';
 
 export enum AppTheme {
+    AOIDE_DARK = 'aoideDark',
+    AOIDE_LIGHT = 'aoideLight',
     AYU_DARK = 'ayuDark',
     AYU_LIGHT = 'ayuLight',
     CATPPUCCIN_LATTE = 'catppuccinLatte',

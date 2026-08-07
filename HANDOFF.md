@@ -71,6 +71,25 @@ too, but they are the ones worth carrying across.
   row, never to the device: a global monotonic clock runs ahead of real time
   during a bulk import (a thousand rows, a thousand milliseconds) and a device
   that believes it is in the future starts skew-correcting its own writes.
+- **A payload is the row, so the column names are the wire.** iOS spells them
+  camelCase; the design doc's SQL spells them snake_case; the desktop client was
+  written from the doc and could not apply a single inbound playlist op. Nothing
+  reported an incompatibility — the row simply failed `NOT NULL` on columns it could
+  not find. Read the other client's schema, never the specification, for anything that
+  travels.
+- **SQLite has no booleans and Swift will not accept 0 for one.** `JSONDecoder` throws
+  on a number where it wants `Bool`, so the phone quarantines the op — permanently,
+  because rejected ops are never retried — while this side reports a successful push.
+  Convert on the way out, and list the boolean columns explicitly rather than sniffing
+  SQLite's advisory column types.
+- **Build the payload by reading the row back, never from the caller's arguments.**
+  Anything filled by a `DEFAULT` is otherwise missing from the wire while being
+  present in the database, and the receiving client's non-optional field fails to
+  decode.
+- **Two sets that must agree will drift.** `deleted` is metadata on the phone, and the
+  desktop had it in the merge's structural set but not in the stamper's, so it stopped
+  merging `deleted` per field while still *emitting* a stamp for it. One exported
+  definition now, used by both.
 - **`cmd | tail` reports `tail`'s exit code, not `cmd`'s.** A pipeline exits with its
   last command, so piping a checker into `tail` for readability turns every failure
   into a pass. This has now silently reported success over a broken build twice: once

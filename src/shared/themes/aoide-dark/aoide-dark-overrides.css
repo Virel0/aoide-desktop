@@ -1,0 +1,27 @@
+/*
+ * Feishin fixes `--theme-colors-border` in global.css, per colour scheme rather
+ * than per theme, so it is the one surface colour a theme configuration cannot
+ * reach — `AppThemeConfiguration.colors` is injected as a bare `:root` block and
+ * loses to global.css's `:root[data-mantine-color-scheme='dark']` on specificity
+ * no matter which order the two stylesheets land in.
+ *
+ * The selector is `html:root[data-theme=...]` and every part of it is load
+ * bearing. global.css compiles to `:root[data-mantine-color-scheme=dark]`,
+ * which is (0,2,0) — two B-column selectors, a pseudo-class and an attribute.
+ * Specificity compares B before C, so a type selector cannot make up the
+ * difference: `html[data-theme=...]` is (0,1,1) and LOSES, silently, leaving
+ * Feishin's neutral hairline in place with nothing to show for it. Adding
+ * `:root` back alongside `html` gives (0,2,1), which wins on the C column with
+ * B already level, and wins regardless of stylesheet order.
+ *
+ * `aoide-theme.test.ts` computes both specificities and fails if this stops
+ * being true, because the failure mode is a colour that is quietly never
+ * applied rather than anything that errors.
+ *
+ * The value is the accent at low alpha rather than plain white. Composited over
+ * #0B0B10 it reaches #242136 against stock Feishin's #232328 — the same visual
+ * weight for a hairline, carrying the app's hue instead of a neutral grey.
+ */
+html:root[data-theme='aoideDark'] {
+    --theme-colors-border: rgb(165 147 255 / 16%);
+}

@@ -17,6 +17,11 @@ import { AppTheme, AppThemeConfiguration } from '/@/shared/themes/app-theme-type
 import { FontType } from '/@/shared/types/types';
 
 export const THEME_DATA = [
+    // First in the list because they are the app's own, and because Aoide Dark is
+    // what a fresh install selects. The order of this array is the order of the
+    // settings dropdown, not an alphabetical index.
+    { label: 'Aoide Dark', type: 'dark', value: AppTheme.AOIDE_DARK },
+    { label: 'Aoide Light', type: 'light', value: AppTheme.AOIDE_LIGHT },
     { label: 'Default Dark', type: 'dark', value: AppTheme.DEFAULT_DARK },
     { label: 'Default Light', type: 'light', value: AppTheme.DEFAULT_LIGHT },
     { label: 'Nord', type: 'dark', value: AppTheme.NORD },

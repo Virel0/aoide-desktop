@@ -1283,7 +1283,11 @@ const initialState: SettingsState = {
         type: FontType.BUILT_IN,
     },
     general: {
-        accent: 'rgb(53, 116, 252)',
+        // The iOS app's dark-appearance accent, #A593FF. This is a separate
+        // setting from the theme's own `primary`, and it is the one that wins:
+        // `useThemeAccentColor` defaults to false, so shipping Aoide Dark
+        // without changing this would leave it wearing Feishin's blue.
+        accent: 'rgb(165, 147, 255)',
         albumBackground: false,
         albumBackgroundBlur: 3,
         albumGroupImageSize: 0,
@@ -1378,9 +1382,12 @@ const initialState: SettingsState = {
             skipForwardSeconds: 10,
         },
         spotify: true,
-        theme: AppTheme.DEFAULT_DARK,
-        themeDark: AppTheme.DEFAULT_DARK,
-        themeLight: AppTheme.DEFAULT_LIGHT,
+        // Dark on a fresh install, matching the phone. `themeDark`/`themeLight`
+        // are the pair used when "follow system theme" is on, so both sides of
+        // that switch have to move too or the app changes identity at sunset.
+        theme: AppTheme.AOIDE_DARK,
+        themeDark: AppTheme.AOIDE_DARK,
+        themeLight: AppTheme.AOIDE_LIGHT,
         useThemeAccentColor: false,
         useThemePrimaryShade: true,
         volumeWheelStep: 5,
