@@ -1,4 +1,5 @@
 import { SyncError, syncErrorFromReply } from './errors';
+
 import {
     isSyncEntity,
     PullResponse,
@@ -6,7 +7,7 @@ import {
     PushResponse,
     ServerReply,
     SyncOp,
-} from './types';
+} from '/@/shared/aoide/sync-types';
 
 export interface SidecarClientOptions {
     /** The Jellyfin server's base URL. The sidecar lives on the same host. */

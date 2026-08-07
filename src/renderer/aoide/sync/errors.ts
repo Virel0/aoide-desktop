@@ -1,4 +1,4 @@
-import { ServerReply } from './types';
+import { ServerReply } from '/@/shared/aoide/sync-types';
 
 /**
  * How a failed request should be treated, which is a different question from

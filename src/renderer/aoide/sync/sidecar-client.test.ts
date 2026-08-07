@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { SyncError } from './errors';
 import { SidecarClient } from './sidecar-client';
-import { SyncOp } from './types';
+
+import { SyncOp } from '/@/shared/aoide/sync-types';
 
 interface Recorded {
     body?: BodyInit | null;

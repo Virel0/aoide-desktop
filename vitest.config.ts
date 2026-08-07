@@ -8,12 +8,13 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
     resolve: {
         alias: {
+            '/@/main': resolve('src/main'),
             '/@/renderer': resolve('src/renderer'),
             '/@/shared': resolve('src/shared'),
         },
     },
     test: {
         environment: 'node',
-        include: ['src/renderer/aoide/**/*.test.ts'],
+        include: ['src/main/features/aoide/**/*.test.ts', 'src/renderer/aoide/**/*.test.ts'],
     },
 });
