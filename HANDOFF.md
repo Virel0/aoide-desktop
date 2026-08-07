@@ -103,6 +103,12 @@ against **pacman's database only**, so a Node installed through nvm, `n`, or cor
 is invisible to it and it fails with "Could not resolve all dependencies". Both
 packages are in `extra`.
 
+If the build itself then fails somewhere inside vite or electron-builder, suspect the
+Node version before suspecting the code. `extra/nodejs` tracks Current (26.x at the
+time of writing) while this tree was built and verified on **24.15**. Swap to
+`nodejs-lts-krypton` (24.x) — the LTS packages all declare `provides=(nodejs)`, so
+the PKGBUILD needs no change.
+
 A local package, not an AUR one — it builds from the checkout it sits in, because
 this repository is private and there is nothing for makepkg to fetch. That is why it
 uses `$startdir`, which a published AUR package must never do. Going to the AUR means
