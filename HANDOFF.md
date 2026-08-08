@@ -96,18 +96,25 @@ too, but they are the ones worth carrying across.
   on iOS with a test target that would not compile, once here with thirteen type
   errors in a test file. Capture the exit code directly, or `set -o pipefail`.
 
-## Open question for the sidecar
+## Answered: skew correction can be switched on
 
-`docs/sync-design.md` says clock skew is handled with the server's `receivedAt`,
-and **the wire contract has no such field** — neither the pull response nor the op
-shape carries one. The desktop client therefore corrects nothing when it is absent,
-because correcting against the local clock alone is precisely the failure the rule
-exists to prevent: it cannot tell a fast writer from a slow server, and a NAS
-without a real-time clock is a slow server.
+An earlier note here asked the sidecar for a `receivedAt`. It has attached one to every
+pulled op since 1.0.0.0 — the question was answered before it was asked. `createdAt` is
+the writing device's clock, `receivedAt` the server's, stamped on arrival.
 
-If the sidecar can attach its own receipt time to each op on pull, skew correction
-starts working on this client with no further change — `correctForSkew` already
-takes it. Until then the protection is dormant, on every client.
+**Judge skew per batch, not per op.** Ops pushed together share a receipt time, so
+comparing two ops inside one batch measures nothing.
+
+Two other things from the sidecar's 1.7.0.0 contract that change client rules:
+
+- **One rejection is no longer permanent.** Everywhere else a rejected op is
+  quarantined forever; a playlist that "belongs to another user and is not shared with
+  you for editing" can become valid again. It must be neither retried blindly nor
+  silently dropped — this client models it as its own outcome so a caller cannot fall
+  into the quarantine path by accident.
+- **Retention is bounded by the lowest cursor among devices that pull.** A device that
+  pushes but never pulls is invisible to that guard and its history can be pruned out
+  from under it, so a sync always completes a pull even with nothing to push.
 
 ## Environment
 

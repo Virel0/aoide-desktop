@@ -1,0 +1,59 @@
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--theme-spacing-sm);
+    padding: var(--theme-spacing-md);
+    background-color: var(--theme-colors-surface);
+    border-radius: var(--theme-radius-md);
+}
+
+.header {
+    display: flex;
+    gap: var(--theme-spacing-md);
+    align-items: center;
+    justify-content: space-between;
+}
+
+.status {
+    display: flex;
+    gap: var(--theme-spacing-sm);
+    align-items: center;
+}
+
+/*
+ * The server's own words, whole.
+ *
+ * `pre-wrap` because `displayMessage` keeps the response body's line breaks and
+ * several failures in one run are joined with a newline; collapsing them would
+ * run a stack trace and a summary into one unreadable line, which is the shape
+ * this project has twice been bitten by.
+ *
+ * Carries no colour of its own, so the same wrapping serves an error, a warning
+ * and a quarantine reason without any of them having to restate it.
+ */
+.verbatim {
+    max-height: 12rem;
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.error {
+    color: var(--theme-colors-state-error);
+}
+
+.warning {
+    color: var(--theme-colors-state-warning);
+}
+
+/*
+ * Why the server refused, under the headline saying how many it refused.
+ *
+ * Muted and indented rather than repeating the headline's colour: the count is
+ * the alarm, and colouring the explanation the same makes a five-line refusal
+ * shout louder than a fifty-op one.
+ */
+.reason {
+    padding-left: var(--theme-spacing-md);
+    color: var(--theme-colors-foreground-muted);
+}

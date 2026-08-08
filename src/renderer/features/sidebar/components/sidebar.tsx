@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import styles from './sidebar.module.css';
 
+import { AoideSidebarList } from '/@/renderer/aoide/features/sidebar/aoide-sidebar-list';
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
 import { ContextMenuController } from '/@/renderer/features/context-menu/context-menu-controller';
 import {
@@ -130,7 +131,7 @@ export const Sidebar = () => {
                         item: styles.accordionItem,
                         root: styles.accordionRoot,
                     }}
-                    defaultValue={['library', 'collections', 'playlists']}
+                    defaultValue={['library', 'collections', 'aoide', 'playlists']}
                     multiple
                 >
                     <Accordion.Item value="library">
@@ -153,6 +154,7 @@ export const Sidebar = () => {
                         </Accordion.Panel>
                     </Accordion.Item>
                     <SidebarCollectionList />
+                    <AoideSidebarList />
                     {sidebarPlaylistList && <SidebarPlaylistSection />}
                 </Accordion>
             </ScrollArea>

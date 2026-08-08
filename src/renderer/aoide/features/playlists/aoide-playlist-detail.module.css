@@ -1,0 +1,174 @@
+/*
+ * One Aoide playlist.
+ *
+ * The hero corner is 12pt and the row thumbnails are 5pt — `--theme-radius-lg`
+ * and `--theme-radius-sm`, which the Aoide themes redefine to exactly the
+ * phone's values. Nothing here names a colour or a corner directly, so this
+ * screen follows whichever theme is on rather than only looking right under one.
+ */
+
+.page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.scroll {
+    flex: 1;
+    min-height: 0;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--theme-spacing-2xl);
+    max-width: var(--theme-content-max-width);
+    padding: var(--theme-spacing-lg);
+    margin: 0 auto;
+}
+
+.hero {
+    display: flex;
+    gap: var(--theme-spacing-xl);
+    align-items: flex-end;
+}
+
+.hero-artwork {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 180px;
+    height: 180px;
+    color: var(--theme-colors-foreground-muted);
+    background-color: var(--theme-colors-surface);
+    border-radius: var(--theme-radius-lg);
+}
+
+.hero-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--theme-spacing-xs);
+    min-width: 0;
+}
+
+.notes {
+    max-width: 60ch;
+}
+
+.rows {
+    display: flex;
+    flex-direction: column;
+}
+
+.row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.5rem 2rem 1fr 1fr 3.5rem 2rem;
+    gap: var(--theme-spacing-md);
+    align-items: center;
+    padding: var(--theme-spacing-xs) var(--theme-spacing-sm);
+    border-radius: var(--theme-radius-sm);
+}
+
+.row:hover {
+    background-color: var(--theme-colors-surface);
+}
+
+.row:hover .handle,
+.row:hover .row-menu {
+    opacity: 1;
+}
+
+.row-dragging {
+    opacity: 0.4;
+}
+
+/*
+ * Where the row would land. Drawn on the target's edge rather than by opening a
+ * gap, because opening a gap re-lays-out every row below the cursor and the
+ * hitboxes move out from under the pointer as it does.
+ */
+.row-drop-top::before,
+.row-drop-bottom::after {
+    position: absolute;
+    right: 0;
+    left: 0;
+    height: 2px;
+    content: '';
+    background-color: var(--theme-colors-primary-filled);
+}
+
+.row-drop-top::before {
+    top: -1px;
+}
+
+.row-drop-bottom::after {
+    bottom: -1px;
+}
+
+.handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--theme-colors-foreground-muted);
+    cursor: grab;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.index {
+    text-align: right;
+}
+
+.cell {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.duration {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.row-menu {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.unresolved {
+    font-style: italic;
+}
+
+.error {
+    color: var(--theme-colors-state-error);
+}
+
+.empty {
+    display: flex;
+    flex-direction: column;
+    gap: var(--theme-spacing-sm);
+    align-items: center;
+    padding: var(--theme-spacing-4xl) var(--theme-spacing-lg);
+    text-align: center;
+    background-color: var(--theme-colors-surface);
+    border-radius: var(--theme-radius-lg);
+}
+
+/*
+ * The album column is the first thing to go: it is the only one a person can
+ * live without, and the alternative — letting the grid squeeze — takes the
+ * title down with it.
+ */
+@container (width < 44rem) {
+    .row {
+        grid-template-columns: 1.5rem 2rem 1fr 3.5rem 2rem;
+    }
+
+    .album {
+        display: none;
+    }
+}

@@ -1,4 +1,77 @@
 {
+    "aoide": {
+        "action": {
+            "addToPlaylist": "Add to Aoide playlist",
+            "createPlaylist": "New Aoide playlist",
+            "newPlaylist": "New playlist…",
+            "removeFromPlaylist": "Remove from playlist"
+        },
+        "detail": {
+            "empty": "Nothing in this playlist yet",
+            "emptyHint": "Right-click a track anywhere in your library and choose \"Add to Aoide playlist\".",
+            "eyebrow": "Aoide playlist",
+            "missing": "This playlist no longer exists.",
+            "playMissing_one": "{{count}} track is not in your library on this server and was left out",
+            "playMissing_other": "{{count}} tracks are not in your library on this server and were left out",
+            "unresolved": "Track not known to this device",
+            "unresolvedHint": "Added on another device — the details appear once this one has seen the track"
+        },
+        "error": {
+            "add": "Could not add to the playlist",
+            "move": "Could not reorder the playlist",
+            "play": "Could not play this playlist",
+            "playNoneResolved": "None of these tracks are in your library on this server.",
+            "remove": "Could not remove the track"
+        },
+        "form": {
+            "createTitle": "New Aoide playlist",
+            "deleteConfirm": "Delete \"{{name}}\"?",
+            "deleteEverywhere": "The playlist and its tracks are removed from every device that syncs with this one.",
+            "deleteTitle": "Delete Aoide playlist",
+            "editTitle": "Edit Aoide playlist",
+            "nameLabel": "Name",
+            "namePlaceholder": "Playlist name",
+            "nameRequired": "A playlist needs a name",
+            "notesLabel": "Notes"
+        },
+        "list": {
+            "empty": "No Aoide playlists yet",
+            "emptyHint": "Aoide playlists live on this device and sync with the phone. Jellyfin's own playlists are listed separately.",
+            "subtitle": "Local playlists, synced with your other Aoide devices",
+            "title": "Aoide"
+        },
+        "sidebar": {
+            "all": "All playlists",
+            "title": "Aoide"
+        },
+        "sync": {
+            "blocked_one": "{{count}} change cannot be sent: a playlist's share was revoked",
+            "blocked_other": "{{count}} changes cannot be sent: a playlist's share was revoked",
+            "heldBack_one": "{{count}} change waiting on a cover upload",
+            "heldBack_other": "{{count}} changes waiting on a cover upload",
+            "idle": "Not synced yet",
+            "imageErrors_one": "{{count}} cover could not be uploaded",
+            "imageErrors_other": "{{count}} covers could not be uploaded",
+            "lastChecked": "Checked at {{time}} — the server answered, but nothing was synced",
+            "lastFailed": "Last tried at {{time}} — nothing was synced",
+            "lastSynced": "Last synced at {{time}}",
+            "noServer": "Sign in to a server first — the sidecar lives on the same host.",
+            "noStoreBridge": "This build can reach the sidecar but cannot push local edits yet: the preload bridge exposes no op log, so \"Sync now\" only checks the server.",
+            "now": "Sync now",
+            "quarantined_one": "{{count}} change was refused and will not be retried",
+            "quarantined_other": "{{count}} changes were refused and will not be retried",
+            "running": "Syncing…",
+            "serverCursor": "Server is at sequence {{cursor}}",
+            "summary": "Pushed {{pushed}}, pulled {{pulled}}, applied {{applied}}",
+            "title": "Sync"
+        },
+        "toast": {
+            "added_one": "Added {{count}} track to {{name}}",
+            "added_other": "Added {{count}} tracks to {{name}}"
+        },
+        "trackCount_one": "{{count}} track",
+        "trackCount_other": "{{count}} tracks"
+    },
     "action": {
         "addToFavorites": "Add to $t(entity.favorite, {\"count\": 2})",
         "addToPlaylist": "Add to $t(entity.playlist, {\"count\": 1})",

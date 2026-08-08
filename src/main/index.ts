@@ -34,6 +34,8 @@ import { canHandleVisualizerDisplayMedia } from './features/core/visualizer';
 import log, { autoUpdaterLogInterface } from './logger';
 import MenuBuilder, { MenuPlaybackState } from './menu';
 import './features';
+// Aoide's curation store: opens itself when the app is ready and closes on quit.
+import './features/aoide';
 import { hotkeyToElectronAccelerator } from './utils';
 
 import { disableAutoUpdates, isLinux, isMacOS, isWindows } from '/@/main/env';

@@ -1,5 +1,7 @@
 export enum AppRoute {
     ACTION_REQUIRED = '/action-required',
+    AOIDE_PLAYLISTS = '/aoide/playlists',
+    AOIDE_PLAYLISTS_DETAIL = '/aoide/playlists/:playlistId',
     EXPLORE = '/explore',
     FAKE_LIBRARY_ALBUM_DETAILS = '/library/albums/dummy/:albumId',
     FAVORITES = '/favorites',

@@ -2,11 +2,19 @@ import { SyncError, syncErrorFromReply } from './errors';
 
 import {
     isSyncEntity,
+    OrphanImage,
+    PlaylistShare,
+    PruneResult,
     PullResponse,
     PushRequest,
     PushResponse,
+    QueueEntry,
+    ReclaimResult,
+    RetentionReport,
     ServerReply,
+    ShareRequest,
     SyncOp,
+    SyncStatus,
 } from '/@/shared/aoide/sync-types';
 
 export interface SidecarClientOptions {
@@ -26,7 +34,54 @@ export const PULL_LIMIT = 500;
 const trimTrailingSlash = (url: string): string => url.replace(/\/+$/, '');
 
 /**
- * Transport for the two sync endpoints and the three image ones.
+ * The optional `olderThanDays` query, or nothing at all.
+ *
+ * Omitted rather than defaulted, so the server's own grace stays the single
+ * definition of it. A default written here would be a second copy of a number
+ * the server already owns, and the two would drift the first time either moved.
+ */
+const daysQuery = (olderThanDays?: number): string =>
+    olderThanDays === undefined
+        ? ''
+        : `?olderThanDays=${encodeURIComponent(String(olderThanDays))}`;
+
+/**
+ * Pull a list out of a reply that may or may not have wrapped it.
+ *
+ * The five endpoints added in 1.7.0.0 are informational — a queue offer, a share
+ * list, a housekeeping report — and none of them sits in the path of a user's
+ * edit. Being liberal about whether the array arrived bare or under a key costs
+ * one function and removes a whole class of "the report is empty and nothing
+ * says why", which is the failure that would actually happen here.
+ */
+const listFrom = <T>(body: unknown, ...keys: string[]): T[] => {
+    if (Array.isArray(body)) return body as T[];
+    if (!body || typeof body !== 'object') return [];
+
+    for (const key of keys) {
+        const value = (body as Record<string, unknown>)[key];
+        if (Array.isArray(value)) return value as T[];
+    }
+    return [];
+};
+
+/**
+ * Discard a receipt time that is not a usable number.
+ *
+ * `correctForSkew` compares this against a row's own timestamp, and a string
+ * that slipped through would compare as text: `'1786065442334' > 999` is false,
+ * so a genuinely skewed row would sail past the one check written to catch it.
+ * Absent is the honest answer for anything that is not a finite number, and
+ * absent means "correct nothing", which is the safe direction.
+ */
+const finiteOrUndefined = (value: unknown): number | undefined => {
+    const number = Number(value);
+    return typeof value === 'number' && Number.isFinite(number) ? number : undefined;
+};
+
+/**
+ * Transport for the two sync endpoints, the three image ones, and the five
+ * added in sidecar 1.7.0.0.
  *
  * Deliberately only transport: one request in, one parsed reply out. Retry,
  * bisection, cursor bookkeeping and quarantine are policy and live in the sync
@@ -81,6 +136,70 @@ export class SidecarClient {
     }
 
     /**
+     * Which playlists are shared, in either direction.
+     *
+     * The sync engine re-reads this after a "not shared with you for editing"
+     * refusal, because that refusal is the one that can become an acceptance.
+     * A playlist that has left this list has left this account: drop it locally
+     * rather than keeping a copy nobody can reach.
+     */
+    async listShares(): Promise<PlaylistShare[]> {
+        const response = await this.send('/aoide/shares', { method: 'GET' });
+
+        if (!response.ok) {
+            throw syncErrorFromReply('aoide/shares', await this.readReply(response));
+        }
+
+        return listFrom<PlaylistShare>(
+            await this.readJson<unknown>(response, 'aoide/shares'),
+            'shares',
+        );
+    }
+
+    /**
+     * Blobs the server holds that no playlist names.
+     *
+     * Also the cheapest answer to "did my upload arrive?" — a blob pushed
+     * moments ago shows up here with `ageDays` 0, because nothing references it
+     * until the op naming it lands.
+     */
+    async orphanedImages(): Promise<OrphanImage[]> {
+        const response = await this.send('/aoide/images/orphans', { method: 'GET' });
+
+        if (!response.ok) {
+            throw syncErrorFromReply('aoide/images/orphans', await this.readReply(response));
+        }
+
+        return listFrom<OrphanImage>(
+            await this.readJson<unknown>(response, 'aoide/images/orphans'),
+            'images',
+            'orphans',
+        );
+    }
+
+    /**
+     * Delete play history older than `olderThanDays`. Only `play_events` is
+     * prunable — everything else is small, or is not the kind of thing a
+     * retention policy should be deciding about.
+     *
+     * Omitting the argument leaves the cutoff to the server, which is the
+     * authority on its own default. Naming 90 here would be a second copy of a
+     * number that lives elsewhere, and the two would eventually disagree.
+     */
+    async pruneRetention(olderThanDays?: number): Promise<PruneResult> {
+        const response = await this.send(`/aoide/retention/prune${daysQuery(olderThanDays)}`, {
+            method: 'POST',
+        });
+
+        if (!response.ok) {
+            throw syncErrorFromReply('aoide/retention/prune', await this.readReply(response));
+        }
+
+        const body = await this.readJson<Partial<PruneResult>>(response, 'aoide/retention/prune');
+        return { pruned: Number(body.pruned ?? 0) };
+    }
+
+    /**
      * Read ops from `since` forward.
      *
      * `since` is always sent, as `0` on a device that has never synced, rather
@@ -107,7 +226,16 @@ export class SidecarClient {
             // discard the rest of the batch, and must not stop the cursor from
             // advancing past it — that would wedge the sync permanently on an
             // entity a newer build introduced.
-            ops: (body.ops ?? []).filter((op) => isSyncEntity(op.entity)),
+            ops: (body.ops ?? [])
+                .filter((op) => isSyncEntity(op.entity))
+                // Everything else on the op travels untouched, including fields
+                // this build has never heard of. Only the two the merge does
+                // arithmetic on are checked, and only for being numbers.
+                .map((op) => ({
+                    ...op,
+                    receivedAt: finiteOrUndefined(op.receivedAt),
+                    seq: finiteOrUndefined(op.seq),
+                })),
         };
     }
 
@@ -157,6 +285,116 @@ export class SidecarClient {
 
         if (!response.ok) {
             throw syncErrorFromReply('Uploading a cover', await this.readReply(response));
+        }
+    }
+
+    /**
+     * Every device's queue, most recently updated first.
+     *
+     * "Resume across devices" offers the first entry that is **not**
+     * `isCurrentDevice`, and judges how recent it is on `ageSeconds` or
+     * `receivedAt` — never on `updatedAt`. The first two are the server's clock;
+     * `updatedAt` is the writing device's, so a machine whose clock is set wrong
+     * would otherwise claim to be the most recent one and win every handover.
+     */
+    async queues(): Promise<QueueEntry[]> {
+        const response = await this.send('/aoide/queue', { method: 'GET' });
+
+        if (!response.ok) {
+            throw syncErrorFromReply('aoide/queue', await this.readReply(response));
+        }
+
+        return listFrom<QueueEntry>(
+            await this.readJson<unknown>(response, 'aoide/queue'),
+            'entries',
+            'queues',
+        );
+    }
+
+    /**
+     * Sweep unreferenced blobs.
+     *
+     * `olderThanDays` can only make the sweep **more** cautious — the server
+     * clamps it up to its own thirty-day grace. That direction is the whole
+     * safety property: a blob nothing references here may still be named by a
+     * playlist on a phone that has been in a drawer for three weeks.
+     */
+    async reclaimImages(olderThanDays?: number): Promise<ReclaimResult> {
+        const response = await this.send(
+            `/aoide/images/orphans/reclaim${daysQuery(olderThanDays)}`,
+            { method: 'POST' },
+        );
+
+        if (!response.ok) {
+            throw syncErrorFromReply(
+                'aoide/images/orphans/reclaim',
+                await this.readReply(response),
+            );
+        }
+
+        const body = await this.readJson<Partial<ReclaimResult>>(
+            response,
+            'aoide/images/orphans/reclaim',
+        );
+        return { reclaimed: Number(body.reclaimed ?? 0), sha256: body.sha256 };
+    }
+
+    /** How much play history the server is holding, and how far back it goes. */
+    async retention(): Promise<RetentionReport> {
+        const response = await this.send('/aoide/retention', { method: 'GET' });
+
+        if (!response.ok) {
+            throw syncErrorFromReply('aoide/retention', await this.readReply(response));
+        }
+
+        return this.readJson<RetentionReport>(response, 'aoide/retention');
+    }
+
+    /** Grant another Jellyfin user access to a playlist. */
+    async share(request: ShareRequest): Promise<void> {
+        const response = await this.send('/aoide/shares', {
+            body: JSON.stringify(request),
+            headers: { 'Content-Type': 'application/json' },
+            method: 'POST',
+        });
+
+        if (!response.ok) {
+            throw syncErrorFromReply('aoide/shares', await this.readReply(response));
+        }
+    }
+
+    /**
+     * The server's view of who has pulled how far.
+     *
+     * Worth surfacing: since 1.7.0.0 the server prunes no further than the
+     * lowest cursor among devices seen recently, and a device that pushes but
+     * never pulls is invisible to that guard. This is where a device falling
+     * behind can be seen before its history is gone.
+     */
+    async status(): Promise<SyncStatus> {
+        const response = await this.send('/aoide/sync/status', { method: 'GET' });
+
+        if (!response.ok) {
+            throw syncErrorFromReply('aoide/sync/status', await this.readReply(response));
+        }
+
+        return this.readJson<SyncStatus>(response, 'aoide/sync/status');
+    }
+
+    /**
+     * Revoke a user's access to a playlist.
+     *
+     * **Not retroactive.** Ops that user already pushed stay in the log and stay
+     * applied; this only stops the next one. An op of theirs still queued on
+     * their own device comes back refused, which is the refusal
+     * `classifyRejection` singles out.
+     */
+    async unshare(playlistId: string, granteeUserId: string): Promise<void> {
+        const path = `/aoide/shares/${encodeURIComponent(playlistId)}/${encodeURIComponent(granteeUserId)}`;
+        const response = await this.send(path, { method: 'DELETE' });
+
+        if (!response.ok) {
+            throw syncErrorFromReply('aoide/shares (delete)', await this.readReply(response));
         }
     }
 

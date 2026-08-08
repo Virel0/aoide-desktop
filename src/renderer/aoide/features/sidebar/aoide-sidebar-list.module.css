@@ -1,0 +1,60 @@
+/*
+ * The Aoide section of the sidebar.
+ *
+ * Shaped after `sidebar-collection-list.module.css` rather than sharing it:
+ * that file belongs to Feishin and every line changed in it is a line that
+ * conflicts on the next upstream merge, which is the entire value of the fork.
+ */
+
+.row {
+    position: relative;
+    width: 100%;
+    border-radius: var(--theme-radius-md);
+}
+
+.row-active {
+    background-color: var(--theme-colors-surface);
+}
+
+.row-link {
+    display: flex;
+    gap: var(--theme-spacing-xs);
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    padding: var(--theme-spacing-xs) var(--theme-spacing-md);
+    color: var(--theme-colors-foreground);
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid transparent;
+    border-radius: var(--theme-radius-md);
+    transition: color 0.2s ease-in-out;
+}
+
+.row-link:focus-visible {
+    border-color: var(--theme-colors-primary-filled);
+}
+
+.row-active .row-link,
+.row-active .row-link .name {
+    color: var(--theme-colors-primary-filled);
+}
+
+.row-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.count {
+    flex-shrink: 0;
+}
+
+.empty {
+    padding: var(--theme-spacing-xs) var(--theme-spacing-md);
+}

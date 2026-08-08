@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { SyncError } from './errors';
 import { SidecarClient } from './sidecar-client';
+import { SyncTransport } from './sync-engine';
 
 import { SyncOp } from '/@/shared/aoide/sync-types';
 
@@ -72,6 +73,17 @@ const op = (overrides: Partial<SyncOp> = {}): SyncOp => ({
 });
 
 describe('SidecarClient', () => {
+    // A build-time assertion wearing a test's clothes. The engine takes
+    // `SyncTransport` rather than this class so the ordering rules can be tested
+    // without a network, and nothing else forces the two to keep agreeing —
+    // renaming a method here would otherwise be found by whoever wires them
+    // together, at runtime.
+    it('satisfies the interface the sync engine takes', () => {
+        const transport: SyncTransport = client((async () => new Response()) as typeof fetch);
+
+        expect(typeof transport.push).toBe('function');
+    });
+
     it('authenticates with the Jellyfin token and no account system of its own', async () => {
         const { calls, impl } = stubFetch([() => json(200, { accepted: [], cursor: 1 })]);
         await client(impl).push([]);
@@ -216,6 +228,175 @@ describe('SidecarClient', () => {
 
             expect(error.kind).toBe('permanent');
             expect(error.reply?.body).toContain('Sign in');
+        });
+    });
+
+    describe('the 1.7.0.0 fields on a pulled op', () => {
+        it('carries the server’s receipt time and the author through untouched', async () => {
+            const { impl } = stubFetch([
+                () =>
+                    json(200, {
+                        cursor: 3,
+                        hasMore: false,
+                        ops: [
+                            {
+                                ...op(),
+                                authorUserId: 'user-2',
+                                createdAt: 1786052177201,
+                                receivedAt: 1786065442334,
+                                seq: 1,
+                            },
+                        ],
+                    }),
+            ]);
+            const result = await client(impl).pull(0);
+
+            expect(result.ops[0].authorUserId).toBe('user-2');
+            expect(result.ops[0].receivedAt).toBe(1786065442334);
+            expect(result.ops[0].seq).toBe(1);
+        });
+
+        // `correctForSkew` compares this against a row's own timestamp, and a
+        // string would compare as text — so a genuinely skewed row would sail
+        // past the one check written to catch it. Absent means "correct
+        // nothing", which is the safe direction.
+        it('drops a receipt time that is not a number rather than comparing text', async () => {
+            const { impl } = stubFetch([
+                () =>
+                    json(200, {
+                        cursor: 3,
+                        hasMore: false,
+                        ops: [{ ...op(), receivedAt: '1786065442334' }],
+                    }),
+            ]);
+            const result = await client(impl).pull(0);
+
+            expect(result.ops[0].receivedAt).toBeUndefined();
+        });
+    });
+
+    describe('queue handover', () => {
+        it('reports every device’s queue with the server’s own freshness fields', async () => {
+            const { calls, impl } = stubFetch([
+                () =>
+                    json(200, {
+                        entries: [
+                            {
+                                ageSeconds: 12,
+                                deviceId: 'phone',
+                                isCurrentDevice: false,
+                                receivedAt: 1786065442334,
+                                updatedAt: 9_000_000_000_000,
+                            },
+                        ],
+                    }),
+            ]);
+            const entries = await client(impl).queues();
+
+            expect(calls[0].url).toBe('https://example.invalid/aoide/queue');
+            expect(entries[0].ageSeconds).toBe(12);
+            expect(entries[0].receivedAt).toBe(1786065442334);
+        });
+
+        it('takes a bare array too, so an empty report is never a silent one', async () => {
+            const { impl } = stubFetch([
+                () => json(200, [{ ageSeconds: 1, deviceId: 'a', isCurrentDevice: true }]),
+            ]);
+
+            expect(await client(impl).queues()).toHaveLength(1);
+        });
+    });
+
+    describe('shares', () => {
+        it('lists what is shared', async () => {
+            const { calls, impl } = stubFetch([
+                () => json(200, [{ canEdit: true, granteeUserId: 'u2', playlistId: 'p1' }]),
+            ]);
+            const shares = await client(impl).listShares();
+
+            expect(calls[0].url).toBe('https://example.invalid/aoide/shares');
+            expect(shares).toEqual([{ canEdit: true, granteeUserId: 'u2', playlistId: 'p1' }]);
+        });
+
+        it('grants access with the whole request in the body', async () => {
+            const { calls, impl } = stubFetch([() => new Response(null, { status: 204 })]);
+            await client(impl).share({ canEdit: true, granteeUserId: 'u2', playlistId: 'p1' });
+
+            expect(calls[0].method).toBe('POST');
+            expect(JSON.parse(String(calls[0].body))).toEqual({
+                canEdit: true,
+                granteeUserId: 'u2',
+                playlistId: 'p1',
+            });
+        });
+
+        it('escapes the ids it puts in the path', async () => {
+            const { calls, impl } = stubFetch([() => new Response(null, { status: 204 })]);
+            await client(impl).unshare('p 1/x', 'u#2');
+
+            expect(calls[0].method).toBe('DELETE');
+            expect(calls[0].url).toBe('https://example.invalid/aoide/shares/p%201%2Fx/u%232');
+        });
+    });
+
+    describe('housekeeping', () => {
+        it('reports orphaned blobs, which doubles as “did my upload arrive?”', async () => {
+            const { calls, impl } = stubFetch([
+                () => json(200, { images: [{ ageDays: 0, sha256: 'aa11' }] }),
+            ]);
+            const orphans = await client(impl).orphanedImages();
+
+            expect(calls[0].url).toBe('https://example.invalid/aoide/images/orphans');
+            // A blob pushed moments ago appears with ageDays 0, because nothing
+            // references it until the op naming it lands.
+            expect(orphans[0].ageDays).toBe(0);
+        });
+
+        // The server owns the grace period and clamps anything shorter up to it.
+        // A default written here would be a second copy of that number, and the
+        // two would drift the first time either moved.
+        it('leaves the grace to the server unless a caller names one', async () => {
+            const { calls, impl } = stubFetch([() => json(200, { reclaimed: 3 })]);
+            const cl = client(impl);
+
+            await cl.reclaimImages();
+            await cl.reclaimImages(90);
+
+            expect(calls[0].url).toBe('https://example.invalid/aoide/images/orphans/reclaim');
+            expect(calls[1].url).toContain('olderThanDays=90');
+            expect(calls[1].method).toBe('POST');
+        });
+
+        it('prunes play history and reports how much went', async () => {
+            const { calls, impl } = stubFetch([() => json(200, { pruned: 41 })]);
+            const result = await client(impl).pruneRetention(180);
+
+            expect(calls[0].url).toContain('/aoide/retention/prune?olderThanDays=180');
+            expect(result.pruned).toBe(41);
+        });
+
+        it('reads the retention report and the sync status', async () => {
+            const { calls, impl } = stubFetch([
+                () => json(200, { eventCount: 900, oldestAt: 1 }),
+                () => json(200, { cursor: 88, lowestCursor: 12 }),
+            ]);
+            const cl = client(impl);
+
+            expect((await cl.retention()).eventCount).toBe(900);
+            // The lowest cursor among devices seen recently is what bounds
+            // pruning, so a device falling behind is visible here first.
+            expect((await cl.status()).lowestCursor).toBe(12);
+            expect(calls.map((call) => call.url)).toEqual([
+                'https://example.invalid/aoide/retention',
+                'https://example.invalid/aoide/sync/status',
+            ]);
+        });
+
+        it('classifies a failure on a housekeeping endpoint like any other', async () => {
+            const { impl } = stubFetch([() => new Response('nope', { status: 401 })]);
+            const error = await expectSyncError(client(impl).listShares());
+
+            expect(error.kind).toBe('auth');
         });
     });
 
