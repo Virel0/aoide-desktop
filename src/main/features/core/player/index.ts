@@ -1,7 +1,9 @@
 import { app, ipcMain, powerMonitor } from 'electron';
+import { constants } from 'fs';
 import { access, rm } from 'fs/promises';
 import uniq from 'lodash/uniq';
 import MpvAPI from 'node-mpv';
+import { delimiter, join } from 'node:path';
 import { pid } from 'node:process';
 import process from 'process';
 
@@ -9,7 +11,7 @@ import { getMainWindow, sendToastToRenderer } from '../../../index';
 import log from '../../../logger';
 import { store } from '../settings';
 
-import { isMacOS, isWindows } from '/@/main/env';
+import { isWindows } from '/@/main/env';
 import { PlayerData } from '/@/shared/types/domain-types';
 
 declare module 'node-mpv';
@@ -74,7 +76,26 @@ const mpvLog = (
 };
 
 const MPV_BINARY_PATH = store.get('mpv_path') as string | undefined;
-const MACOS_MPV_BINARY_PATHS = ['/opt/homebrew/bin/mpv', '/usr/local/bin/mpv'];
+/**
+ * Where mpv is found when nobody has said.
+ *
+ * Upstream probed Homebrew's two locations and gave up on every other platform,
+ * so on Linux `resolveMpvBinaryPath` returned undefined unless the path had been
+ * typed into Settings by hand — and mpv never started. Selecting the MPV backend
+ * then stopped playback with nothing on screen to say why.
+ *
+ * The Arch package declares mpv a hard dependency precisely so it is present, so
+ * the app should be able to find it. PATH is consulted first because that is
+ * where a user's own build would be; the fixed paths are the fallback for a
+ * launcher started with a bare environment, which is the normal case for a
+ * desktop entry.
+ */
+const MPV_BINARY_CANDIDATES = [
+    '/usr/bin/mpv',
+    '/usr/local/bin/mpv',
+    '/opt/homebrew/bin/mpv',
+    '/var/lib/flatpak/exports/bin/io.mpv.Mpv',
+];
 
 const prefetchPlaylistParams = [
     '--prefetch-playlist=no',
@@ -114,16 +135,20 @@ const resolveMpvBinaryPath = async (binaryPath?: string) => {
         return MPV_BINARY_PATH;
     }
 
-    if (!isMacOS()) {
-        return undefined;
-    }
+    const fromPath = (process.env.PATH ?? '')
+        .split(delimiter)
+        .filter(Boolean)
+        .map((directory) => join(directory, 'mpv'));
 
-    for (const candidate of MACOS_MPV_BINARY_PATHS) {
+    for (const candidate of [...fromPath, ...MPV_BINARY_CANDIDATES]) {
         try {
-            await access(candidate);
+            // X_OK rather than F_OK: a file that exists and cannot be executed
+            // would be resolved here and then fail to spawn, which reports as
+            // "mpv did not start" rather than as the permission problem it is.
+            await access(candidate, constants.X_OK);
             return candidate;
         } catch {
-            // Try the next common Homebrew location.
+            // Try the next location.
         }
     }
 

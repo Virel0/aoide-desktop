@@ -85,7 +85,23 @@ const SERVER_TYPES: Record<ServerType, ServerDetails> = {
     },
 };
 
-const ALL_SERVERS = Object.keys(SERVER_TYPES).map((serverType) => {
+/**
+ * The server types this build offers at sign-in.
+ *
+ * Jellyfin only. Aoide is built around one server — the curation store's whole
+ * premise is that Jellyfin owns the library and this owns what Jellyfin is bad
+ * at, and the sidecar is a Jellyfin plugin authenticating with a Jellyfin token.
+ * Offering Navidrome or OpenSubsonic would present a working sign-in that leads
+ * to an app whose Aoide half cannot function.
+ *
+ * The other two are hidden rather than deleted: upstream's Navidrome and
+ * Subsonic code stays where it is, so merging upstream stays cheap, and anyone
+ * who wants them back changes this list. A server already saved under another
+ * type keeps working — this governs the picker, not the API layer.
+ */
+const OFFERED_SERVER_TYPES: readonly ServerType[] = [ServerType.JELLYFIN];
+
+const ALL_SERVERS = OFFERED_SERVER_TYPES.map((serverType) => {
     const info = SERVER_TYPES[serverType];
     return {
         label: <ServerIconWithLabel icon={info.icon} label={info.name} />,
@@ -116,7 +132,7 @@ export const AddServerForm = ({ onCancel }: AddServerFormProps) => {
             type:
                 (localSettings
                     ? localSettings.env.SERVER_TYPE
-                    : toServerType(window.SERVER_TYPE)) ?? ServerType.NAVIDROME,
+                    : toServerType(window.SERVER_TYPE)) ?? ServerType.JELLYFIN,
             url: (localSettings ? localSettings.env.SERVER_URL : window.SERVER_URL) ?? 'https://',
             username: '',
         },

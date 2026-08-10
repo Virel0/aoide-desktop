@@ -146,13 +146,13 @@ export const useAppTheme = (overrideTheme?: AppTheme) => {
 
             // Note: we change the url to bust caches when changing the path
             // The url provided here does NOT matter, validation is done
-            // on the main process. Any feishin:/ url will fetch the same
+            // on the main process. Any aoide:/ url will fetch the same
             // item, which the renderer will check via magic number to be
             // some font item
             textStyleRef.current.textContent = `
             @font-face {
                 font-family: "dynamic-font";
-                src: url("feishin:${custom}");
+                src: url("aoide:${custom}");
             }`;
         } else {
             const root = document.documentElement;

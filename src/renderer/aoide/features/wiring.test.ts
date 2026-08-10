@@ -95,3 +95,40 @@ describe('syncOutcome', () => {
         expect(syncOutcome(state({ finishedAt: undefined, phase: 'idle' }))).toBe('idle');
     });
 });
+
+describe('the sign-in form', () => {
+    const source = readFileSync(
+        join(import.meta.dirname, '../../features/servers/components/add-server-form.tsx'),
+        'utf8',
+    );
+
+    // Aoide is built around one server: the sidecar is a Jellyfin plugin and
+    // authenticates with a Jellyfin token, so a Navidrome sign-in would succeed
+    // and lead to an app whose Aoide half cannot work at all.
+    it('offers Jellyfin and nothing else', () => {
+        expect(source).toContain(
+            'OFFERED_SERVER_TYPES: readonly ServerType[] = [ServerType.JELLYFIN]',
+        );
+    });
+
+    it('does not default to a type it no longer offers', () => {
+        expect(source).not.toMatch(/\?\?\s*ServerType\.NAVIDROME/);
+    });
+});
+
+describe('the custom font protocol', () => {
+    // Main registers `aoide:`; the renderer built `feishin:` URLs, so a custom
+    // font fetched nothing. Renaming a scheme in one process and not the other
+    // fails silently — the font simply never arrives.
+    it('asks for the scheme the main process registers', () => {
+        const renderer = readFileSync(
+            join(import.meta.dirname, '../../themes/use-app-theme.ts'),
+            'utf8',
+        );
+        const main = readFileSync(join(import.meta.dirname, '../../../main/index.ts'), 'utf8');
+
+        expect(renderer).toContain('url("aoide:');
+        expect(renderer).not.toContain('feishin:');
+        expect(main).toContain("protocol.handle('aoide'");
+    });
+});
