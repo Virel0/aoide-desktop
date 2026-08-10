@@ -469,6 +469,17 @@ export class Playlists {
         return this.update(playlistId, { notes });
     }
 
+    /**
+     * Store a rule set on a playlist, making it smart.
+     *
+     * The rules and not the tracks: a mix frozen to the songs it happened to
+     * pick today stops being the thing that was described. Stored as the phone's
+     * own JSON, so the phone evaluates it without knowing this app exists.
+     */
+    setSmartRules(playlistId: string, smartRules: null | string): PlaylistSummary {
+        return this.update(playlistId, { isSmart: smartRules !== null, smartRules });
+    }
+
     /** The local copy of a Jellyfin playlist, if one has been imported. */
     private importedPlaylist(sourceJellyfinId: string): CurationRow | undefined {
         // Ordered by id so that a library which already holds duplicates — the

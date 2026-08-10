@@ -1,3 +1,4 @@
+import type { SmartRules } from '/@/shared/aoide/smart-rules';
 import type { SyncOp } from '/@/shared/aoide/sync-types';
 
 import { app, ipcMain } from 'electron';
@@ -8,6 +9,7 @@ import type { CreatePlaylistOptions, ImportRequest, MoveTarget, TrackInput } fro
 import { CurationStore } from './curation-store';
 import { CurationDatabase, openCurationDatabase } from './database';
 import { ImageBlobStore } from './image-blobs';
+import { Mix } from './mix';
 import { Playlists } from './playlists';
 import { registerSmartSearchHandlers } from './smart-search';
 
@@ -29,6 +31,7 @@ import log from '/@/main/logger';
 export interface Curation {
     database: CurationDatabase;
     images: ImageBlobStore;
+    mix: Mix;
     playlists: Playlists;
     store: CurationStore;
 }
@@ -77,6 +80,7 @@ export const curation = (): Curation => {
     opened = {
         database,
         images: new ImageBlobStore(database),
+        mix: new Mix(database),
         playlists: new Playlists(database, store),
         store,
     };
@@ -126,6 +130,12 @@ handle('aoide:playlists-create', ({ playlists }, name: string, options?: CreateP
 
 handle('aoide:playlists-rename', ({ playlists }, playlistId: string, name: string) =>
     playlists.rename(playlistId, name),
+);
+
+handle(
+    'aoide:playlists-set-smart-rules',
+    ({ playlists }, playlistId: string, smartRules: null | string) =>
+        playlists.setSmartRules(playlistId, smartRules),
 );
 
 handle('aoide:playlists-set-notes', ({ playlists }, playlistId: string, notes: null | string) =>
@@ -233,3 +243,14 @@ handle('aoide:sync-images-to-upload', ({ images }, ops: SyncOp[]) =>
 handle('aoide:sync-mark-uploaded', ({ images }, sha256: string) => images.markUploaded(sha256));
 
 registerSmartSearchHandlers();
+
+/**
+ * Narrow a mix's candidates by what has actually been listened to.
+ *
+ * The renderer brings candidates from Jellyfin, which answers the library half
+ * of a rule set exactly. This answers the half only the curation store knows —
+ * and knows honestly, because Jellyfin counts a four-second skip as a play.
+ */
+handle('aoide:mix-narrow', ({ mix }, candidateIds: string[], rules: SmartRules) =>
+    mix.narrow(candidateIds, rules),
+);

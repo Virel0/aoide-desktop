@@ -3,6 +3,7 @@ import { ipcMain, safeStorage } from 'electron';
 import { store } from '../core/settings';
 
 import log from '/@/main/logger';
+import { buildMixPrompt, parseRules, SmartRules } from '/@/shared/aoide/smart-rules';
 import { buildPrompt, MusicQuery, parseQuery } from '/@/shared/aoide/smart-search';
 
 /**
@@ -69,8 +70,26 @@ export interface SmartSearchOutcome {
  * than one that quietly does the ordinary thing.
  */
 export const translate = async (phrase: string, genres: string[]): Promise<SmartSearchOutcome> => {
+    const reply = await ask(buildPrompt(phrase, genres));
+    if ('reason' in reply) return { query: null, reason: reply.reason };
+
+    return { query: parseQuery(reply.content, genres) };
+};
+
+/**
+ * One request to OpenRouter, and one place that knows how to make it.
+ *
+ * Both features ask the same service the same way, and having two copies of the
+ * headers, the timeout and the refusal handling would mean the second feature
+ * drifting from the first the moment either is touched.
+ *
+ * Never throws: every failure comes back as a reason, because the caller always
+ * has something ordinary to fall back on and a search box that throws is worse
+ * than one that quietly does the plain thing.
+ */
+const ask = async (prompt: string): Promise<{ content: string } | { reason: string }> => {
     const key = readKey();
-    if (!key) return { query: null, reason: 'No OpenRouter key is set.' };
+    if (!key) return { reason: 'No OpenRouter key is set.' };
 
     const model = (store.get(MODEL_SETTING) as string | undefined) || DEFAULT_MODEL;
     const controller = new AbortController();
@@ -79,7 +98,7 @@ export const translate = async (phrase: string, genres: string[]): Promise<Smart
     try {
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             body: JSON.stringify({
-                messages: [{ content: buildPrompt(phrase, genres), role: 'user' }],
+                messages: [{ content: prompt, role: 'user' }],
                 model,
                 // Translation, not composition. The same phrase should give the
                 // same filters twice, or a search becomes a slot machine.
@@ -104,23 +123,19 @@ export const translate = async (phrase: string, genres: string[]): Promise<Smart
             // here — out of credit, unknown model, invalid key — and replacing
             // them with "search failed" throws away the only thing that would
             // tell somebody what to do about it.
-            log.error('OpenRouter refused a translation', { body, status: response.status });
-            return {
-                query: null,
-                reason: `OpenRouter returned HTTP ${response.status}: ${body.slice(0, 200)}`,
-            };
+            log.error('OpenRouter refused a request', { body, status: response.status });
+            return { reason: `OpenRouter returned HTTP ${response.status}: ${body.slice(0, 200)}` };
         }
 
         const content = readContent(body);
         if (content === null) {
-            return { query: null, reason: 'OpenRouter returned a reply in an unfamiliar shape.' };
+            return { reason: 'OpenRouter returned a reply in an unfamiliar shape.' };
         }
 
-        return { query: parseQuery(content, genres) };
+        return { content };
     } catch (error) {
         const aborted = error instanceof Error && error.name === 'AbortError';
         return {
-            query: null,
             reason: aborted
                 ? 'OpenRouter did not answer in time.'
                 : `Could not reach OpenRouter: ${error instanceof Error ? error.message : String(error)}`,
@@ -196,7 +211,34 @@ export interface OpenRouterModel {
     promptPrice: null | number;
 }
 
+/**
+ * Turn a mood into smart playlist rules.
+ *
+ * The same call as `translate`, aimed at a different prompt: the model produces
+ * rules and never touches a track. Rules it got wrong are dropped with a reason
+ * rather than silently trimmed, because a mix that quietly lost half its
+ * definition looks exactly like one whose rules simply match little.
+ */
+export const describeMix = async (description: string, genres: string[]): Promise<MixOutcome> => {
+    const reply = await ask(buildMixPrompt(description, genres));
+    if ('reason' in reply) return { rejected: [], rules: null, ...reply };
+
+    const parsed = parseRules(reply.content);
+    return { rejected: parsed.rejected, rules: parsed.rules };
+};
+
+export interface MixOutcome {
+    reason?: string;
+    /** Rules the model produced that neither app could evaluate, and why. */
+    rejected: string[];
+    rules: null | SmartRules;
+}
+
 export const registerSmartSearchHandlers = (): void => {
+    ipcMain.handle('aoide:mix-describe', (_event, description: string, genres: string[]) =>
+        describeMix(description, genres),
+    );
+
     ipcMain.handle('aoide:smart-search-list-models', () => listModels());
 
     // Deliberately answers whether a key exists, never what it is.

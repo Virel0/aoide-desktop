@@ -35,6 +35,8 @@ describe('the OpenRouter key stays in the main process', () => {
         // translation — none of them hand back a secret.
         expect(new Set(handlers)).toEqual(
             new Set([
+                // Returns rules, not a secret: a mood in, a rule set out.
+                'aoide:mix-describe',
                 'aoide:smart-search-configured',
                 // A public catalogue, fetched unauthenticated. Listed here so
                 // the set stays exhaustive: every new channel has to be named

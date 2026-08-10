@@ -7,7 +7,12 @@ import type {
     PlaylistTrack,
     TrackInput,
 } from '/@/main/features/aoide/playlists';
-import type { OpenRouterModel, SmartSearchOutcome } from '/@/main/features/aoide/smart-search';
+import type {
+    MixOutcome,
+    OpenRouterModel,
+    SmartSearchOutcome,
+} from '/@/main/features/aoide/smart-search';
+import type { SmartRules } from '/@/shared/aoide/smart-rules';
 import type { SyncOp } from '/@/shared/aoide/sync-types';
 
 import { ipcRenderer } from 'electron';
@@ -39,6 +44,14 @@ export const aoide = {
 
         store: (bytes: Uint8Array, mime: string): Promise<string> =>
             ipcRenderer.invoke('aoide:images-store', bytes, mime),
+    },
+
+    mix: {
+        describe: (description: string, genres: string[]): Promise<MixOutcome> =>
+            ipcRenderer.invoke('aoide:mix-describe', description, genres),
+
+        narrow: (candidateIds: string[], rules: SmartRules): Promise<string[]> =>
+            ipcRenderer.invoke('aoide:mix-narrow', candidateIds, rules),
     },
 
     playlists: {
@@ -89,6 +102,9 @@ export const aoide = {
 
         setNotes: (playlistId: string, notes: null | string): Promise<PlaylistSummary> =>
             ipcRenderer.invoke('aoide:playlists-set-notes', playlistId, notes),
+
+        setSmartRules: (playlistId: string, smartRules: null | string): Promise<PlaylistSummary> =>
+            ipcRenderer.invoke('aoide:playlists-set-smart-rules', playlistId, smartRules),
     },
 
     /**

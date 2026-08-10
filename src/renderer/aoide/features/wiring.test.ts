@@ -187,8 +187,12 @@ describe('the search screen', () => {
     const source = sourceOf('search/aoide-search.tsx');
     const hook = sourceOf('search/use-smart-search.ts');
 
-    it('is reachable from the sidebar', () => {
-        expect(sourceOf('sidebar/aoide-sidebar-list.tsx')).toContain('AOIDE_SEARCH');
+    // Reachable from the top left rather than from the Aoide section — that is
+    // where people look for search, and the separate entry is what made the
+    // feature invisible in the first place. The route guard below is what pins
+    // it; this only records that the duplicate entry is gone on purpose.
+    it('does not keep a second entry in the Aoide sidebar', () => {
+        expect(sourceOf('sidebar/aoide-sidebar-list.tsx')).not.toContain('AOIDE_SEARCH');
     });
 
     // Every translation is a paid request. A search box that asked a hosted
@@ -244,5 +248,34 @@ describe('the search people actually click', () => {
             /element=\{<AoideSearchRoute \/>\}\s*\n\s*path=\{AppRoute\.SEARCH\}/,
         );
         expect(router).not.toContain('<SearchRoute />');
+    });
+});
+
+describe('mixes', () => {
+    const screen = sourceOf('mix/aoide-mix.tsx');
+    const hook = sourceOf('mix/use-mix.ts');
+
+    it('is reachable from the sidebar', () => {
+        expect(sourceOf('sidebar/aoide-sidebar-list.tsx')).toContain('AOIDE_MIX');
+    });
+
+    // The measured principle: the model produces rules, the library and the
+    // history select. A mix therefore cannot contain a track you do not own.
+    it('asks for rules and never for songs', () => {
+        expect(hook).toContain('mix.describe');
+        expect(hook).toContain('mix.narrow');
+        expect(hook).toContain('getSongList');
+    });
+
+    // Saved as rules, not as the tracks it happened to pick — a mix frozen to
+    // today's songs stops being the thing that was described, and only the rules
+    // are a format the phone already evaluates.
+    it('saves the rules rather than the songs', () => {
+        expect(screen).toContain('setSmartRules');
+        expect(screen).toContain('JSON.stringify(mix.rules)');
+    });
+
+    it('says which rules it had to drop', () => {
+        expect(screen).toContain('mix.rejected.map');
     });
 });

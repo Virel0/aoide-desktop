@@ -40,6 +40,16 @@
             "subtitle": "Local playlists, synced with your other Aoide devices",
             "title": "Aoide"
         },
+        "mix": {
+            "discard": "Discard",
+            "make": "Make a mix",
+            "placeholder": "Describe a mood — \"something calm I have not heard in months\"",
+            "play": "Play {{count}} tracks",
+            "save": "Save as playlist",
+            "saved": "Saved. It stays fresh — the rules re-run every time you open it.",
+            "savedFrom": "From: {{description}}",
+            "title": "Mixes"
+        },
         "search": {
             "albums": "Albums",
             "clearInterpretation": "Clear",
@@ -67,6 +77,7 @@
         },
         "sidebar": {
             "all": "All playlists",
+            "mix": "Mixes",
             "search": "Search",
             "title": "Aoide"
         },

@@ -63,10 +63,10 @@ export const AoideSidebarList = () => {
             </Accordion.Control>
             <Accordion.Panel>
                 <AoideSidebarRow
-                    icon="search"
-                    isActive={location.pathname === AppRoute.AOIDE_SEARCH}
-                    label={t('aoide.sidebar.search')}
-                    to={AppRoute.AOIDE_SEARCH}
+                    icon="mediaShuffle"
+                    isActive={location.pathname === AppRoute.AOIDE_MIX}
+                    label={t('aoide.sidebar.mix')}
+                    to={AppRoute.AOIDE_MIX}
                 />
                 <AoideSidebarRow
                     isActive={location.pathname === AppRoute.AOIDE_PLAYLISTS}
@@ -109,7 +109,7 @@ const AoideSidebarRow = ({
 }: {
     count?: number;
     cover?: CoverSource;
-    icon?: 'playlist' | 'search';
+    icon?: 'mediaShuffle' | 'playlist' | 'search';
     isActive: boolean;
     label: string;
     to: string;
