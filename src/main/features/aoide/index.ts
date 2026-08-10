@@ -9,6 +9,7 @@ import { CurationStore } from './curation-store';
 import { CurationDatabase, openCurationDatabase } from './database';
 import { ImageBlobStore } from './image-blobs';
 import { Playlists } from './playlists';
+import { registerSmartSearchHandlers } from './smart-search';
 
 import log from '/@/main/logger';
 
@@ -210,3 +211,5 @@ handle('aoide:sync-images-to-upload', ({ images }, ops: SyncOp[]) =>
 );
 
 handle('aoide:sync-mark-uploaded', ({ images }, sha256: string) => images.markUploaded(sha256));
+
+registerSmartSearchHandlers();

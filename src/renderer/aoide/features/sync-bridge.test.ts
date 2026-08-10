@@ -33,7 +33,13 @@ const SYNC_STORE_MEMBERS = [
 
 describe('the op log bridge', () => {
     const preload = read('../../../preload/aoide.ts');
-    const main = read('../../../main/features/aoide/index.ts');
+    // Every main-side module that registers an aoide: channel. A new module the
+    // bridge invokes but this list does not name would be reported as
+    // unregistered — which is the guard working, and the fix is to add it here.
+    const main = [
+        read('../../../main/features/aoide/index.ts'),
+        read('../../../main/features/aoide/smart-search.ts'),
+    ].join('\n');
     const engine = read('../sync/sync-engine.ts');
 
     it('publishes every member the engine declares', () => {

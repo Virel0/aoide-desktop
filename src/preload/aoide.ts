@@ -7,6 +7,7 @@ import type {
     PlaylistTrack,
     TrackInput,
 } from '/@/main/features/aoide/playlists';
+import type { SmartSearchOutcome } from '/@/main/features/aoide/smart-search';
 import type { SyncOp } from '/@/shared/aoide/sync-types';
 
 import { ipcRenderer } from 'electron';
@@ -77,6 +78,29 @@ export const aoide = {
 
         setNotes: (playlistId: string, notes: null | string): Promise<PlaylistSummary> =>
             ipcRenderer.invoke('aoide:playlists-set-notes', playlistId, notes),
+    },
+
+    /**
+     * Natural-language search.
+     *
+     * There is no `getKey`, and that is the point: the OpenRouter key stays in
+     * the main process, so nothing running in the renderer — including anything
+     * that gets there by accident — can read it. `isConfigured` answers whether
+     * one is set, because a settings screen has to say.
+     */
+    smartSearch: {
+        isConfigured: (): Promise<boolean> => ipcRenderer.invoke('aoide:smart-search-configured'),
+
+        model: (): Promise<string> => ipcRenderer.invoke('aoide:smart-search-model'),
+
+        setKey: (key: string): Promise<boolean> =>
+            ipcRenderer.invoke('aoide:smart-search-set-key', key),
+
+        setModel: (model: string): Promise<void> =>
+            ipcRenderer.invoke('aoide:smart-search-set-model', model),
+
+        translate: (phrase: string, genres: string[]): Promise<SmartSearchOutcome> =>
+            ipcRenderer.invoke('aoide:smart-search-translate', phrase, genres),
     },
 
     /**
