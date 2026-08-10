@@ -213,6 +213,74 @@ export class Playlists {
         return this.items(playlistId).filter((item) => added.has(item.id));
     }
 
+    /**
+     * Remember what a track is, so a playlist can be drawn without Jellyfin.
+     *
+     * Written straight to SQLite rather than through `record`, and that is the
+     * one place in this file where that is correct: `tracks` is not a syncable
+     * entity. Each device rebuilds it from its own connection, and keeping it out
+     * of the op log is what keeps a full history sync small.
+     *
+     * One transaction for the batch. Safe to open here only because nothing
+     * inside it goes through `record`, which opens its own and cannot nest.
+     */
+    /**
+     * Teach this device about tracks it has only ever seen an id for.
+     *
+     * A playlist that arrived from the phone carries `jellyfinId` and a content
+     * key and nothing else — the `tracks` cache is deliberately per-device and
+     * never synced, so a freshly synced playlist is a list of identifiers with
+     * no titles, no artists and no artwork. The renderer resolves them against
+     * Jellyfin, which it can already reach, and hands them back here so the next
+     * open is instant and the one after that works offline.
+     */
+    cacheTracks(tracks: readonly TrackInput[]): void {
+        const statement = this.db.prepare(
+            `INSERT INTO tracks
+                 (jellyfinId, contentKey, musicbrainzId, title, artist, album,
+                  albumArtist, albumId, durationMs, year, genres, lastSeenAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON CONFLICT(jellyfinId) DO UPDATE SET
+                 contentKey = excluded.contentKey,
+                 musicbrainzId = excluded.musicbrainzId,
+                 title = excluded.title,
+                 artist = excluded.artist,
+                 album = excluded.album,
+                 albumArtist = excluded.albumArtist,
+                 albumId = excluded.albumId,
+                 durationMs = excluded.durationMs,
+                 year = excluded.year,
+                 genres = excluded.genres,
+                 lastSeenAt = excluded.lastSeenAt`,
+        );
+
+        const seenAt = Date.now();
+
+        this.db.exec('BEGIN');
+        try {
+            for (const track of tracks) {
+                statement.run(
+                    track.jellyfinId,
+                    track.contentKey ?? contentKeyFor(track),
+                    track.musicbrainzId ?? null,
+                    track.title,
+                    track.artist,
+                    track.album,
+                    track.albumArtist ?? null,
+                    track.albumId ?? null,
+                    track.durationMs ?? null,
+                    track.year ?? null,
+                    JSON.stringify(track.genres ?? []),
+                    seenAt,
+                );
+            }
+            this.db.exec('COMMIT');
+        } catch (error) {
+            this.db.exec('ROLLBACK');
+            throw error;
+        }
+    }
+
     /** A new playlist, appended after the last one. */
     create(name: string, options: CreatePlaylistOptions = {}): PlaylistSummary {
         const id = this.insertPlaylist({
@@ -399,64 +467,6 @@ export class Playlists {
 
     setNotes(playlistId: string, notes: null | string): PlaylistSummary {
         return this.update(playlistId, { notes });
-    }
-
-    /**
-     * Remember what a track is, so a playlist can be drawn without Jellyfin.
-     *
-     * Written straight to SQLite rather than through `record`, and that is the
-     * one place in this file where that is correct: `tracks` is not a syncable
-     * entity. Each device rebuilds it from its own connection, and keeping it out
-     * of the op log is what keeps a full history sync small.
-     *
-     * One transaction for the batch. Safe to open here only because nothing
-     * inside it goes through `record`, which opens its own and cannot nest.
-     */
-    private cacheTracks(tracks: readonly TrackInput[]): void {
-        const statement = this.db.prepare(
-            `INSERT INTO tracks
-                 (jellyfinId, contentKey, musicbrainzId, title, artist, album,
-                  albumArtist, albumId, durationMs, year, genres, lastSeenAt)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-             ON CONFLICT(jellyfinId) DO UPDATE SET
-                 contentKey = excluded.contentKey,
-                 musicbrainzId = excluded.musicbrainzId,
-                 title = excluded.title,
-                 artist = excluded.artist,
-                 album = excluded.album,
-                 albumArtist = excluded.albumArtist,
-                 albumId = excluded.albumId,
-                 durationMs = excluded.durationMs,
-                 year = excluded.year,
-                 genres = excluded.genres,
-                 lastSeenAt = excluded.lastSeenAt`,
-        );
-
-        const seenAt = Date.now();
-
-        this.db.exec('BEGIN');
-        try {
-            for (const track of tracks) {
-                statement.run(
-                    track.jellyfinId,
-                    track.contentKey ?? contentKeyFor(track),
-                    track.musicbrainzId ?? null,
-                    track.title,
-                    track.artist,
-                    track.album,
-                    track.albumArtist ?? null,
-                    track.albumId ?? null,
-                    track.durationMs ?? null,
-                    track.year ?? null,
-                    JSON.stringify(track.genres ?? []),
-                    seenAt,
-                );
-            }
-            this.db.exec('COMMIT');
-        } catch (error) {
-            this.db.exec('ROLLBACK');
-            throw error;
-        }
     }
 
     /** The local copy of a Jellyfin playlist, if one has been imported. */

@@ -22,6 +22,7 @@ import {
     useRemoveAoideItem,
 } from '/@/renderer/aoide/features/playlists/aoide-playlists-api';
 import { resolvePlaylistPlayback } from '/@/renderer/aoide/features/playlists/playlist-playback';
+import { useResolveUnknownTracks } from '/@/renderer/aoide/features/playlists/use-resolve-unknown-tracks';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { getSongById } from '/@/renderer/features/player/utils';
 import { useDragDrop } from '/@/renderer/hooks/use-drag-drop';
@@ -59,6 +60,11 @@ export const AoidePlaylistDetail = ({ playlistId }: { playlistId: string }) => {
 
     const playlistQuery = useAoidePlaylist(playlistId);
     const itemsQuery = useAoidePlaylistItems(playlistId);
+
+    // A playlist that arrived from the phone is a list of ids until this device
+    // has looked them up. Without this the rows read "Track not known to this
+    // device" and stay that way.
+    useResolveUnknownTracks(playlistId, itemsQuery.data ?? []);
     const { mutate: moveItem } = useMoveAoideItem();
     const { mutate: removeItem } = useRemoveAoideItem();
 

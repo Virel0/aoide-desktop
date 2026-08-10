@@ -132,3 +132,53 @@ describe('the custom font protocol', () => {
         expect(main).toContain("protocol.handle('aoide'");
     });
 });
+
+describe('the OpenRouter key field', () => {
+    const source = readFileSync(
+        join(import.meta.dirname, 'settings/smart-search-settings.tsx'),
+        'utf8',
+    );
+
+    it('exists somewhere a person can find it', () => {
+        const generalTab = readFileSync(
+            join(import.meta.dirname, '../../features/settings/components/general/general-tab.tsx'),
+            'utf8',
+        );
+
+        expect(generalTab).toContain('SmartSearchSettings');
+    });
+
+    // There is no channel that returns a key, so the field cannot be prefilled
+    // even by accident — but it must also not try, and it must not echo what was
+    // typed back after saving.
+    it('never asks for the key back', () => {
+        expect(source).not.toMatch(/getKey|smart-search-get-key/);
+        expect(source).toContain('isConfigured');
+        expect(source).toContain('type="password"');
+    });
+
+    it('clears the field after saving rather than holding the key in the page', () => {
+        expect(source).toMatch(/setKey\(''\)/);
+    });
+
+    it('says so when there is no keyring, instead of failing quietly', () => {
+        expect(source).toContain('keyNotEncrypted');
+    });
+});
+
+describe('synced playlists get their track details', () => {
+    // The tracks cache is per-device and never synced, so a playlist from the
+    // phone arrives as a list of ids reading "Track not known to this device".
+    it('resolves unknown tracks on the detail screen', () => {
+        const detail = sourceOf('playlists/aoide-playlist-detail.tsx');
+        expect(detail).toContain('useResolveUnknownTracks');
+    });
+
+    it('writes what it learns back to the store', () => {
+        const hook = sourceOf('playlists/use-resolve-unknown-tracks.ts');
+        expect(hook).toContain('cacheTracks');
+        // Asking again forever for a track Jellyfin cannot resolve is the
+        // failure mode; the id is marked before the lookup, not after it.
+        expect(hook).toMatch(/attempted\.current\.add\(id\)/);
+    });
+});

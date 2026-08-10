@@ -40,6 +40,18 @@
             "subtitle": "Local playlists, synced with your other Aoide devices",
             "title": "Aoide"
         },
+        "settings": {
+            "clear": "Clear",
+            "key": "OpenRouter API key",
+            "key_description": "Lets you search by describing music — \"upbeat rock from the nineties\". The key is stored encrypted and never leaves this computer; only your phrase and your library’s genre names are sent to OpenRouter.",
+            "keyCleared": "OpenRouter key removed",
+            "keyNotEncrypted": "This system has no keyring available, so the key was not saved. Aoide will not store an API key in plain text.",
+            "keyPlaceholder": "sk-or-…",
+            "keySaved": "OpenRouter key saved",
+            "keyStored": "A key is saved — type a new one to replace it",
+            "model": "Model",
+            "model_description": "Any OpenRouter model id. The default is small and cheap on purpose: the job is turning a phrase into filters, not choosing music."
+        },
         "sidebar": {
             "all": "All playlists",
             "title": "Aoide"

@@ -38,6 +38,9 @@ export const aoide = {
         addTracks: (playlistId: string, tracks: TrackInput[]): Promise<PlaylistTrack[]> =>
             ipcRenderer.invoke('aoide:playlists-add-tracks', playlistId, tracks),
 
+        cacheTracks: (tracks: TrackInput[]): Promise<void> =>
+            ipcRenderer.invoke('aoide:playlists-cache-tracks', tracks),
+
         create: (name: string, options?: CreatePlaylistOptions): Promise<PlaylistSummary> =>
             ipcRenderer.invoke('aoide:playlists-create', name, options),
 

@@ -116,6 +116,10 @@ handle('aoide:playlists-get', ({ playlists }, playlistId: string) => playlists.g
 
 handle('aoide:playlists-items', ({ playlists }, playlistId: string) => playlists.items(playlistId));
 
+handle('aoide:playlists-cache-tracks', ({ playlists }, tracks: TrackInput[]) =>
+    playlists.cacheTracks(tracks),
+);
+
 handle('aoide:playlists-create', ({ playlists }, name: string, options?: CreatePlaylistOptions) =>
     playlists.create(name, options),
 );
