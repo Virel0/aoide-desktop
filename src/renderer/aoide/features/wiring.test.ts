@@ -224,3 +224,25 @@ describe('the search screen', () => {
         expect(hook).toContain('looksLikeAPhrase');
     });
 });
+
+describe('the search people actually click', () => {
+    // The Aoide search sat behind its own sidebar entry while every existing way
+    // in — the sidebar's Search item, the command palette, the shortcut — went to
+    // Feishin's. Typing "90s rock music" there searches for that literal string
+    // and finds nothing, which reads as the AI being broken.
+    //
+    // The sidebar's route string is persisted in settings, so changing a default
+    // reaches nobody who already has the app. Swapping what AppRoute.SEARCH
+    // renders reaches everybody.
+    it('renders the Aoide search at the route every entry point uses', () => {
+        const router = readFileSync(
+            join(import.meta.dirname, '../../router/app-router.tsx'),
+            'utf8',
+        );
+
+        expect(router).toMatch(
+            /element=\{<AoideSearchRoute \/>\}\s*\n\s*path=\{AppRoute\.SEARCH\}/,
+        );
+        expect(router).not.toContain('<SearchRoute />');
+    });
+});

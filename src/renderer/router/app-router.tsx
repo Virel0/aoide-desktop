@@ -90,8 +90,6 @@ const FolderListRoute = lazy(() => import('/@/renderer/features/folders/routes/f
 
 const RadioListRoute = lazy(() => import('/@/renderer/features/radio/routes/radio-list-route'));
 
-const SearchRoute = lazy(() => import('/@/renderer/features/search/routes/search-route'));
-
 const FavoritesRoute = lazy(() => import('/@/renderer/features/favorites/routes/favorites-route'));
 
 const SettingsRoute = lazy(() => import('/@/renderer/features/settings/routes/settings-route'));
@@ -211,7 +209,20 @@ export const AppRouter = () => {
                                     <Route element={<ResponsiveLayout />}>
                                         <Route element={<HomeRoute />} index />
                                         <Route element={<HomeRoute />} path={AppRoute.HOME} />
-                                        <Route element={<SearchRoute />} path={AppRoute.SEARCH} />
+                                        {/*
+                                         * Aoide's search, not Feishin's. Every
+                                         * way in — the sidebar item, the
+                                         * command palette, the shortcut — lands
+                                         * here, and the sidebar's route string
+                                         * is persisted in settings, so changing
+                                         * a default would not reach an install
+                                         * that already exists. Swapping the
+                                         * element does.
+                                         */}
+                                        <Route
+                                            element={<AoideSearchRoute />}
+                                            path={AppRoute.SEARCH}
+                                        />
                                         <Route
                                             element={<FavoritesRoute />}
                                             path={AppRoute.FAVORITES}

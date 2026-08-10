@@ -41,6 +41,7 @@
             "title": "Aoide"
         },
         "search": {
+            "albums": "Albums",
             "clearInterpretation": "Clear",
             "favourites": "Favourites",
             "interpret": "Search by description",
@@ -49,6 +50,7 @@
             "needsPhrase": "Describe what you want in {{count}} words or more",
             "noResults": "Nothing matched",
             "placeholder": "Search, or describe what you want to hear",
+            "songs": "Songs",
             "understood": "Understood as"
         },
         "settings": {

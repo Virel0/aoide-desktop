@@ -44,3 +44,25 @@
     flex-direction: column;
     min-width: 0;
 }
+
+/* A shelf of covers, at the phone's card spacing. */
+.albums {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--theme-spacing-md);
+}
+
+.album {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: inherit;
+    text-decoration: none;
+}
+
+.album-art {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--theme-radius-md);
+}

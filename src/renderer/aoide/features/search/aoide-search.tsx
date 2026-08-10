@@ -1,13 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { generatePath, Link } from 'react-router';
 
 import styles from './aoide-search.module.css';
 
 import { useSmartSearch } from '/@/renderer/aoide/features/search/use-smart-search';
+import { api } from '/@/renderer/api';
 import { useGenreList } from '/@/renderer/features/genres/api/genres-api';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
+import { AppRoute } from '/@/renderer/router/routes';
 import { useCurrentServerId } from '/@/renderer/store';
 import { looksLikeAPhrase, MINIMUM_PHRASE_WORDS } from '/@/shared/aoide/smart-search';
 import { Badge } from '/@/shared/components/badge/badge';
@@ -17,7 +20,7 @@ import { Spinner } from '/@/shared/components/spinner/spinner';
 import { Stack } from '/@/shared/components/stack/stack';
 import { TextInput } from '/@/shared/components/text-input/text-input';
 import { Text } from '/@/shared/components/text/text';
-import { SongListSort, SortOrder } from '/@/shared/types/domain-types';
+import { AlbumListSort, SongListSort, SortOrder } from '/@/shared/types/domain-types';
 import { Play } from '/@/shared/types/types';
 
 /**
@@ -81,7 +84,26 @@ export const AoideSearch = () => {
         enabled: submitted.length > 0,
     });
 
+    const albums = useQuery({
+        enabled: submitted.length > 0,
+        queryFn: ({ signal }) =>
+            api.controller.getAlbumList({
+                apiClientProps: { serverId, signal },
+                query: {
+                    limit: 24,
+                    maxYear: interpreted?.toYear ?? undefined,
+                    minYear: interpreted?.fromYear ?? undefined,
+                    searchTerm: interpreted?.searchTerm ?? submitted,
+                    sortBy: AlbumListSort.NAME,
+                    sortOrder: SortOrder.ASC,
+                    startIndex: 0,
+                },
+            }),
+        queryKey: ['aoide', 'search', 'albums', serverId, submitted, interpreted],
+    });
+
     const songs = results.data?.items ?? [];
+    const albumResults = albums.data?.items ?? [];
 
     const search = () => {
         setSubmitted(text);
@@ -165,6 +187,43 @@ export const AoideSearch = () => {
 
             {submitted && !results.isLoading && songs.length === 0 && (
                 <Text isMuted>{t('aoide.search.noResults')}</Text>
+            )}
+
+            {albumResults.length > 0 && (
+                <Stack gap="xs">
+                    <Text fw={600} size="lg">
+                        {t('aoide.search.albums')}
+                    </Text>
+                    <div className={styles.albums}>
+                        {albumResults.map((album) => (
+                            <Link
+                                className={styles.album}
+                                key={album.id}
+                                to={generatePath(AppRoute.LIBRARY_ALBUMS_DETAIL, {
+                                    albumId: album.id,
+                                })}
+                            >
+                                <img
+                                    alt=""
+                                    className={styles.albumArt}
+                                    src={album.imageUrl ?? undefined}
+                                />
+                                <Text lineClamp={1} size="sm">
+                                    {album.name}
+                                </Text>
+                                <Text isMuted lineClamp={1} size="xs">
+                                    {album.albumArtists?.[0]?.name ?? ''}
+                                </Text>
+                            </Link>
+                        ))}
+                    </div>
+                </Stack>
+            )}
+
+            {songs.length > 0 && (
+                <Text fw={600} size="lg">
+                    {t('aoide.search.songs')}
+                </Text>
             )}
 
             <Stack gap={0}>
