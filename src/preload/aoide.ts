@@ -7,8 +7,16 @@ import type {
     PlaylistTrack,
     TrackInput,
 } from '/@/main/features/aoide/playlists';
+import type { SyncOp } from '/@/shared/aoide/sync-types';
 
 import { ipcRenderer } from 'electron';
+
+/** Mirrors `SyncEngine`'s `OutboundImage`, which the renderer cannot import here. */
+interface OutboundImage {
+    bytes: Uint8Array;
+    mime: string;
+    sha256: string;
+}
 
 /**
  * The renderer's way into the curation store, which lives in the main process.
@@ -69,6 +77,42 @@ export const aoide = {
 
         setNotes: (playlistId: string, notes: null | string): Promise<PlaylistSummary> =>
             ipcRenderer.invoke('aoide:playlists-set-notes', playlistId, notes),
+    },
+
+    /**
+     * The op log, as `SyncEngine`'s `SyncStore` wants it.
+     *
+     * Written against that interface deliberately rather than given a shape of
+     * its own: `SyncStore` is already the contract the engine consumes, every
+     * member of it allows a promise precisely so an IPC bridge can satisfy it,
+     * and a second definition here would be another pair of sets that must
+     * agree — which this project has paid for twice already.
+     */
+    sync: {
+        applyRemote: (op: SyncOp, receivedAt?: number): Promise<'applied' | 'ignored'> =>
+            ipcRenderer.invoke('aoide:sync-apply-remote', op, receivedAt),
+
+        cursor: (): Promise<number> => ipcRenderer.invoke('aoide:sync-cursor'),
+
+        deviceId: (): Promise<string> => ipcRenderer.invoke('aoide:sync-device-id'),
+
+        imagesToUpload: (ops: SyncOp[]): Promise<OutboundImage[]> =>
+            ipcRenderer.invoke('aoide:sync-images-to-upload', ops),
+
+        markSynced: (opIds: string[]): Promise<void> =>
+            ipcRenderer.invoke('aoide:sync-mark-synced', opIds),
+
+        markUploaded: (sha256: string): Promise<void> =>
+            ipcRenderer.invoke('aoide:sync-mark-uploaded', sha256),
+
+        pendingOps: (limit?: number): Promise<SyncOp[]> =>
+            ipcRenderer.invoke('aoide:sync-pending-ops', limit),
+
+        quarantine: (opId: string, reason: string): Promise<void> =>
+            ipcRenderer.invoke('aoide:sync-quarantine', opId, reason),
+
+        setCursor: (cursor: number): Promise<void> =>
+            ipcRenderer.invoke('aoide:sync-set-cursor', cursor),
     },
 };
 

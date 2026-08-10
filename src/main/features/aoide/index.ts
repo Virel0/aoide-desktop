@@ -1,3 +1,5 @@
+import type { SyncOp } from '/@/shared/aoide/sync-types';
+
 import { app, ipcMain } from 'electron';
 import { join } from 'path';
 
@@ -5,6 +7,7 @@ import type { CreatePlaylistOptions, ImportRequest, MoveTarget, TrackInput } fro
 
 import { CurationStore } from './curation-store';
 import { CurationDatabase, openCurationDatabase } from './database';
+import { ImageBlobStore } from './image-blobs';
 import { Playlists } from './playlists';
 
 import log from '/@/main/logger';
@@ -24,6 +27,7 @@ import log from '/@/main/logger';
  */
 export interface Curation {
     database: CurationDatabase;
+    images: ImageBlobStore;
     playlists: Playlists;
     store: CurationStore;
 }
@@ -69,7 +73,12 @@ export const curation = (): Curation => {
     const database = openCurationDatabase(path);
     const store = new CurationStore(database);
 
-    opened = { database, playlists: new Playlists(database, store), store };
+    opened = {
+        database,
+        images: new ImageBlobStore(database),
+        playlists: new Playlists(database, store),
+        store,
+    };
     log.info('Aoide curation store opened', { device: store.device, path });
 
     return opened;
@@ -146,3 +155,58 @@ app.whenReady()
     .catch((error) => log.error('Aoide curation store failed to open', error));
 
 app.on('before-quit', closeCuration);
+
+/*
+ * The op log, published so the renderer's sync engine has something to push.
+ *
+ * Without these the engine cannot be built at all: `aoideSyncStore` looks for
+ * `window.api.aoide.sync` and finds nothing, so "Sync Now" falls back to a bare
+ * reachability check and the panel says so. Every local edit sits in the log
+ * unpushed and nothing from any other device arrives.
+ *
+ * Coarse on purpose — one call per step of the loop, never per row. The engine
+ * makes a handful of these per sync, not one per playlist.
+ */
+
+handle('aoide:sync-device-id', ({ store }) => store.device);
+
+handle('aoide:sync-pending-ops', ({ store }, limit?: number) => store.pendingOps(limit));
+
+handle('aoide:sync-mark-synced', ({ store }, opIds: string[]) => store.markSynced(opIds));
+
+handle('aoide:sync-quarantine', ({ store }, opId: string, reason: string) =>
+    store.quarantine(opId, reason),
+);
+
+handle('aoide:sync-cursor', ({ store }) => store.cursor);
+
+/**
+ * Apply one inbound op. The renderer advances the cursor separately, after the
+ * whole batch, which is what the contract asks for.
+ *
+ * Per op rather than per batch, because that is the shape `SyncStore` declares
+ * and an adapter that buffered ops in the renderer to fake a batch call would be
+ * a second place where the ordering rule lives. Interruption is already safe:
+ * the cursor moves only after a batch applies, and applying an op twice is a
+ * no-op, so a sync that dies half way replays rather than skips.
+ */
+handle('aoide:sync-apply-remote', ({ store }, op: SyncOp, receivedAt?: number) =>
+    store.applyRemote(op, receivedAt),
+);
+
+handle('aoide:sync-set-cursor', ({ store }, cursor: number) => store.setCursor(cursor));
+
+handle('aoide:sync-images-to-upload', ({ images }, ops: SyncOp[]) =>
+    images
+        .imagesNeededBeforePush(ops)
+        .map((blob) => {
+            const held = images.get(blob.sha256);
+            return held ? { bytes: held.bytes, mime: held.mime, sha256: blob.sha256 } : undefined;
+        })
+        // A hash the log names and this device does not hold cannot be uploaded
+        // from here. Dropping it lets the rest of the push proceed; the op
+        // naming it waits, which is what the contract asks for.
+        .filter((image) => image !== undefined),
+);
+
+handle('aoide:sync-mark-uploaded', ({ images }, sha256: string) => images.markUploaded(sha256));
