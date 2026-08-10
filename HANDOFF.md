@@ -8,7 +8,7 @@ Feishin. None of the Aoide half exists yet.
 | --- | --- | --- | --- |
 | **Aoide iOS** | `~/Jelly music` | `Virel0/aoide` (private) | shipped, on the phone |
 | **Aoide sidecar** | *(other chat)* | `Virel0/aoide-sidecar` (public) | working, syncing |
-| **Aoide desktop** | `~/aoide-desktop` | `Virel0/aoide-desktop` (private) | installs and runs on CachyOS; no sync yet |
+| **Aoide desktop** | `~/aoide-desktop` | `Virel0/aoide-desktop` (private) | in daily use; sync, playlists, search, mixes, shared queue |
 
 The specification both existing implementations were written against is
 `docs/sync-design.md` — a copy sits in this repo. `docs/aoide-integration.md` is the
@@ -146,6 +146,61 @@ a shared file is a line that conflicts.
 Build order and the reasoning behind each step: `docs/aoide-integration.md`. The first
 two — the sidecar client and a local store with an op log — are the bulk of the work.
 Everything after that is screens.
+
+## Where this was left
+
+Both repos are pushed. Desktop `cee2765d`, iOS `44ade8e`. 511 tests on the desktop,
+typecheck, lint and build clean; iOS builds clean.
+
+**Working and used:** sync against the sidecar, Aoide playlists with covers from
+Jellyfin, track resolution for synced playlists, natural-language search over
+OpenRouter, mixes on both apps, shared queue between devices.
+
+### The one open bug
+
+**Playlist covers are blank, and it is not a rendering fault.** Measured on the real
+database:
+
+```
+sqlite3 ~/.config/Aoide/aoide-curation.db \
+  "SELECT name, imageHash IS NOT NULL, artworkItemId, sourceJellyfinId FROM playlists WHERE deleted=0;"
+```
+
+Every row returns NULL for all three. The phone never recorded where those covers came
+from, so there is nothing for any client to draw. The desktop reads the phone's own
+precedence (`imageHash`, then `artworkItemId`, then `sourceJellyfinId` — see
+`PlaylistArtwork.swift`) and finds all three empty.
+
+**The same missing column explains the duplicate playlists the sidecar chat found on
+re-import**, because `sourceJellyfinId` is what deduping matches on. One cause, two
+symptoms.
+
+Proposed repair, not yet done: match a coverless playlist to a Jellyfin playlist **by
+name**, and write `artworkItemId` — which then syncs, so the phone gets the cover too.
+Conservative only: match when exactly one Jellyfin playlist carries that name, and
+record it as *artwork* rather than as provenance, since a name match cannot prove where
+a playlist came from. The real fix belongs in the phone's import, which should record
+`sourceJellyfinId` in the first place.
+
+### Also open
+
+- The Feishin-style playlist table. The detail view has Feishin's shape — hero, covers,
+  iOS radii — on a custom list. Porting to Feishin's item-table system means feeding our
+  data through its column factories and list context, and the current view owns the
+  drag-to-reorder that writes exactly **one** row per move. A hasty port loses that.
+- The play/skip thresholds cross above twenty minutes: five minutes of a thirty-minute
+  set counts as a play *and* a skip. Present on both clients, and the iOS test matrix
+  stops exactly at the boundary, so neither has ever exercised it. Needs one decision
+  across iOS, desktop and the sidecar rather than a fix on one side.
+- Discord Rich Presence still announces "Feishin" — the fallback is upstream's
+  registered application id, and only registering an Aoide application changes it.
+
+### Nothing is waiting on the sidecar
+
+Mixes ride on `playlists.smartRules`, which the server stores opaquely and never parses.
+The shared queue uses `GET /aoide/queue` and `queue_state`, both shipped in 1.7.0.0. The
+one question worth asking them: does their playlist export set `artworkItemId` when it
+adopts a Jellyfin playlist? That bears directly on the cover bug above.
 
 ## Installing it (Arch / CachyOS)
 
