@@ -50,6 +50,11 @@
             "savedFrom": "From: {{description}}",
             "title": "Mixes"
         },
+        "queue": {
+            "pickUp": "Pick up",
+            "resume_one": "{{device}} was playing {{count}} track",
+            "resume_other": "{{device}} was playing {{count}} tracks"
+        },
         "search": {
             "albums": "Albums",
             "clearInterpretation": "Clear",

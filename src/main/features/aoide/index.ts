@@ -251,6 +251,49 @@ registerSmartSearchHandlers();
  * of a rule set exactly. This answers the half only the curation store knows —
  * and knows honestly, because Jellyfin counts a four-second skip as a play.
  */
+/*
+ * This device's queue, written as an op so it reaches the others.
+ *
+ * One row per device, replaced whole — the sidecar compacts superseded rows on
+ * push, so saving often costs nothing and the log does not grow. Saving *rarely*
+ * is what costs: a handover offers whatever was last written, so a queue saved
+ * only on quit is a queue that is wrong every time somebody actually reaches for
+ * their other machine.
+ */
+handle(
+    'aoide:queue-save',
+    ({ store }, deviceName: string, trackIds: string[], position: number, elapsedMs: number) => {
+        store.record('queue_state', {
+            deviceId: store.device,
+            deviceName,
+            elapsedMs: Math.max(0, Math.trunc(elapsedMs)),
+            position: Math.max(0, Math.trunc(position)),
+            // Capped for the same reason the phone caps it: a queue is a thing
+            // somebody is listening to, not an export of their library, and a
+            // payload has a ceiling.
+            trackIds: JSON.stringify(trackIds.slice(0, MAX_QUEUE_TRACKS)),
+        });
+    },
+);
+
+/**
+ * Other devices' queues as this device last saw them.
+ *
+ * The fallback for when the sidecar cannot be reached: these rows arrived
+ * through the ordinary op log, so a handover still works offline — just with
+ * whatever the last sync brought, and ordered by the writing device's clock
+ * rather than the server's.
+ */
+handle('aoide:queue-others', ({ store }) =>
+    store
+        .live('queue_state')
+        .filter((row) => row.deviceId !== store.device)
+        .sort((a, b) => Number(b.updatedAt) - Number(a.updatedAt)),
+);
+
 handle('aoide:mix-narrow', ({ mix }, candidateIds: string[], rules: SmartRules) =>
     mix.narrow(candidateIds, rules),
 );
+
+/** The phone keeps 500; matching it keeps a handover the same size on both. */
+const MAX_QUEUE_TRACKS = 500;

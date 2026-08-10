@@ -1,15 +1,21 @@
+import { useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 
 import styles from './aoide-sync-panel.module.css';
 
+import { useHandoff, useQueueBroadcast } from '/@/renderer/aoide/features/queue/use-queue-handoff';
 import { syncOutcome, syncReportEntries } from '/@/renderer/aoide/features/sync/sync-report';
 import { useAoideSync } from '/@/renderer/aoide/features/sync/use-aoide-sync';
+import { usePlayer } from '/@/renderer/features/player/context/player-context';
+import { getSongById } from '/@/renderer/features/player/utils';
+import { useCurrentServerId } from '/@/renderer/store';
 import { Button } from '/@/shared/components/button/button';
 import { Group } from '/@/shared/components/group/group';
 import { Icon } from '/@/shared/components/icon/icon';
 import { Stack } from '/@/shared/components/stack/stack';
 import { Text } from '/@/shared/components/text/text';
+import { Play } from '/@/shared/types/types';
 
 /**
  * Where a sync is started and what it did afterwards.
@@ -31,12 +37,53 @@ export const AoideSyncPanel = () => {
     const { canPushLocalEdits, hasServer, state, sync } = useAoideSync();
 
     const outcome = syncOutcome(state);
+    const handoff = useHandoff();
+    const player = usePlayer();
+    const serverId = useCurrentServerId();
+    const queryClient = useQueryClient();
+
+    // Broadcasting this device's queue is a side effect of the panel existing
+    // rather than a button, because a handover somebody has to remember to arm
+    // is a handover that is never armed.
+    useQueueBroadcast(navigator.platform || 'Desktop');
+
+    const resume = async () => {
+        if (!handoff) return;
+
+        const songs = (
+            await Promise.allSettled(
+                handoff.trackIds.map((id) => getSongById({ id, queryClient, serverId })),
+            )
+        ).flatMap((result) => (result.status === 'fulfilled' ? result.value.items : []));
+
+        if (songs.length === 0) return;
+
+        // The starting track is named rather than the list sliced, so everything
+        // before it stays in the queue and Previous still reaches the beginning
+        // of what they were listening to.
+        const start = songs[Math.min(handoff.position, songs.length - 1)];
+        player.addToQueueByData(songs, Play.NOW, start?.id);
+    };
     const isRunning = outcome === 'running';
     const result = state.result;
     const finishedAt = state.finishedAt ? new Date(state.finishedAt).toLocaleTimeString() : '';
 
     return (
         <div className={styles.panel}>
+            {handoff && (
+                <Group className={styles.handoff} gap="sm">
+                    <Text size="sm">
+                        {t('aoide.queue.resume', {
+                            count: handoff.trackIds.length,
+                            device: handoff.deviceName,
+                        })}
+                    </Text>
+                    <Button onClick={() => void resume()} size="compact-sm" variant="filled">
+                        {t('aoide.queue.pickUp')}
+                    </Button>
+                </Group>
+            )}
+
             <div className={styles.header}>
                 <div className={styles.status}>
                     <Icon

@@ -279,3 +279,35 @@ describe('mixes', () => {
         expect(screen).toContain('mix.rejected.map');
     });
 });
+
+describe('the shared queue', () => {
+    const hook = sourceOf('queue/use-queue-handoff.ts');
+    const panel = sourceOf('sync/aoide-sync-panel.tsx');
+
+    // Only the server can say how recent a row is without trusting the clock of
+    // the device that wrote it. A machine set wrong would otherwise claim to be
+    // the most recent one forever and win every handover.
+    it('judges freshness on the server’s clock, never the writer’s', () => {
+        expect(hook).toContain('ageSeconds');
+        expect(hook).toMatch(/transport\.queues\(\)/);
+        // The local fallback derives an age rather than sorting on updatedAt as
+        // though it were comparable across devices.
+        expect(hook).not.toMatch(/sort\([^)]*updatedAt/);
+    });
+
+    it('offers a device that is not this one', () => {
+        expect(hook).toContain('!entry.isCurrentDevice');
+    });
+
+    // Saving rarely is what costs: a handover offers whatever was last written,
+    // so a queue saved only on quit is wrong exactly when somebody reaches for
+    // their other machine.
+    it('writes the queue as it changes, without a button to arm it', () => {
+        expect(panel).toContain('useQueueBroadcast');
+        expect(hook).toContain('lastSaved.current');
+    });
+
+    it('names the starting track rather than slicing the queue short', () => {
+        expect(panel).toMatch(/addToQueueByData\(songs, Play\.NOW, start\?\.id\)/);
+    });
+});

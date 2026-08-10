@@ -107,6 +107,19 @@ export const aoide = {
             ipcRenderer.invoke('aoide:playlists-set-smart-rules', playlistId, smartRules),
     },
 
+    queue: {
+        others: (): Promise<Array<Record<string, unknown>>> =>
+            ipcRenderer.invoke('aoide:queue-others'),
+
+        save: (
+            deviceName: string,
+            trackIds: string[],
+            position: number,
+            elapsedMs: number,
+        ): Promise<void> =>
+            ipcRenderer.invoke('aoide:queue-save', deviceName, trackIds, position, elapsedMs),
+    },
+
     /**
      * Natural-language search.
      *
