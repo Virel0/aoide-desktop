@@ -182,3 +182,40 @@ describe('synced playlists get their track details', () => {
         expect(hook).toMatch(/attempted\.current\.add\(id\)/);
     });
 });
+
+describe('the search screen', () => {
+    const source = sourceOf('search/aoide-search.tsx');
+    const hook = sourceOf('search/use-smart-search.ts');
+
+    it('is reachable from the sidebar', () => {
+        expect(sourceOf('sidebar/aoide-sidebar-list.tsx')).toContain('AOIDE_SEARCH');
+    });
+
+    // Every translation is a paid request. A search box that asked a hosted
+    // model per character would cost real money to type a sentence into.
+    it('never translates on a keystroke', () => {
+        expect(source).not.toMatch(/onChange=\{[^}]*interpret/);
+        expect(source).toContain('onClick={interpret}');
+    });
+
+    it('searches plainly without asking a model at all', () => {
+        // Enter runs the ordinary search; interpretation is the extra step.
+        expect(source).toMatch(/if \(event\.key === 'Enter'\) search\(\)/);
+    });
+
+    // A wrong reading is obvious when shown and invisible when assumed.
+    it('shows what the phrase was understood to mean', () => {
+        expect(source).toContain('aoide.search.understood');
+        expect(source).toContain('smart.clear');
+    });
+
+    it('sends genre names to the model and ids to the server', () => {
+        expect(source).toContain('genreNames');
+        expect(source).toContain('genreIdsByName');
+    });
+
+    it('offers the description path only for a real phrase with a key set', () => {
+        expect(source).toMatch(/smart\.canInterpret && looksLikeAPhrase\(text\)/);
+        expect(hook).toContain('looksLikeAPhrase');
+    });
+});

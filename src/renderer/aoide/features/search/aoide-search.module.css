@@ -1,0 +1,46 @@
+/*
+ * One field, results underneath. Spacing follows the phone: a 16pt page margin
+ * and 5pt corners on a list thumbnail, expressed through the theme so this
+ * screen looks right under every theme rather than only under Aoide's.
+ */
+
+.page {
+    max-width: var(--theme-content-max-width);
+    padding: var(--theme-spacing-lg);
+    margin: 0 auto;
+}
+
+.input {
+    width: 100%;
+}
+
+.result {
+    display: flex;
+    gap: var(--theme-spacing-md);
+    align-items: center;
+    width: 100%;
+    padding: var(--theme-spacing-sm);
+    text-align: left;
+    cursor: pointer;
+    background: none;
+    border: none;
+    border-radius: var(--theme-radius-sm);
+}
+
+.result:hover {
+    background: var(--theme-colors-background-hover);
+}
+
+.result-art {
+    flex-shrink: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    object-fit: cover;
+    border-radius: var(--theme-radius-sm);
+}
+
+.result-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}

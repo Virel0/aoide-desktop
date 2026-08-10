@@ -60,6 +60,12 @@ export const AoideSidebarList = () => {
             </Accordion.Control>
             <Accordion.Panel>
                 <AoideSidebarRow
+                    icon="search"
+                    isActive={location.pathname === AppRoute.AOIDE_SEARCH}
+                    label={t('aoide.sidebar.search')}
+                    to={AppRoute.AOIDE_SEARCH}
+                />
+                <AoideSidebarRow
                     isActive={location.pathname === AppRoute.AOIDE_PLAYLISTS}
                     label={t('aoide.sidebar.all')}
                     to={AppRoute.AOIDE_PLAYLISTS}
@@ -93,6 +99,7 @@ export const AoideSidebarList = () => {
 
 const AoideSidebarRow = ({
     count,
+    icon = 'playlist',
     imageHash = null,
     imageMime = null,
     isActive,
@@ -100,6 +107,7 @@ const AoideSidebarRow = ({
     to,
 }: {
     count?: number;
+    icon?: 'playlist' | 'search';
     imageHash?: null | string;
     imageMime?: null | string;
     isActive: boolean;
@@ -115,7 +123,7 @@ const AoideSidebarRow = ({
                     {cover ? (
                         <img alt="" className={styles.rowCover} src={cover} />
                     ) : (
-                        <Icon color={isActive ? 'primary' : 'muted'} icon="playlist" size="sm" />
+                        <Icon color={isActive ? 'primary' : 'muted'} icon={icon} size="sm" />
                     )}
                     <Text className={styles.name} fw={500} size="md">
                         {label}

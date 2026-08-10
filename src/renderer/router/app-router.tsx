@@ -16,6 +16,8 @@ const NowPlayingRoute = lazy(
     () => import('/@/renderer/features/now-playing/routes/now-playing-route'),
 );
 
+const AoideSearchRoute = lazy(() => import('/@/renderer/aoide/routes/aoide-search-route'));
+
 const AoidePlaylistListRoute = lazy(
     () => import('/@/renderer/aoide/routes/aoide-playlist-list-route'),
 );
@@ -279,6 +281,10 @@ export const AppRouter = () => {
                                         <Route
                                             element={<PlaylistListRoute />}
                                             path={AppRoute.PLAYLISTS}
+                                        />
+                                        <Route
+                                            element={<AoideSearchRoute />}
+                                            path={AppRoute.AOIDE_SEARCH}
                                         />
                                         <Route path={AppRoute.AOIDE_PLAYLISTS}>
                                             <Route element={<AoidePlaylistListRoute />} index />

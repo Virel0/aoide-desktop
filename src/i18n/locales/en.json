@@ -40,6 +40,15 @@
             "subtitle": "Local playlists, synced with your other Aoide devices",
             "title": "Aoide"
         },
+        "search": {
+            "clearInterpretation": "Clear",
+            "favourites": "Favourites",
+            "interpret": "Search by description",
+            "interpretHint": "Ask a model to turn this into filters",
+            "noResults": "Nothing matched",
+            "placeholder": "Search, or describe what you want to hear",
+            "understood": "Understood as"
+        },
         "settings": {
             "clear": "Clear",
             "key": "OpenRouter API key",
@@ -54,6 +63,7 @@
         },
         "sidebar": {
             "all": "All playlists",
+            "search": "Search",
             "title": "Aoide"
         },
         "sync": {
