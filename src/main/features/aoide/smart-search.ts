@@ -142,7 +142,63 @@ const readContent = (body: string): null | string => {
     }
 };
 
+/**
+ * The models OpenRouter currently offers, cheapest first.
+ *
+ * Fetched rather than hard-coded: the catalogue changes weekly, and a list
+ * frozen into a release is a list that is wrong by the time somebody reads it.
+ * Unauthenticated — the endpoint is public — so the picker works before a key
+ * has been entered, which is the moment somebody most wants to see it.
+ */
+export const listModels = async (): Promise<OpenRouterModel[]> => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+    try {
+        const response = await fetch('https://openrouter.ai/api/v1/models', {
+            signal: controller.signal,
+        });
+        if (!response.ok) return [];
+
+        const body = (await response.json()) as {
+            data?: Array<{ id?: unknown; name?: unknown; pricing?: { prompt?: unknown } }>;
+        };
+
+        return (
+            (body.data ?? [])
+                .flatMap((model) => {
+                    if (typeof model.id !== 'string') return [];
+                    const prompt = Number(model.pricing?.prompt);
+                    return [
+                        {
+                            id: model.id,
+                            name: typeof model.name === 'string' ? model.name : model.id,
+                            promptPrice: Number.isFinite(prompt) ? prompt : null,
+                        },
+                    ];
+                })
+                // Cheapest first, because the job is translating a phrase into six
+                // fields and paying frontier prices for it buys nothing.
+                .sort((a, b) => (a.promptPrice ?? Infinity) - (b.promptPrice ?? Infinity))
+        );
+    } catch (error) {
+        log.warn('Could not list OpenRouter models', error);
+        return [];
+    } finally {
+        clearTimeout(timeout);
+    }
+};
+
+export interface OpenRouterModel {
+    id: string;
+    name: string;
+    /** Cost per prompt token, or null when OpenRouter did not say. */
+    promptPrice: null | number;
+}
+
 export const registerSmartSearchHandlers = (): void => {
+    ipcMain.handle('aoide:smart-search-list-models', () => listModels());
+
     // Deliberately answers whether a key exists, never what it is.
     ipcMain.handle('aoide:smart-search-configured', () => readKey() !== null);
 

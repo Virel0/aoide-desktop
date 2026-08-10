@@ -7,7 +7,7 @@ import type {
     PlaylistTrack,
     TrackInput,
 } from '/@/main/features/aoide/playlists';
-import type { SmartSearchOutcome } from '/@/main/features/aoide/smart-search';
+import type { OpenRouterModel, SmartSearchOutcome } from '/@/main/features/aoide/smart-search';
 import type { SyncOp } from '/@/shared/aoide/sync-types';
 
 import { ipcRenderer } from 'electron';
@@ -93,6 +93,9 @@ export const aoide = {
      */
     smartSearch: {
         isConfigured: (): Promise<boolean> => ipcRenderer.invoke('aoide:smart-search-configured'),
+
+        listModels: (): Promise<OpenRouterModel[]> =>
+            ipcRenderer.invoke('aoide:smart-search-list-models'),
 
         model: (): Promise<string> => ipcRenderer.invoke('aoide:smart-search-model'),
 

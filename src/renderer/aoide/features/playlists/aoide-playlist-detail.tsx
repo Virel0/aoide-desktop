@@ -22,17 +22,22 @@ import {
     useRemoveAoideItem,
 } from '/@/renderer/aoide/features/playlists/aoide-playlists-api';
 import { resolvePlaylistPlayback } from '/@/renderer/aoide/features/playlists/playlist-playback';
+import {
+    ROW_ARTWORK_WIDTH,
+    trackArtworkUrl,
+} from '/@/renderer/aoide/features/playlists/track-artwork';
 import { useResolveUnknownTracks } from '/@/renderer/aoide/features/playlists/use-resolve-unknown-tracks';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { getSongById } from '/@/renderer/features/player/utils';
 import { useDragDrop } from '/@/renderer/hooks/use-drag-drop';
 import { AppRoute } from '/@/renderer/router/routes';
-import { useCurrentServerId } from '/@/renderer/store';
+import { useCurrentServer, useCurrentServerId } from '/@/renderer/store';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Button } from '/@/shared/components/button/button';
 import { DropdownMenu } from '/@/shared/components/dropdown-menu/dropdown-menu';
 import { Group } from '/@/shared/components/group/group';
 import { Icon } from '/@/shared/components/icon/icon';
+import { Image } from '/@/shared/components/image/image';
 import { ScrollArea } from '/@/shared/components/scroll-area/scroll-area';
 import { Spinner } from '/@/shared/components/spinner/spinner';
 import { TextTitle } from '/@/shared/components/text-title/text-title';
@@ -337,6 +342,7 @@ const AoidePlaylistHero = ({
 const AoideTrackRow = memo(
     ({ index, item, onPlay, onRemove, onReorder, playlistId }: AoideTrackRowProps) => {
         const { t } = useTranslation();
+        const server = useCurrentServer();
 
         const drag = useMemo(
             () => ({
@@ -376,6 +382,8 @@ const AoideTrackRow = memo(
 
         const isUnresolved = item.title === null;
 
+        const artwork = trackArtworkUrl(item, server, ROW_ARTWORK_WIDTH);
+
         return (
             <div
                 className={clsx(styles.row, {
@@ -392,6 +400,13 @@ const AoideTrackRow = memo(
                 <Text className={styles.index} isMuted size="sm">
                     {index}
                 </Text>
+                <Image
+                    className={styles.artwork}
+                    src={artwork ?? undefined}
+                    // A row without a resolved album has nothing to draw, and an
+                    // empty box reads better than a broken-image glyph.
+                    style={{ visibility: artwork ? 'visible' : 'hidden' }}
+                />
                 <div className={styles.cell}>
                     <Text
                         className={clsx(styles.cell, { [styles.unresolved]: isUnresolved })}

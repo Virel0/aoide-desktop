@@ -65,7 +65,7 @@
 .row {
     position: relative;
     display: grid;
-    grid-template-columns: 1.5rem 2rem 1fr 1fr 3.5rem 2rem;
+    grid-template-columns: 1.5rem 2rem 2.5rem 1fr 1fr 3.5rem 2rem;
     gap: var(--theme-spacing-md);
     align-items: center;
     padding: var(--theme-spacing-xs) var(--theme-spacing-sm);
@@ -165,10 +165,24 @@
  */
 @container (width < 44rem) {
     .row {
-        grid-template-columns: 1.5rem 2rem 1fr 3.5rem 2rem;
+        grid-template-columns: 1.5rem 2rem 2.5rem 1fr 3.5rem 2rem;
     }
 
     .album {
         display: none;
     }
+}
+
+/*
+ * The row's cover.
+ *
+ * Square and small: this is the thumbnail Feishin draws beside a song
+ * everywhere else, and a playlist that sized it differently would read as a
+ * different app halfway down the page.
+ */
+.artwork {
+    width: 2rem;
+    height: 2rem;
+    overflow: hidden;
+    border-radius: var(--theme-radius-sm);
 }

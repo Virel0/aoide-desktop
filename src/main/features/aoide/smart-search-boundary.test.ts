@@ -36,6 +36,10 @@ describe('the OpenRouter key stays in the main process', () => {
         expect(new Set(handlers)).toEqual(
             new Set([
                 'aoide:smart-search-configured',
+                // A public catalogue, fetched unauthenticated. Listed here so
+                // the set stays exhaustive: every new channel has to be named
+                // and judged, which is the point of enumerating them.
+                'aoide:smart-search-list-models',
                 'aoide:smart-search-model',
                 'aoide:smart-search-set-key',
                 'aoide:smart-search-set-model',
