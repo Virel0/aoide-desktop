@@ -104,7 +104,7 @@ export const AoidePlaylistList = () => {
  */
 const AoidePlaylistCard = ({ playlist }: { playlist: PlaylistSummary }) => {
     const { t } = useTranslation();
-    const cover = usePlaylistCover(playlist.imageHash, playlist.imageMime);
+    const cover = usePlaylistCover(playlist);
 
     return (
         <Link

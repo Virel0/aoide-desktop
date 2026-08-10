@@ -9,7 +9,7 @@ import { useGenreList } from '/@/renderer/features/genres/api/genres-api';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
 import { useCurrentServerId } from '/@/renderer/store';
-import { looksLikeAPhrase } from '/@/shared/aoide/smart-search';
+import { looksLikeAPhrase, MINIMUM_PHRASE_WORDS } from '/@/shared/aoide/smart-search';
 import { Badge } from '/@/shared/components/badge/badge';
 import { Button } from '/@/shared/components/button/button';
 import { Group } from '/@/shared/components/group/group';
@@ -107,16 +107,28 @@ export const AoideSearch = () => {
                 value={text}
             />
 
-            {smart.canInterpret && looksLikeAPhrase(text) && (
-                <Group gap="sm">
-                    <Button disabled={smart.interpreting} onClick={interpret} variant="filled">
-                        {smart.interpreting ? <Spinner /> : t('aoide.search.interpret')}
-                    </Button>
-                    <Text isMuted size="sm">
-                        {t('aoide.search.interpretHint')}
-                    </Text>
-                </Group>
-            )}
+            {/*
+             * Always here once a key is set, disabled rather than hidden when
+             * the phrase is too short. Hiding it meant the feature was
+             * indistinguishable from a broken one: nothing on screen said it
+             * existed, or what it wanted.
+             */}
+            <Group gap="sm">
+                <Button
+                    disabled={!smart.canInterpret || !looksLikeAPhrase(text) || smart.interpreting}
+                    onClick={interpret}
+                    variant="filled"
+                >
+                    {smart.interpreting ? <Spinner /> : t('aoide.search.interpret')}
+                </Button>
+                <Text isMuted size="sm">
+                    {!smart.canInterpret
+                        ? t('aoide.search.needsKey')
+                        : looksLikeAPhrase(text)
+                          ? t('aoide.search.interpretHint')
+                          : t('aoide.search.needsPhrase', { count: MINIMUM_PHRASE_WORDS })}
+                </Text>
+            </Group>
 
             {interpreted && (
                 <Group gap="xs">
@@ -143,7 +155,7 @@ export const AoideSearch = () => {
                 </Group>
             )}
 
-            {smart.reason && !interpreted && (
+            {smart.reason && (
                 <Text isMuted size="sm">
                     {smart.reason}
                 </Text>

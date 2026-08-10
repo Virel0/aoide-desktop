@@ -6,7 +6,10 @@ import styles from './aoide-sidebar-list.module.css';
 
 import { openCreateAoidePlaylistModal } from '/@/renderer/aoide/features/playlists/aoide-playlist-modals';
 import { useAoidePlaylistList } from '/@/renderer/aoide/features/playlists/aoide-playlists-api';
-import { usePlaylistCover } from '/@/renderer/aoide/features/playlists/use-playlist-cover';
+import {
+    CoverSource,
+    usePlaylistCover,
+} from '/@/renderer/aoide/features/playlists/use-playlist-cover';
 import { isAoideAvailable } from '/@/renderer/aoide/features/shared/aoide-bridge';
 import { AppRoute } from '/@/renderer/router/routes';
 import { Accordion } from '/@/shared/components/accordion/accordion';
@@ -78,8 +81,7 @@ export const AoideSidebarList = () => {
                     return (
                         <AoideSidebarRow
                             count={playlist.trackCount}
-                            imageHash={playlist.imageHash}
-                            imageMime={playlist.imageMime}
+                            cover={playlist}
                             isActive={location.pathname === to}
                             key={playlist.id}
                             label={playlist.name}
@@ -99,29 +101,27 @@ export const AoideSidebarList = () => {
 
 const AoideSidebarRow = ({
     count,
+    cover,
     icon = 'playlist',
-    imageHash = null,
-    imageMime = null,
     isActive,
     label,
     to,
 }: {
     count?: number;
+    cover?: CoverSource;
     icon?: 'playlist' | 'search';
-    imageHash?: null | string;
-    imageMime?: null | string;
     isActive: boolean;
     label: string;
     to: string;
 }) => {
-    const cover = usePlaylistCover(imageHash, imageMime);
+    const coverUrl = usePlaylistCover(cover ?? EMPTY_COVER);
 
     return (
         <div className={clsx(styles.row, { [styles.rowActive]: isActive })}>
             <Link className={styles.rowLink} to={to}>
                 <Group className={styles.rowContent} gap="sm" wrap="nowrap">
-                    {cover ? (
-                        <img alt="" className={styles.rowCover} src={cover} />
+                    {coverUrl ? (
+                        <img alt="" className={styles.rowCover} src={coverUrl} />
                     ) : (
                         <Icon color={isActive ? 'primary' : 'muted'} icon={icon} size="sm" />
                     )}
@@ -137,4 +137,12 @@ const AoideSidebarRow = ({
             </Link>
         </div>
     );
+};
+
+/** The "all playlists" row has no cover of its own, and hooks cannot be skipped. */
+const EMPTY_COVER: CoverSource = {
+    artworkItemId: null,
+    imageHash: null,
+    imageMime: null,
+    sourceJellyfinId: null,
 };

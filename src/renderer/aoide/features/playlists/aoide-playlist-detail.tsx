@@ -276,7 +276,7 @@ const AoidePlaylistHero = ({
 }) => {
     const { t } = useTranslation();
 
-    const cover = usePlaylistCover(playlist.imageHash, playlist.imageMime);
+    const cover = usePlaylistCover(playlist);
 
     return (
         <div className={styles.hero}>

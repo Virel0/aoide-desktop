@@ -214,8 +214,13 @@ describe('the search screen', () => {
         expect(source).toContain('genreIdsByName');
     });
 
-    it('offers the description path only for a real phrase with a key set', () => {
-        expect(source).toMatch(/smart\.canInterpret && looksLikeAPhrase\(text\)/);
+    // Shown always, disabled when it cannot be used, and saying which. Hidden
+    // was indistinguishable from broken: nothing on screen said the feature
+    // existed or what it wanted.
+    it('disables the description path rather than hiding it', () => {
+        expect(source).toMatch(/disabled=\{!smart\.canInterpret \|\| !looksLikeAPhrase\(text\)/);
+        expect(source).toContain('aoide.search.needsKey');
+        expect(source).toContain('aoide.search.needsPhrase');
         expect(hook).toContain('looksLikeAPhrase');
     });
 });

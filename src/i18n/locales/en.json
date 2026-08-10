@@ -45,6 +45,8 @@
             "favourites": "Favourites",
             "interpret": "Search by description",
             "interpretHint": "Ask a model to turn this into filters",
+            "needsKey": "Add an OpenRouter key in Settings to search by description",
+            "needsPhrase": "Describe what you want in {{count}} words or more",
             "noResults": "Nothing matched",
             "placeholder": "Search, or describe what you want to hear",
             "understood": "Understood as"

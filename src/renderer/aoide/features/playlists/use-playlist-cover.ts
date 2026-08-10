@@ -3,6 +3,8 @@ import { useEffect, useMemo } from 'react';
 
 import { isAoideAvailable } from '/@/renderer/aoide/features/shared/aoide-bridge';
 import { useSidecarTransport } from '/@/renderer/aoide/features/sync/use-sidecar-transport';
+import { useCurrentServer } from '/@/renderer/store';
+import { getServerUrl } from '/@/renderer/utils/normalize-server-url';
 
 /**
  * A playlist's cover, wherever it happens to be.
@@ -23,11 +25,10 @@ import { useSidecarTransport } from '/@/renderer/aoide/features/sync/use-sidecar
  * addressing buys, after "re-uploading is a no-op" and "two playlists sharing a
  * cover store one copy".
  */
-export const usePlaylistCover = (
-    imageHash: null | string,
-    imageMime: null | string,
-): null | string => {
+export const usePlaylistCover = (playlist: CoverSource): null | string => {
+    const { artworkItemId, imageHash, imageMime, sourceJellyfinId } = playlist;
     const transport = useSidecarTransport();
+    const server = useCurrentServer();
 
     const { data } = useQuery({
         enabled: Boolean(imageHash) && isAoideAvailable(),
@@ -73,5 +74,34 @@ export const usePlaylistCover = (
         return () => URL.revokeObjectURL(url);
     }, [url]);
 
-    return url;
+    // The blob wins when there is one. Otherwise the cover is an *item* on
+    // Jellyfin, which is how a playlist imported from there keeps the picture it
+    // already had — `artworkItemId` when somebody chose one, and the source
+    // playlist itself when nobody did.
+    const jellyfinItem = artworkItemId ?? sourceJellyfinId;
+    const base = server ? getServerUrl(server) : null;
+
+    if (url) return url;
+    if (!jellyfinItem || !base) return null;
+
+    return `${base}/Items/${jellyfinItem}/Images/Primary?quality=96&width=${COVER_WIDTH}`;
 };
+
+/**
+ * Where a playlist's cover can come from, in the phone's order of precedence.
+ *
+ * `PlaylistArtwork.swift` reads `artworkItemId ?? sourceJellyfinId`, with the
+ * hash beating both — and the third of those is the one that matters in
+ * practice, because a playlist imported from Jellyfin has no blob and no chosen
+ * artwork, only the picture Jellyfin already holds for it. Looking at the hash
+ * alone left every imported playlist blank.
+ */
+export interface CoverSource {
+    artworkItemId: null | string;
+    imageHash: null | string;
+    imageMime: null | string;
+    sourceJellyfinId: null | string;
+}
+
+/** Big enough for the detail hero; a thumbnail scales down without a second fetch. */
+const COVER_WIDTH = 600;
