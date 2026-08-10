@@ -33,6 +33,14 @@ interface OutboundImage {
  * the crossing per row.
  */
 export const aoide = {
+    images: {
+        get: (sha256: string): Promise<undefined | { bytes: Uint8Array; mime: string }> =>
+            ipcRenderer.invoke('aoide:images-get', sha256),
+
+        store: (bytes: Uint8Array, mime: string): Promise<string> =>
+            ipcRenderer.invoke('aoide:images-store', bytes, mime),
+    },
+
     playlists: {
         /** Appends tracks. Returns the new entries only, not the whole playlist. */
         addTracks: (playlistId: string, tracks: TrackInput[]): Promise<PlaylistTrack[]> =>

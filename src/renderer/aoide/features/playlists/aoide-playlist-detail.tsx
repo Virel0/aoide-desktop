@@ -26,6 +26,7 @@ import {
     ROW_ARTWORK_WIDTH,
     trackArtworkUrl,
 } from '/@/renderer/aoide/features/playlists/track-artwork';
+import { usePlaylistCover } from '/@/renderer/aoide/features/playlists/use-playlist-cover';
 import { useResolveUnknownTracks } from '/@/renderer/aoide/features/playlists/use-resolve-unknown-tracks';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { getSongById } from '/@/renderer/features/player/utils';
@@ -275,10 +276,16 @@ const AoidePlaylistHero = ({
 }) => {
     const { t } = useTranslation();
 
+    const cover = usePlaylistCover(playlist.imageHash, playlist.imageMime);
+
     return (
         <div className={styles.hero}>
             <div className={styles.heroArtwork}>
-                <Icon icon="playlist" size="4xl" />
+                {cover ? (
+                    <img alt="" className={styles.heroCover} src={cover} />
+                ) : (
+                    <Icon icon="playlist" size="4xl" />
+                )}
             </div>
             <div className={styles.heroText}>
                 <Text isMuted size="sm">

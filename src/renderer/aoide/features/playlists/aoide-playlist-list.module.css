@@ -115,3 +115,10 @@
     background-color: var(--theme-colors-surface);
     border-radius: var(--theme-radius-lg);
 }
+
+/* Fills the square the icon used to sit in, without distorting a non-square cover. */
+.cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}

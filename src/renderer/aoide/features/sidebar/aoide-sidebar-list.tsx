@@ -6,6 +6,7 @@ import styles from './aoide-sidebar-list.module.css';
 
 import { openCreateAoidePlaylistModal } from '/@/renderer/aoide/features/playlists/aoide-playlist-modals';
 import { useAoidePlaylistList } from '/@/renderer/aoide/features/playlists/aoide-playlists-api';
+import { usePlaylistCover } from '/@/renderer/aoide/features/playlists/use-playlist-cover';
 import { isAoideAvailable } from '/@/renderer/aoide/features/shared/aoide-bridge';
 import { AppRoute } from '/@/renderer/router/routes';
 import { Accordion } from '/@/shared/components/accordion/accordion';
@@ -71,6 +72,8 @@ export const AoideSidebarList = () => {
                     return (
                         <AoideSidebarRow
                             count={playlist.trackCount}
+                            imageHash={playlist.imageHash}
+                            imageMime={playlist.imageMime}
                             isActive={location.pathname === to}
                             key={playlist.id}
                             label={playlist.name}
@@ -90,28 +93,40 @@ export const AoideSidebarList = () => {
 
 const AoideSidebarRow = ({
     count,
+    imageHash = null,
+    imageMime = null,
     isActive,
     label,
     to,
 }: {
     count?: number;
+    imageHash?: null | string;
+    imageMime?: null | string;
     isActive: boolean;
     label: string;
     to: string;
-}) => (
-    <div className={clsx(styles.row, { [styles.rowActive]: isActive })}>
-        <Link className={styles.rowLink} to={to}>
-            <Group className={styles.rowContent} gap="sm" wrap="nowrap">
-                <Icon color={isActive ? 'primary' : 'muted'} icon="playlist" size="sm" />
-                <Text className={styles.name} fw={500} size="md">
-                    {label}
-                </Text>
-            </Group>
-            {count !== undefined && (
-                <Text className={styles.count} isMuted size="sm">
-                    {count}
-                </Text>
-            )}
-        </Link>
-    </div>
-);
+}) => {
+    const cover = usePlaylistCover(imageHash, imageMime);
+
+    return (
+        <div className={clsx(styles.row, { [styles.rowActive]: isActive })}>
+            <Link className={styles.rowLink} to={to}>
+                <Group className={styles.rowContent} gap="sm" wrap="nowrap">
+                    {cover ? (
+                        <img alt="" className={styles.rowCover} src={cover} />
+                    ) : (
+                        <Icon color={isActive ? 'primary' : 'muted'} icon="playlist" size="sm" />
+                    )}
+                    <Text className={styles.name} fw={500} size="md">
+                        {label}
+                    </Text>
+                </Group>
+                {count !== undefined && (
+                    <Text className={styles.count} isMuted size="sm">
+                        {count}
+                    </Text>
+                )}
+            </Link>
+        </div>
+    );
+};

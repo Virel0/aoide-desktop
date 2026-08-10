@@ -58,3 +58,15 @@
 .empty {
     padding: var(--theme-spacing-xs) var(--theme-spacing-md);
 }
+
+/*
+ * The sidebar cover, sized to the icon it replaces so a list of playlists with
+ * and without artwork keeps one rhythm. iOS rounds a list thumbnail at 5pt.
+ */
+.row-cover {
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    object-fit: cover;
+    border-radius: 5px;
+}

@@ -11,6 +11,7 @@ import {
     openEditAoidePlaylistModal,
 } from '/@/renderer/aoide/features/playlists/aoide-playlist-modals';
 import { useAoidePlaylistList } from '/@/renderer/aoide/features/playlists/aoide-playlists-api';
+import { usePlaylistCover } from '/@/renderer/aoide/features/playlists/use-playlist-cover';
 import { AoideSyncPanel } from '/@/renderer/aoide/features/sync/aoide-sync-panel';
 import { AppRoute } from '/@/renderer/router/routes';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
@@ -96,14 +97,14 @@ export const AoidePlaylistList = () => {
 /**
  * One playlist.
  *
- * The artwork is a placeholder even when `imageHash` is set: the bytes live in
- * the content-addressed blob store in the main process and there is no bridge
- * to read them from a renderer yet. Drawing a broken image would be worse than
- * drawing none, and inventing a fetch against `/aoide/images/{sha}` per card
- * would download the whole library's covers to fill a grid.
+ * The cover is fetched when this card mounts and not before — the hash travels
+ * in the op log, the bytes never do. A grid that prefetched every cover would
+ * download the library's artwork to draw a page somebody may scroll straight
+ * past.
  */
 const AoidePlaylistCard = ({ playlist }: { playlist: PlaylistSummary }) => {
     const { t } = useTranslation();
+    const cover = usePlaylistCover(playlist.imageHash, playlist.imageMime);
 
     return (
         <Link
@@ -111,7 +112,11 @@ const AoidePlaylistCard = ({ playlist }: { playlist: PlaylistSummary }) => {
             to={generatePath(AppRoute.AOIDE_PLAYLISTS_DETAIL, { playlistId: playlist.id })}
         >
             <div className={styles.artwork}>
-                <Icon icon="playlist" size="2xl" />
+                {cover ? (
+                    <img alt="" className={styles.cover} src={cover} />
+                ) : (
+                    <Icon icon="playlist" size="2xl" />
+                )}
             </div>
             <Stack gap={0}>
                 <Text className={styles.cardName} fw={600} size="md">

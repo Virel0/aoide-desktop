@@ -201,6 +201,22 @@ handle('aoide:sync-apply-remote', ({ store }, op: SyncOp, receivedAt?: number) =
 
 handle('aoide:sync-set-cursor', ({ store }, cursor: number) => store.setCursor(cursor));
 
+/*
+ * Cover bytes, by hash.
+ *
+ * Content-addressed, so a hash that resolves here is the right picture forever
+ * and the renderer can cache it without any invalidation story at all. Missing
+ * is an ordinary answer rather than an error: a cover chosen on the phone lives
+ * on the sidecar until this device has reason to fetch it, and "reason" means
+ * something is about to draw it.
+ */
+handle('aoide:images-get', ({ images }, sha256: string) => images.get(sha256));
+
+/** Keep bytes fetched from the sidecar, so the next draw needs no network. */
+handle('aoide:images-store', ({ images }, bytes: Uint8Array, mime: string) =>
+    images.store(bytes, mime),
+);
+
 handle('aoide:sync-images-to-upload', ({ images }, ops: SyncOp[]) =>
     images
         .imagesNeededBeforePush(ops)
