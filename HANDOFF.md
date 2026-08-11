@@ -147,6 +147,80 @@ Build order and the reasoning behind each step: `docs/aoide-integration.md`. The
 two — the sidecar client and a local store with an op log — are the bulk of the work.
 Everything after that is screens.
 
+## The work order, agreed
+
+In this order. Each is self-contained; nothing here is blocked on anything else.
+
+### 1. Playlist covers  *(in progress)*
+
+**Symptom:** every Aoide playlist draws a placeholder. **Cause, measured on the real
+database rather than guessed:**
+
+```
+sqlite3 ~/.config/Aoide/aoide-curation.db \
+  "SELECT name, imageHash IS NOT NULL, artworkItemId, sourceJellyfinId FROM playlists WHERE deleted=0;"
+```
+
+Every row is NULL for all three. The phone never recorded where those covers came from,
+so no client has anything to draw. The desktop already reads the phone's precedence —
+`imageHash`, then `artworkItemId`, then `sourceJellyfinId`, see `PlaylistArtwork.swift`
+— and finds all three empty.
+
+**The same missing `sourceJellyfinId` is why re-import produced duplicate playlists**
+(the sidecar chat measured that independently). One cause, two symptoms.
+
+Two pieces:
+
+- **The repair, desktop:** match a coverless playlist to a Jellyfin playlist **by name**
+  and write `artworkItemId`, which then syncs so the phone gets the cover too. Match
+  only when *exactly one* Jellyfin playlist carries that name, and record it as
+  **artwork**, never as `sourceJellyfinId` — a name match cannot prove provenance, and
+  writing provenance on a guess would corrupt the key that deduping depends on.
+- **The real fix, iOS:** `LocalPlaylistStore.importFromServer` must record
+  `sourceJellyfinId` so this cannot recur.
+
+### 2. The play/skip crossover above twenty minutes
+
+**What it is.** A play is `min(half the track, 4 minutes)`. A skip is `a fifth of the
+track`. Those were meant to be disjoint, and the Swift says so — but they cross at
+**20 minutes**: past that, a fifth of the track exceeds four minutes, so five minutes of
+a thirty-minute DJ set is *over* the play threshold and *under* the skip threshold at
+once. `classify()` returns `countsAsPlay` **and** `skipped`.
+
+**Why nobody has hit it.** The iOS boundary matrix stops at exactly 1,200,000 ms. Both
+clients reproduce the behaviour identically, so nothing disagrees — it is wrong in the
+same way everywhere, which is why it has never shown up as a sync bug.
+
+**What it actually costs today:** an imported play event with no stored verdict gets
+counted once as a play and once as a skip, inflating both figures for that track and
+making its skip *rate* meaningless. Long mixes and DJ sets only.
+
+**The decision to make** (needs iOS, desktop and sidecar to agree, because a smart
+playlist and a play count that disagree is the exact failure the shared definition
+exists to prevent): cap the skip threshold at something below the play ceiling — a
+fifth of the duration **or four minutes, whichever is smaller** is the obvious
+candidate, and keeps skips meaning "rejected it early" at every length. Then extend the
+matrix past 1,200,000 on both clients so the boundary is actually exercised.
+
+### 3. The Feishin-style playlist table
+
+Asked for and repeatedly deferred. The detail view currently has Feishin's *shape* —
+hero, covers, iOS radii — on a hand-written list. Porting to Feishin's item-table system
+means feeding our rows through its column factories, list context and filter hooks.
+
+**The thing not to lose:** the current view owns the drag-to-reorder that writes exactly
+**one** row per move, via `positionBetween`. That single-row property is what makes
+playlist order survive two devices reordering at once. A port that lets the table
+renumber rows destroys it silently — the playlist still looks right on the device that
+did it.
+
+### 4. Discord Rich Presence still says "Feishin"
+
+`FALLBACK_DISCORD_APPLICATION_ID` in `src/main/features/core/discord-rpc/index.ts` is
+upstream's registered application, and the name Discord shows is that application's.
+Only registering an Aoide application at discord.com/developers changes it — a human
+step, then paste the id into Settings.
+
 ## Where this was left
 
 Both repos are pushed. Desktop `cee2765d`, iOS `44ade8e`. 511 tests on the desktop,
