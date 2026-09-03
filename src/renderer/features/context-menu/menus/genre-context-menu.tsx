@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { AddToAoidePlaylistAction } from '/@/renderer/aoide/features/playlists/add-to-aoide-playlist-action';
 import { AddToPlaylistAction } from '/@/renderer/features/context-menu/actions/add-to-playlist-action';
 import { PlayAction } from '/@/renderer/features/context-menu/actions/play-action';
 import { ContextMenuPreview } from '/@/renderer/features/context-menu/components/context-menu-preview';
@@ -24,6 +25,7 @@ export const GenreContextMenu = ({ items, type }: GenreContextMenuProps) => {
             <PlayAction ids={ids} itemType={LibraryItem.ALBUM} />
             <ContextMenu.Divider />
             <AddToPlaylistAction items={ids} itemType={LibraryItem.ALBUM} />
+            <AddToAoidePlaylistAction items={ids} itemType={LibraryItem.GENRE} />
         </ContextMenu.Content>
     );
 };

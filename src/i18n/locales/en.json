@@ -109,7 +109,8 @@
         },
         "toast": {
             "added_one": "Added {{count}} track to {{name}}",
-            "added_other": "Added {{count}} tracks to {{name}}"
+            "added_other": "Added {{count}} tracks to {{name}}",
+            "nothingToAdd": "Nothing was added to {{name}} — no tracks were found"
         },
         "trackCount_one": "{{count}} track",
         "trackCount_other": "{{count}} tracks"

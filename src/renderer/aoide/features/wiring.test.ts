@@ -354,3 +354,63 @@ describe('sync happens without a button', () => {
         expect(effect).toContain('queryKeys.playlists.list(serverId)');
     });
 });
+
+describe('"Add to Aoide playlist" is offered wherever "Add to playlist" is', () => {
+    // The report: on the desktop you could add music to a Jellyfin playlist
+    // and not to an Aoide one. The Aoide entry was wired into the song menu
+    // alone; every other menu carried only Feishin's.
+    const menus = [
+        'album-artist-context-menu',
+        'album-context-menu',
+        'artist-context-menu',
+        'folder-context-menu',
+        'genre-context-menu',
+        'playlist-context-menu',
+        'playlist-song-context-menu',
+        'queue-context-menu',
+        'song-context-menu',
+    ];
+
+    for (const menu of menus) {
+        it(`${menu} renders the Aoide entry beside the Jellyfin one`, () => {
+            const source = readFileSync(
+                join(import.meta.dirname, `../../features/context-menu/menus/${menu}.tsx`),
+                'utf8',
+            );
+
+            expect(source).toContain('<AddToPlaylistAction ');
+            expect(source).toContain('<AddToAoidePlaylistAction ');
+        });
+    }
+
+    const action = sourceOf('playlists/add-to-aoide-playlist-action.tsx');
+
+    // Upstream hands genre ids to its own action typed as ALBUM. Ids are ids
+    // there; here they decide which lookup runs, so the Aoide entry says GENRE.
+    it('tells the genre menu’s ids apart from album ids', () => {
+        const genre = readFileSync(
+            join(import.meta.dirname, '../../features/context-menu/menus/genre-context-menu.tsx'),
+            'utf8',
+        );
+        expect(genre).toContain(
+            '<AddToAoidePlaylistAction items={ids} itemType={LibraryItem.GENRE} />',
+        );
+    });
+
+    // Right-clicking a discography must not download it. The songs are worked
+    // out inside the selection handler, not in a hook that runs on open.
+    it('resolves songs when a playlist is chosen, not when the menu opens', () => {
+        expect(action).toMatch(/const collectTracks = useCallback\(async/);
+        expect(action).not.toMatch(/useQuery\(|useEffect\(/);
+        expect(action).toContain('resolveSongsForSelection(itemType, items, fetchers)');
+    });
+
+    it('keeps the fast path for menus that already hold the songs', () => {
+        expect(action).toContain('if (songs) return songs.map(trackInputFromSong);');
+    });
+
+    it('grows a search box past a handful of playlists, like its sibling', () => {
+        expect(action).toContain('playlists.length > PLAYLIST_SEARCH_THRESHOLD');
+        expect(action).toContain('stickyContent={searchInput}');
+    });
+});

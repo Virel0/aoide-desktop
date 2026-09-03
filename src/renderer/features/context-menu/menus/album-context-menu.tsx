@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { AddToAoidePlaylistAction } from '/@/renderer/aoide/features/playlists/add-to-aoide-playlist-action';
 import { AddToPlaylistAction } from '/@/renderer/features/context-menu/actions/add-to-playlist-action';
 import { DownloadAction } from '/@/renderer/features/context-menu/actions/download-action';
 import { EditMetadataAction } from '/@/renderer/features/context-menu/actions/edit-metadata-action';
@@ -33,6 +34,7 @@ export const AlbumContextMenu = ({ items, type }: AlbumContextMenuProps) => {
             <PlayAlbumRadioAction album={items[0]} disabled={items.length > 1} />
             <ContextMenu.Divider />
             <AddToPlaylistAction items={ids} itemType={LibraryItem.ALBUM} />
+            <AddToAoidePlaylistAction items={ids} itemType={LibraryItem.ALBUM} />
             <ContextMenu.Divider />
             <SetFavoriteAction ids={ids} itemType={LibraryItem.ALBUM} />
             <SetRatingAction ids={ids} itemType={LibraryItem.ALBUM} />

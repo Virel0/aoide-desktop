@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { AddToAoidePlaylistAction } from '/@/renderer/aoide/features/playlists/add-to-aoide-playlist-action';
 import { AddToPlaylistAction } from '/@/renderer/features/context-menu/actions/add-to-playlist-action';
 import { DeletePlaylistAction } from '/@/renderer/features/context-menu/actions/delete-playlist-action';
 import { EditPlaylistAction } from '/@/renderer/features/context-menu/actions/edit-playlist-action';
@@ -37,6 +38,7 @@ export const PlaylistContextMenu = ({ items, type }: PlaylistContextMenuProps) =
             <PlayAction ids={ids} itemType={LibraryItem.PLAYLIST} />
             <ContextMenu.Divider />
             <AddToPlaylistAction items={ids} itemType={LibraryItem.PLAYLIST} />
+            <AddToAoidePlaylistAction items={ids} itemType={LibraryItem.PLAYLIST} />
             <ContextMenu.Divider />
             <EditPlaylistAction disabled={!canEditPlaylist} items={items} />
             <DeletePlaylistAction disabled={!canDeletePlaylist} items={items} />

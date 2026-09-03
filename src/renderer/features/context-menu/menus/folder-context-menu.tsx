@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { AddToAoidePlaylistAction } from '/@/renderer/aoide/features/playlists/add-to-aoide-playlist-action';
 import { AddToPlaylistAction } from '/@/renderer/features/context-menu/actions/add-to-playlist-action';
 import { DownloadAction } from '/@/renderer/features/context-menu/actions/download-action';
 import { PlayAction } from '/@/renderer/features/context-menu/actions/play-action';
@@ -26,6 +27,7 @@ export const FolderContextMenu = ({ items, type }: FolderContextMenuProps) => {
             <PlayAction ids={ids} itemType={LibraryItem.FOLDER} />
             <ContextMenu.Divider />
             <AddToPlaylistAction items={ids} itemType={LibraryItem.FOLDER} />
+            <AddToAoidePlaylistAction items={ids} itemType={LibraryItem.FOLDER} />
             <ContextMenu.Divider />
             <DownloadAction ids={ids} />
             <ShareAction ids={ids} itemType={LibraryItem.FOLDER} />
