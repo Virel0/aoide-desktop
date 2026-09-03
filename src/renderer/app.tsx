@@ -15,6 +15,7 @@ import { useCheckForUpdates } from '/@/renderer/hooks/use-check-for-updates';
 import { useFullscreenToggle } from '/@/renderer/hooks/use-fullscreen-toggle';
 import { useNativeMenuSync } from '/@/renderer/hooks/use-native-menu-sync';
 import { useSyncSettingsToMain } from '/@/renderer/hooks/use-sync-settings-to-main';
+import { AoideSyncOnLaunchEffect } from '/@/renderer/aoide/features/sync/aoide-sync-on-launch-effect';
 import { AppRouter } from '/@/renderer/router/app-router';
 import {
     useCssSettings,
@@ -121,6 +122,7 @@ const AppEffects = () => (
         <NativeMenuSyncEffect />
         <FullscreenToggleEffect />
         <InputFocusEffect />
+        <AoideSyncOnLaunchEffect />
     </>
 );
 

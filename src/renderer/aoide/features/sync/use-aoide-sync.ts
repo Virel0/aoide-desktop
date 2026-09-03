@@ -53,10 +53,18 @@ export const useAoideSync = () => {
         return new SyncEngine({ store, transport, userId: server?.userId ?? undefined });
     }, [server?.userId, store, transport]);
 
-    const sync = useCallback(async () => {
+    // Resolves to the state it just set, so a caller with no panel — the
+    // launch-and-focus effect — can see what happened without subscribing to a
+    // render it will never draw.
+    const sync = useCallback(async (): Promise<AoideSyncState> => {
         if (!transport) {
-            setState({ error: 'No server is signed in', finishedAt: Date.now(), phase: 'error' });
-            return;
+            const next: AoideSyncState = {
+                error: 'No server is signed in',
+                finishedAt: Date.now(),
+                phase: 'error',
+            };
+            setState(next);
+            return next;
         }
 
         setState((previous) => ({ ...previous, phase: 'running' }));
@@ -74,13 +82,14 @@ export const useAoideSync = () => {
                 void queryClient.invalidateQueries({ queryKey: aoidePlaylistKeys.all });
             }
 
-            setState({
+            const next: AoideSyncState = {
                 ...syncMessages(result),
                 finishedAt: Date.now(),
                 phase: syncFailed(result) ? 'error' : 'success',
                 result,
-            });
-            return;
+            };
+            setState(next);
+            return next;
         }
 
         /*
@@ -94,19 +103,22 @@ export const useAoideSync = () => {
          * is set on every path, so a status line keyed off it says "Last synced"
          * after a run that moved not one op.
          */
+        let next: AoideSyncState;
         try {
-            setState({
+            next = {
                 finishedAt: Date.now(),
                 phase: 'success',
                 status: await transport.status(),
-            });
+            };
         } catch (error) {
-            setState({
+            next = {
                 error: describeSyncError(error),
                 finishedAt: Date.now(),
                 phase: 'error',
-            });
+            };
         }
+        setState(next);
+        return next;
     }, [engine, queryClient, transport]);
 
     return {

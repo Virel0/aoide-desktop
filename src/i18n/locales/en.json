@@ -98,7 +98,7 @@
             "lastFailed": "Last tried at {{time}} — nothing was synced",
             "lastSynced": "Last synced at {{time}}",
             "noServer": "Sign in to a server first — the sidecar lives on the same host.",
-            "noStoreBridge": "This build can reach the sidecar but cannot push local edits yet: the preload bridge exposes no op log, so \"Sync now\" only checks the server.",
+            "noStoreBridge": "This build has no local playlist store, so \"Sync now\" only checks that the server answers. Use the desktop app to sync edits.",
             "now": "Sync now",
             "quarantined_one": "{{count}} change was refused and will not be retried",
             "quarantined_other": "{{count}} changes were refused and will not be retried",

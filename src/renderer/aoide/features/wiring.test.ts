@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { syncOutcome } from './sync/sync-report';
+import { FOCUS_SYNC_MIN_INTERVAL_MS } from './sync/sync-schedule';
 
 /**
  * Guards over the component *source*, because these components cannot be
@@ -309,5 +310,47 @@ describe('the shared queue', () => {
 
     it('names the starting track rather than slicing the queue short', () => {
         expect(panel).toMatch(/addToQueueByData\(songs, Play\.NOW, start\?\.id\)/);
+    });
+});
+
+describe('sync happens without a button', () => {
+    const effect = sourceOf('sync/aoide-sync-on-launch-effect.tsx');
+
+    // The button lives on a page most sessions never open. An effect that is
+    // written but not mounted syncs exactly as often as no effect at all.
+    it('is mounted with the app’s other effects', () => {
+        const app = readFileSync(join(import.meta.dirname, '../../app.tsx'), 'utf8');
+        expect(app).toContain('<AoideSyncOnLaunchEffect />');
+    });
+
+    it('waits for a server that can push, not merely for mount', () => {
+        expect(effect).toMatch(/if \(!canPushLocalEdits\) return;/);
+        expect(effect).toContain('[canPushLocalEdits, queryClient, serverId, sync]');
+    });
+
+    it('listens for the window coming back, both ways it can', () => {
+        expect(effect).toContain("window.addEventListener('focus'");
+        expect(effect).toContain("document.addEventListener('visibilitychange'");
+        expect(effect).toContain('isFocusSyncDue(lastStartedAt.current, Date.now())');
+    });
+
+    // Every alt-tab is a focus event, and a music player is left open for days.
+    it('never syncs on focus more often than once a minute', () => {
+        expect(FOCUS_SYNC_MIN_INTERVAL_MS).toBeGreaterThanOrEqual(60_000);
+    });
+
+    // A sidecar that is down is logged, never announced. A player that toasts
+    // every time the laptop wakes up is a player somebody turns this off on.
+    it('never raises a toast', () => {
+        // The call and the import, not the word: the comment explaining why
+        // there is no toast is worth keeping.
+        expect(effect).not.toMatch(/\btoast\.\w+\(/);
+        expect(effect).not.toContain('components/toast/toast');
+        expect(effect).toContain('logger.warn');
+    });
+
+    it('refreshes Jellyfin’s own playlist list after applied ops', () => {
+        expect(effect).toMatch(/outcome\.result\.applied > 0/);
+        expect(effect).toContain('queryKeys.playlists.list(serverId)');
     });
 });

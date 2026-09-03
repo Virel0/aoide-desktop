@@ -37,21 +37,21 @@ export const aoidePlaylists = () => {
 };
 
 /**
- * The op log, if this build exposes one yet.
+ * The op log, if this build exposes one.
  *
- * **It does not, at the time of writing.** `SyncEngine` needs `pendingOps`,
- * `applyRemote`, the cursor pair and the two image calls, and the preload bridge
- * only carries playlists — the agents who own `src/preload` and `src/main` have
- * not published a sync channel. This screen therefore cannot push a local edit,
- * and it says so instead of pretending.
+ * The desktop build does: `src/preload/aoide.ts` publishes `sync` with every
+ * member `SyncStore` declares, and `sync-bridge.test.ts` holds the two sides to
+ * that. The web and remote builds have no preload at all, and there this
+ * returns undefined — the sync panel then says it can only check the server,
+ * rather than pretending an edit went somewhere.
  *
  * The lookup is written against `SyncStore` rather than some shape of its own
  * because `SyncStore` is already the contract: it is what the engine consumes,
  * every member already allows a promise precisely so an IPC bridge can satisfy
  * it, and a second definition here would be the "two sets that must agree" that
  * this project has paid for twice. The cast goes through `unknown` because the
- * declared preload type genuinely does not have the member yet — that is the
- * fact being tested, not a type to be argued with.
+ * question being asked is whether the member exists at runtime, and the
+ * declared preload type would answer it at compile time for the wrong build.
  */
 export const aoideSyncStore = (): SyncStore | undefined => {
     if (!isAoideAvailable()) return undefined;
