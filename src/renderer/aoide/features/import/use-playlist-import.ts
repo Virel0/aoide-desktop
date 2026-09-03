@@ -1,7 +1,7 @@
 import type { ImportedPlaylist, ImportedTrack } from '/@/shared/aoide/playlist-import';
 import type { Song } from '/@/shared/types/domain-types';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { candidateFromSong } from '/@/renderer/aoide/features/import/song-candidate';
 import { isAoideAvailable } from '/@/renderer/aoide/features/shared/aoide-bridge';
@@ -110,12 +110,10 @@ export const usePlaylistImport = (serverId: string) => {
         [match],
     );
 
-    const importCSV = useCallback(
-        async (file: File) => {
+    const importCsvText = useCallback(
+        async (text: string, name: string) => {
             setPhase({ kind: 'reading' });
             try {
-                const text = await file.text();
-                const name = file.name.replace(/\.[^.]+$/, '');
                 await match(parsePlaylistCSV(text, name));
             } catch (error) {
                 setPhase({
@@ -130,8 +128,25 @@ export const usePlaylistImport = (serverId: string) => {
         [match],
     );
 
+    const importCSV = useCallback(
+        async (file: File) => importCsvText(await file.text(), file.name.replace(/\.[^.]+$/, '')),
+        [importCsvText],
+    );
+
+    // Exportify, opened in its own window, saves a CSV; the main process catches
+    // it and hands it here, so the person never touches a file.
+    useEffect(() => {
+        if (!isAoideAvailable()) return undefined;
+        return window.api.aoide.import.onCsv((file) => void importCsvText(file.text, file.name));
+    }, [importCsvText]);
+
+    const openExportify = useCallback(() => {
+        if (!isAoideAvailable()) return;
+        void window.api.aoide.import.openExportify();
+    }, []);
+
     const found = matches.flatMap((entry) => (entry.song ? [entry.song] : []));
     const missing = matches.filter((entry) => entry.song === null).map((entry) => entry.track);
 
-    return { found, importCSV, importSpotify, matches, missing, phase, playlist };
+    return { found, importCSV, importSpotify, matches, missing, openExportify, phase, playlist };
 };

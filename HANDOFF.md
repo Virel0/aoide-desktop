@@ -199,6 +199,23 @@ other. Desktop: `/aoide/import`, sidebar row "Import a playlist", main-process f
 Playlists screen's menu (`Aoide/Features/Import/`). Both save the found half as an Aoide
 playlist and copy the missing half as text.
 
+**Exportify, folded in as far as it can be.** It talks to Spotify through its own
+registered application with a PKCE redirect pinned to exportify.net, and Spotify no
+longer grants new applications what that one was granted — so it cannot be embedded as
+a library or its client id borrowed. The desktop opens it in a window of its own
+(`persist:aoide-exportify` partition, so the Spotify sign-in is remembered), catches the
+CSV it saves via `will-download`, and feeds it straight into the import; the zip from
+"export all" gets the ordinary save dialog. iOS links to it in Safari; the export lands
+in Files and the sheet reads it from there. Exportify only lists the signed-in user's
+own playlists and Liked Songs — Spotify's rule, not ours.
+
+**The sidecar proposed `POST /aoide/match`** (server-side matching, one round trip).
+Worth taking for long lists once it exists, *implemented to the same specification and
+checked against the same table*; the clients then try it first and fall back to local
+matching. Input is `ImportedTrack`: `title`, `artists[]`, optional `album`,
+`durationMs`, `isrc` — the embed route carries no album or ISRC, so a content-key
+exact match only ever applies to CSV imports and the fuzzy path is the main path.
+
 ### Also on 2026-09-03: the iOS side of the feedback list
 
 All on `main`, pushed, installed on the phone (`f5acdaf`):

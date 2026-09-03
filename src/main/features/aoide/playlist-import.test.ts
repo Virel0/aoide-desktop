@@ -1,8 +1,39 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { BROWSER_USER_AGENT, fetchSpotifyPlaylist } from './playlist-import';
+import {
+    BROWSER_USER_AGENT,
+    fetchSpotifyPlaylist,
+    isPlaylistCsvDownload,
+    playlistNameFromFilename,
+    registerPlaylistImportHandlers,
+} from './playlist-import';
 
-vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }));
+const handle = vi.fn();
+vi.mock('electron', () => ({
+    app: { getPath: () => '/tmp' },
+    BrowserWindow: vi.fn(),
+    ipcMain: { handle: (...args: unknown[]) => handle(...args) },
+    shell: { openExternal: vi.fn() },
+}));
+
+describe('catching what Exportify saves', () => {
+    it('takes only the CSV; the zip from "export all" keeps the ordinary dialog', () => {
+        expect(isPlaylistCsvDownload('Road_Trip.csv')).toBe(true);
+        expect(isPlaylistCsvDownload('ROAD.CSV')).toBe(true);
+        expect(isPlaylistCsvDownload('spotify_playlists.zip')).toBe(false);
+    });
+
+    it('turns the file name back into the playlist name', () => {
+        expect(playlistNameFromFilename('Road_Trip.csv')).toBe('Road Trip');
+        expect(playlistNameFromFilename('Liked_Songs.csv')).toBe('Liked Songs');
+    });
+
+    it('registers both channels the preload invokes', () => {
+        registerPlaylistImportHandlers();
+        const channels = handle.mock.calls.map((call) => call[0]);
+        expect(channels).toEqual(['aoide:import-spotify', 'aoide:import-open-exportify']);
+    });
+});
 
 const page = (tracks: string) =>
     `<script id="__NEXT_DATA__" type="application/json">{"props":{"pageProps":{"state":{"data":{"entity":{"title":"Road Trip","trackList":[${tracks}]}}}}}}</script>`;

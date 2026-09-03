@@ -80,6 +80,9 @@ export const AoideImport = () => {
                 >
                     {busy ? <Spinner /> : t('aoide.import.lookUp')}
                 </Button>
+                <Button disabled={busy} onClick={importer.openExportify} variant="default">
+                    {t('aoide.import.exportify')}
+                </Button>
                 <FileButton
                     accept=".csv,text/csv,text/plain"
                     onChange={(file) => file && void importer.importCSV(file)}

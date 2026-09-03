@@ -1,4 +1,4 @@
-import type { SpotifyFetchOutcome } from '/@/main/features/aoide/playlist-import';
+import type { CapturedCsv, SpotifyFetchOutcome } from '/@/main/features/aoide/playlist-import';
 import type {
     CreatePlaylistOptions,
     ImportRequest,
@@ -52,6 +52,15 @@ export const aoide = {
      * process — a CSV export is a file the renderer can read itself.
      */
     import: {
+        /** A CSV that Exportify, opened by `openExportify`, has just saved. */
+        onCsv: (cb: (file: CapturedCsv) => void): (() => void) => {
+            const listener = (_event: Electron.IpcRendererEvent, file: CapturedCsv) => cb(file);
+            ipcRenderer.on('aoide:import-csv', listener);
+            return () => ipcRenderer.removeListener('aoide:import-csv', listener);
+        },
+
+        openExportify: (): Promise<void> => ipcRenderer.invoke('aoide:import-open-exportify'),
+
         spotify: (link: string): Promise<SpotifyFetchOutcome> =>
             ipcRenderer.invoke('aoide:import-spotify', link),
     },

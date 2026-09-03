@@ -41,7 +41,7 @@
             "title": "Aoide"
         },
         "import": {
-            "chooseCsv": "Choose a CSV export…",
+            "chooseCsv": "Choose a CSV file…",
             "copied": "Copied {{count}} missing tracks",
             "copyMissing": "Copy missing as text",
             "error": {
@@ -52,9 +52,10 @@
                 "pageChanged": "Spotify has changed its page and the playlist couldn't be read. A CSV export still works.",
                 "unavailable": "Spotify didn't share that playlist. It may be private."
             },
+            "exportify": "Export from Spotify with Exportify…",
             "found": "Found on your server: {{found}} of {{total}}",
             "foundHeading": "Found ({{count}})",
-            "hint": "A link reads the playlist's first 100 tracks straight from Spotify — no account needed. For a longer playlist, export it to CSV with a tool like Exportify and choose the file.",
+            "hint": "A link reads the playlist's first 100 tracks straight from Spotify — no account needed. For a longer playlist, or your own private ones, Exportify (open source) signs in to Spotify and exports a playlist; it opens here and the export comes straight back into this page. A CSV from any other tool can be chosen as a file.",
             "lookUp": "Look up",
             "matching": "Checking your server… {{done}} of {{total}}",
             "missingHeading": "Missing ({{count}})",

@@ -1,6 +1,8 @@
 import type { ImportedPlaylist } from '/@/shared/aoide/playlist-import';
 
-import { ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, type WebContents } from 'electron';
+import { readFile, unlink } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import {
     parseSpotifyEmbed,
@@ -74,6 +76,91 @@ export const fetchSpotifyPlaylist = async (
     }
 };
 
+/**
+ * Exportify, the open-source exporter (MIT, exportify.net), opened inside the
+ * app so its file lands here instead of in Downloads.
+ *
+ * It cannot be folded in any further than this. It talks to Spotify through its
+ * own registered application, whose sign-in redirect is pinned to its own
+ * domain, and Spotify no longer grants new applications what that one was
+ * granted years ago — so it has to *be* that page. What the app adds is the
+ * catching: the CSV it saves is read here and handed straight to the import,
+ * and Spotify's sign-in is remembered between visits.
+ */
+export const EXPORTIFY_URL = 'https://exportify.net';
+
+export const isPlaylistCsvDownload = (filename: string): boolean => /\.csv$/i.test(filename);
+
+/** Exportify saves "Road_Trip.csv" for a playlist called "Road Trip". */
+export const playlistNameFromFilename = (filename: string): string =>
+    filename
+        .replace(/\.csv$/i, '')
+        .replace(/_/g, ' ')
+        .trim();
+
+export interface CapturedCsv {
+    name: string;
+    text: string;
+}
+
+const openExportify = (askedBy: WebContents): void => {
+    const window = new BrowserWindow({
+        autoHideMenuBar: true,
+        height: 760,
+        title: 'Exportify',
+        webPreferences: {
+            contextIsolation: true,
+            nodeIntegration: false,
+            // Its own cookie jar, kept: the Spotify sign-in survives between
+            // visits, and nothing of the app's session is exposed to the page.
+            partition: 'persist:aoide-exportify',
+            sandbox: true,
+        },
+        width: 1000,
+    });
+
+    // Spotify's sign-in page is happier not knowing this is Electron.
+    window.webContents.setUserAgent(
+        window.webContents.getUserAgent().replace(/ ?(Electron|aoide)\/\S+/gi, ''),
+    );
+
+    // Anything that wants a new window — a "learn more" link — goes to the real
+    // browser. Sign-in navigates in place and needs no popup.
+    window.webContents.setWindowOpenHandler(({ url }) => {
+        void shell.openExternal(url);
+        return { action: 'deny' };
+    });
+
+    const session = window.webContents.session;
+    const onDownload = (_event: Electron.Event, item: Electron.DownloadItem) => {
+        const filename = item.getFilename();
+        // "Export all" saves a zip; that one takes the ordinary save dialog.
+        if (!isPlaylistCsvDownload(filename)) return;
+
+        const path = join(app.getPath('temp'), `aoide-import-${Date.now()}-${filename}`);
+        item.setSavePath(path);
+        item.once('done', (_done, state) => {
+            if (state !== 'completed') return;
+            void (async () => {
+                try {
+                    const text = await readFile(path, 'utf8');
+                    if (askedBy.isDestroyed()) return;
+                    const file: CapturedCsv = { name: playlistNameFromFilename(filename), text };
+                    askedBy.send('aoide:import-csv', file);
+                    BrowserWindow.fromWebContents(askedBy)?.focus();
+                } finally {
+                    await unlink(path).catch(() => undefined);
+                }
+            })();
+        });
+    };
+
+    session.on('will-download', onDownload);
+    window.on('closed', () => session.removeListener('will-download', onDownload));
+    void window.loadURL(EXPORTIFY_URL);
+};
+
 export const registerPlaylistImportHandlers = (): void => {
     ipcMain.handle('aoide:import-spotify', (_event, link: string) => fetchSpotifyPlaylist(link));
+    ipcMain.handle('aoide:import-open-exportify', (event) => openExportify(event.sender));
 };

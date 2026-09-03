@@ -504,6 +504,10 @@ describe('the playlist import is reachable and judges with the shared rules', ()
 
     // The point of the shared specification: the desktop must not grow its own
     // idea of a match. It searches by the normalised title and lets `best` judge.
+    it('listens for the CSV Exportify saves', () => {
+        expect(hook).toContain('window.api.aoide.import.onCsv(');
+    });
+
     it('searches by the normalised title and decides with the shared matcher', () => {
         expect(hook).toContain('searchTerm: term');
         expect(hook).toContain('normalize(track.title)');
