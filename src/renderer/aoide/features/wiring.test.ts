@@ -483,3 +483,30 @@ describe('a playlist with no cover shows its first track’s', () => {
         );
     });
 });
+
+describe('the playlist import is reachable and judges with the shared rules', () => {
+    const router = readFileSync(join(import.meta.dirname, '../../router/app-router.tsx'), 'utf8');
+    const sidebar = sourceOf('sidebar/aoide-sidebar-list.tsx');
+    const hook = sourceOf('import/use-playlist-import.ts');
+    const main = readFileSync(
+        join(import.meta.dirname, '../../../main/features/aoide/index.ts'),
+        'utf8',
+    );
+
+    it('has a route and a sidebar row', () => {
+        expect(router).toContain('AppRoute.AOIDE_IMPORT');
+        expect(sidebar).toContain('AppRoute.AOIDE_IMPORT');
+    });
+
+    it('registers the main-process fetch the preload calls', () => {
+        expect(main).toContain('registerPlaylistImportHandlers()');
+    });
+
+    // The point of the shared specification: the desktop must not grow its own
+    // idea of a match. It searches by the normalised title and lets `best` judge.
+    it('searches by the normalised title and decides with the shared matcher', () => {
+        expect(hook).toContain('searchTerm: term');
+        expect(hook).toContain('normalize(track.title)');
+        expect(hook).toContain('best(track, songs.map(candidateFromSong))');
+    });
+});

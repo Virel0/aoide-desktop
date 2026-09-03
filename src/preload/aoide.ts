@@ -1,3 +1,4 @@
+import type { SpotifyFetchOutcome } from '/@/main/features/aoide/playlist-import';
 import type {
     CreatePlaylistOptions,
     ImportRequest,
@@ -44,6 +45,15 @@ export const aoide = {
 
         store: (bytes: Uint8Array, mime: string): Promise<string> =>
             ipcRenderer.invoke('aoide:images-store', bytes, mime),
+    },
+
+    /**
+     * A playlist from somewhere else. Only the Spotify page needs the main
+     * process — a CSV export is a file the renderer can read itself.
+     */
+    import: {
+        spotify: (link: string): Promise<SpotifyFetchOutcome> =>
+            ipcRenderer.invoke('aoide:import-spotify', link),
     },
 
     mix: {

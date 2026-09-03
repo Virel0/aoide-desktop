@@ -72,6 +72,12 @@ export const AoideSidebarList = () => {
                     to={AppRoute.AOIDE_MIX}
                 />
                 <AoideSidebarRow
+                    icon="download"
+                    isActive={location.pathname === AppRoute.AOIDE_IMPORT}
+                    label={t('aoide.sidebar.import')}
+                    to={AppRoute.AOIDE_IMPORT}
+                />
+                <AoideSidebarRow
                     isActive={location.pathname === AppRoute.AOIDE_PLAYLISTS}
                     label={t('aoide.sidebar.all')}
                     to={AppRoute.AOIDE_PLAYLISTS}
@@ -112,7 +118,7 @@ const AoideSidebarRow = ({
 }: {
     count?: number;
     cover?: CoverSource & { firstTrack?: CoverTrack | null };
-    icon?: 'mediaShuffle' | 'playlist' | 'search';
+    icon?: 'download' | 'mediaShuffle' | 'playlist' | 'search';
     isActive: boolean;
     label: string;
     to: string;

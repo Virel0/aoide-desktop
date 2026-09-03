@@ -1,5 +1,6 @@
 export enum AppRoute {
     ACTION_REQUIRED = '/action-required',
+    AOIDE_IMPORT = '/aoide/import',
     AOIDE_MIX = '/aoide/mix',
     AOIDE_PLAYLISTS = '/aoide/playlists',
     AOIDE_PLAYLISTS_DETAIL = '/aoide/playlists/:playlistId',

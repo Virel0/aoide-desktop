@@ -40,6 +40,30 @@
             "subtitle": "Local playlists, synced with your other Aoide devices",
             "title": "Aoide"
         },
+        "import": {
+            "chooseCsv": "Choose a CSV export…",
+            "copied": "Copied {{count}} missing tracks",
+            "copyMissing": "Copy missing as text",
+            "error": {
+                "csvNoTitle": "That file has no title column. Exportify's CSV is the expected shape.",
+                "csvUnreadable": "Couldn't read that file.",
+                "network": "Couldn't reach Spotify: {{detail}}",
+                "notALink": "That doesn't look like a Spotify playlist link.",
+                "pageChanged": "Spotify has changed its page and the playlist couldn't be read. A CSV export still works.",
+                "unavailable": "Spotify didn't share that playlist. It may be private."
+            },
+            "found": "Found on your server: {{found}} of {{total}}",
+            "foundHeading": "Found ({{count}})",
+            "hint": "A link reads the playlist's first 100 tracks straight from Spotify — no account needed. For a longer playlist, export it to CSV with a tool like Exportify and choose the file.",
+            "lookUp": "Look up",
+            "matching": "Checking your server… {{done}} of {{total}}",
+            "missingHeading": "Missing ({{count}})",
+            "placeholder": "Paste a Spotify playlist link",
+            "save": "Save {{count}} as a playlist",
+            "saved": "“{{name}}” now holds {{count}} tracks.",
+            "title": "Import a playlist",
+            "truncated": "Spotify only shares the first 100 tracks through a link. Export the playlist to CSV for all of it."
+        },
         "mix": {
             "discard": "Discard",
             "make": "Make a mix",
@@ -87,6 +111,7 @@
         },
         "sidebar": {
             "all": "All playlists",
+            "import": "Import a playlist",
             "mix": "Mixes",
             "search": "Search",
             "title": "Aoide"

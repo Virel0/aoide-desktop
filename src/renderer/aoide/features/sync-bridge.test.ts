@@ -39,6 +39,7 @@ describe('the op log bridge', () => {
     const main = [
         read('../../../main/features/aoide/index.ts'),
         read('../../../main/features/aoide/smart-search.ts'),
+        read('../../../main/features/aoide/playlist-import.ts'),
     ].join('\n');
     const engine = read('../sync/sync-engine.ts');
 
