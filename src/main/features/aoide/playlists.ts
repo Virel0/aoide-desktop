@@ -26,6 +26,9 @@ import { positionBetween, positionsAfter } from '/@/shared/aoide/fractional-inde
  * the whole thing back. That looks wasteful and is load-bearing — see `update`.
  */
 
+/** What a stand-in cover is built from: the album's picture if known, else the track's. */
+export type CoverTrack = Pick<PlaylistTrack, 'albumId' | 'jellyfinId'>;
+
 export interface CreatePlaylistOptions {
     folderId?: null | string;
     notes?: null | string;
@@ -57,6 +60,13 @@ export interface MoveTarget {
 /** A playlist as a list screen needs it: the row, plus what it costs to count. */
 export interface PlaylistSummary {
     artworkItemId: null | string;
+    /**
+     * The first live entry, for a cover when the playlist has none of its own.
+     * Read in the one summary query rather than by a second call per card: a
+     * grid of forty playlists must not cost forty round trips to find out
+     * which ones need a stand-in picture.
+     */
+    firstTrack: CoverTrack | null;
     folderId: null | string;
     id: string;
     imageHash: null | string;
@@ -465,6 +475,17 @@ export class Playlists {
         return this.update(playlistId, { name });
     }
 
+    /**
+     * Name a Jellyfin item whose picture this playlist wears.
+     *
+     * Artwork and nothing else. `sourceJellyfinId` is provenance — the key a
+     * re-import dedupes on — and this method cannot reach it, so a cover
+     * chosen by a guess can never masquerade as where the playlist came from.
+     */
+    setArtwork(playlistId: string, artworkItemId: null | string): PlaylistSummary {
+        return this.update(playlistId, { artworkItemId });
+    }
+
     setNotes(playlistId: string, notes: null | string): PlaylistSummary {
         return this.update(playlistId, { notes });
     }
@@ -675,7 +696,14 @@ const SUMMARY_QUERY = `
            p.sourceJellyfinId AS sourceJellyfinId,
            p.artworkItemId AS artworkItemId,
            p.updatedAt AS updatedAt,
-           COUNT(i.id) AS trackCount
+           COUNT(i.id) AS trackCount,
+           (SELECT f.jellyfinId FROM playlist_items f
+             WHERE f.playlistId = p.id AND f.deleted = 0
+             ORDER BY f.position, f.id LIMIT 1) AS firstJellyfinId,
+           (SELECT t.albumId FROM playlist_items f
+             LEFT JOIN tracks t ON t.jellyfinId = f.jellyfinId
+             WHERE f.playlistId = p.id AND f.deleted = 0
+             ORDER BY f.position, f.id LIMIT 1) AS firstAlbumId
     FROM playlists p
     LEFT JOIN playlist_items i ON i.playlistId = p.id AND i.deleted = 0
 `;
@@ -706,6 +734,8 @@ type ItemRow = {
 
 type SummaryRow = {
     artworkItemId: null | string;
+    firstAlbumId: null | string;
+    firstJellyfinId: null | string;
     folderId: null | string;
     id: string;
     imageHash: null | string;
@@ -803,6 +833,10 @@ const normaliseForKey = (text: string): string => {
 
 const toSummary = (row: SummaryRow): PlaylistSummary => ({
     artworkItemId: row.artworkItemId,
+    firstTrack:
+        row.firstJellyfinId === null
+            ? null
+            : { albumId: row.firstAlbumId, jellyfinId: row.firstJellyfinId },
     folderId: row.folderId,
     id: row.id,
     imageHash: row.imageHash,

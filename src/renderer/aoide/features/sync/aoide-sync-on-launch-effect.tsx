@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 
+import { useCoverRepair } from '/@/renderer/aoide/features/playlists/use-cover-repair';
 import { isFocusSyncDue } from '/@/renderer/aoide/features/sync/sync-schedule';
 import { useAoideSync } from '/@/renderer/aoide/features/sync/use-aoide-sync';
 import { queryKeys } from '/@/renderer/api/query-keys';
@@ -25,6 +26,7 @@ import { logger } from '/@/renderer/utils/logger';
  */
 export const AoideSyncOnLaunchEffect = () => {
     const { canPushLocalEdits, sync } = useAoideSync();
+    const { repairOnce } = useCoverRepair();
     const queryClient = useQueryClient();
     const serverId = useCurrentServerId();
 
@@ -63,6 +65,17 @@ export const AoideSyncOnLaunchEffect = () => {
                     queryKey: queryKeys.playlists.list(serverId),
                 });
             }
+
+            // The one-time cover repair, after the first sync that worked —
+            // that is when the playlists the phone imported are all here to
+            // be looked at. Its own catch, because a Jellyfin that will not
+            // list its playlists is not a sync failure.
+            try {
+                const repaired = await repairOnce();
+                if (repaired > 0) logger.info(`Aoide repaired ${repaired} playlist covers`);
+            } catch (error) {
+                logger.warn('Aoide cover repair failed', { error });
+            }
         };
 
         void run('launch');
@@ -87,7 +100,7 @@ export const AoideSyncOnLaunchEffect = () => {
             window.removeEventListener('focus', onFocus);
             document.removeEventListener('visibilitychange', onVisibilityChange);
         };
-    }, [canPushLocalEdits, queryClient, serverId, sync]);
+    }, [canPushLocalEdits, queryClient, repairOnce, serverId, sync]);
 
     return null;
 };

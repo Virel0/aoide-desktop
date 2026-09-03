@@ -369,6 +369,77 @@ describe('renaming', () => {
     });
 });
 
+describe('artwork', () => {
+    it('names a Jellyfin item to wear, and records the op that carries it', () => {
+        const list = playlists.create('Driving');
+        store.markSynced(store.pendingOps().map((op) => op.opId));
+
+        expect(playlists.setArtwork(list.id, 'jf-item-1').artworkItemId).toBe('jf-item-1');
+        expect(playlists.get(list.id)?.artworkItemId).toBe('jf-item-1');
+
+        // Through the store, so the phone gets the cover on its next sync. A
+        // row that changed without an op silently never syncs.
+        const ops = store.pendingOps();
+        expect(ops).toHaveLength(1);
+        expect(ops[0].entity).toBe('playlists');
+        expect(ops[0].payload.artworkItemId).toBe('jf-item-1');
+    });
+
+    it('clears it again', () => {
+        const list = playlists.create('Driving');
+        playlists.setArtwork(list.id, 'jf-item-1');
+        expect(playlists.setArtwork(list.id, null).artworkItemId).toBeNull();
+    });
+
+    // Artwork is a picture. `sourceJellyfinId` is the key a re-import dedupes
+    // on, and a cover chosen by a name match must never be able to reach it.
+    it('never touches sourceJellyfinId', () => {
+        const list = playlists.create('Driving');
+        const after = playlists.setArtwork(list.id, 'jf-item-1');
+
+        expect(after.sourceJellyfinId).toBeNull();
+        expect(rawPlaylists()[0].sourceJellyfinId).toBeNull();
+    });
+});
+
+describe('the first track, for a stand-in cover', () => {
+    it('is null for an empty playlist', () => {
+        const list = playlists.create('Driving');
+        expect(playlists.get(list.id)?.firstTrack).toBeNull();
+        expect(playlists.list()[0].firstTrack).toBeNull();
+    });
+
+    it('is the entry in first position, with its album if the cache knows one', () => {
+        const list = playlists.create('Driving');
+        playlists.addTracks(list.id, [
+            track(1, { albumId: 'album-1' }),
+            track(2, { albumId: 'album-2' }),
+        ]);
+
+        expect(playlists.list()[0].firstTrack).toEqual({ albumId: 'album-1', jellyfinId: 'jf-1' });
+        expect(playlists.get(list.id)?.firstTrack).toEqual({
+            albumId: 'album-1',
+            jellyfinId: 'jf-1',
+        });
+    });
+
+    it('follows the order, not the insertion', () => {
+        const list = playlists.create('Driving');
+        const added = playlists.addTracks(list.id, [track(1), track(2)]);
+        playlists.moveItem(added[1].id, { afterId: null, beforeId: added[0].id });
+
+        expect(playlists.get(list.id)?.firstTrack?.jellyfinId).toBe('jf-2');
+    });
+
+    it('skips an entry that has been removed', () => {
+        const list = playlists.create('Driving');
+        const added = playlists.addTracks(list.id, [track(1), track(2)]);
+        playlists.removeItem(added[0].id);
+
+        expect(playlists.get(list.id)?.firstTrack?.jellyfinId).toBe('jf-2');
+    });
+});
+
 describe('importing from Jellyfin', () => {
     it('matches a re-import on the source id, never on the name', () => {
         // The sidecar's bug: two playlists each became two after a re-import.

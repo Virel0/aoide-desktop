@@ -100,6 +100,10 @@ export const aoide = {
         rename: (playlistId: string, name: string): Promise<PlaylistSummary> =>
             ipcRenderer.invoke('aoide:playlists-rename', playlistId, name),
 
+        /** Artwork only — never provenance. See `Playlists.setArtwork`. */
+        setArtwork: (playlistId: string, artworkItemId: null | string): Promise<PlaylistSummary> =>
+            ipcRenderer.invoke('aoide:playlists-set-artwork', playlistId, artworkItemId),
+
         setNotes: (playlistId: string, notes: null | string): Promise<PlaylistSummary> =>
             ipcRenderer.invoke('aoide:playlists-set-notes', playlistId, notes),
 

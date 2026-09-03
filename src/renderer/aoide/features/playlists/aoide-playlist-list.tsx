@@ -11,7 +11,8 @@ import {
     openEditAoidePlaylistModal,
 } from '/@/renderer/aoide/features/playlists/aoide-playlist-modals';
 import { useAoidePlaylistList } from '/@/renderer/aoide/features/playlists/aoide-playlists-api';
-import { usePlaylistCover } from '/@/renderer/aoide/features/playlists/use-playlist-cover';
+import { HEADER_ARTWORK_WIDTH } from '/@/renderer/aoide/features/playlists/track-artwork';
+import { usePlaylistCoverOrFirstTrack } from '/@/renderer/aoide/features/playlists/use-playlist-cover';
 import { AoideSyncPanel } from '/@/renderer/aoide/features/sync/aoide-sync-panel';
 import { AppRoute } from '/@/renderer/router/routes';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
@@ -104,7 +105,7 @@ export const AoidePlaylistList = () => {
  */
 const AoidePlaylistCard = ({ playlist }: { playlist: PlaylistSummary }) => {
     const { t } = useTranslation();
-    const cover = usePlaylistCover(playlist);
+    const cover = usePlaylistCoverOrFirstTrack(playlist, HEADER_ARTWORK_WIDTH);
 
     return (
         <Link

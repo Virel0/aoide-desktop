@@ -23,10 +23,11 @@ import {
 } from '/@/renderer/aoide/features/playlists/aoide-playlists-api';
 import { resolvePlaylistPlayback } from '/@/renderer/aoide/features/playlists/playlist-playback';
 import {
+    HEADER_ARTWORK_WIDTH,
     ROW_ARTWORK_WIDTH,
     trackArtworkUrl,
 } from '/@/renderer/aoide/features/playlists/track-artwork';
-import { usePlaylistCover } from '/@/renderer/aoide/features/playlists/use-playlist-cover';
+import { usePlaylistCoverOrFirstTrack } from '/@/renderer/aoide/features/playlists/use-playlist-cover';
 import { useResolveUnknownTracks } from '/@/renderer/aoide/features/playlists/use-resolve-unknown-tracks';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { getSongById } from '/@/renderer/features/player/utils';
@@ -276,7 +277,7 @@ const AoidePlaylistHero = ({
 }) => {
     const { t } = useTranslation();
 
-    const cover = usePlaylistCover(playlist);
+    const cover = usePlaylistCoverOrFirstTrack(playlist, HEADER_ARTWORK_WIDTH);
 
     return (
         <div className={styles.hero}>

@@ -325,7 +325,7 @@ describe('sync happens without a button', () => {
 
     it('waits for a server that can push, not merely for mount', () => {
         expect(effect).toMatch(/if \(!canPushLocalEdits\) return;/);
-        expect(effect).toContain('[canPushLocalEdits, queryClient, serverId, sync]');
+        expect(effect).toContain('[canPushLocalEdits, queryClient, repairOnce, serverId, sync]');
     });
 
     it('listens for the window coming back, both ways it can', () => {
@@ -412,5 +412,74 @@ describe('"Add to Aoide playlist" is offered wherever "Add to playlist" is', () 
     it('grows a search box past a handful of playlists, like its sibling', () => {
         expect(action).toContain('playlists.length > PLAYLIST_SEARCH_THRESHOLD');
         expect(action).toContain('stickyContent={searchInput}');
+    });
+});
+
+describe('the cover repair', () => {
+    const effect = sourceOf('sync/aoide-sync-on-launch-effect.tsx');
+    const panel = sourceOf('sync/aoide-sync-panel.tsx');
+    const hook = sourceOf('playlists/use-cover-repair.ts');
+
+    // The sync is what brings in the playlists the phone imported, and they
+    // are the only ones the repair is for.
+    it('runs once, after the first sync that worked', () => {
+        expect(effect).toContain('await repairOnce()');
+        // After the error return, so a failed sync never triggers it.
+        expect(effect.indexOf("if (outcome.phase === 'error')")).toBeLessThan(
+            effect.indexOf('await repairOnce()'),
+        );
+        expect(hook).toContain('if (repairedThisLaunch) return 0;');
+    });
+
+    it('can be asked for from the sync panel', () => {
+        expect(panel).toContain('aoide.sync.repairCovers');
+        expect(panel).toMatch(/await repair\(\)/);
+    });
+
+    // Every write goes through the bridge so an op is logged and the phone
+    // gets the cover too. A SQL statement here would fix this machine only.
+    it('writes through setArtwork and nothing else', () => {
+        expect(hook).toContain('aoidePlaylists().setArtwork(step.playlistId, step.artworkItemId)');
+        expect(hook).not.toContain('sourceJellyfinId');
+    });
+
+    it('is published by preload and handled by main', () => {
+        const preload = readFileSync(
+            join(import.meta.dirname, '../../../preload/aoide.ts'),
+            'utf8',
+        );
+        const main = readFileSync(
+            join(import.meta.dirname, '../../../main/features/aoide/index.ts'),
+            'utf8',
+        );
+
+        expect(preload).toContain("ipcRenderer.invoke('aoide:playlists-set-artwork'");
+        expect(main).toContain("'aoide:playlists-set-artwork'");
+    });
+});
+
+describe('a playlist with no cover shows its first track’s', () => {
+    // Every imported playlist drew a grey icon, which reads as broken rather
+    // than as "no cover".
+    it('on the detail hero', () => {
+        const detail = sourceOf('playlists/aoide-playlist-detail.tsx');
+        expect(detail).toContain('usePlaylistCoverOrFirstTrack(playlist, HEADER_ARTWORK_WIDTH)');
+    });
+
+    it('on the list card', () => {
+        const list = sourceOf('playlists/aoide-playlist-list.tsx');
+        expect(list).toContain('usePlaylistCoverOrFirstTrack(playlist, HEADER_ARTWORK_WIDTH)');
+    });
+
+    it('in the sidebar row', () => {
+        const sidebar = sourceOf('sidebar/aoide-sidebar-list.tsx');
+        expect(sidebar).toContain('usePlaylistCoverOrFirstTrack(');
+    });
+
+    it('prefers a real cover and falls back only when there is none', () => {
+        const hook = sourceOf('playlists/use-playlist-cover.ts');
+        expect(hook).toMatch(
+            /if \(cover\) return cover;\s*\n\s*if \(!playlist\.firstTrack\) return null;/,
+        );
     });
 });

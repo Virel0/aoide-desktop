@@ -1,6 +1,9 @@
+import type { CoverTrack } from '/@/main/features/aoide/playlists';
+
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 
+import { trackArtworkUrl } from '/@/renderer/aoide/features/playlists/track-artwork';
 import { isAoideAvailable } from '/@/renderer/aoide/features/shared/aoide-bridge';
 import { useSidecarTransport } from '/@/renderer/aoide/features/sync/use-sidecar-transport';
 import { useCurrentServer } from '/@/renderer/store';
@@ -105,3 +108,26 @@ export interface CoverSource {
 
 /** Big enough for the detail hero; a thumbnail scales down without a second fetch. */
 const COVER_WIDTH = 600;
+
+/**
+ * A cover, or failing that the first track's album art.
+ *
+ * Every playlist the phone imported arrived with no cover at all — no blob, no
+ * chosen item, no source — and drew a grey icon, which reads as broken rather
+ * than as "no cover". The stand-in is the same picture the first row of the
+ * playlist already shows, at whatever size the caller draws; Jellyfin serves
+ * it and the browser caches it. Nothing is written: the repair that *fixes*
+ * the cover is `use-cover-repair.ts`, and this is what is drawn until it has.
+ */
+export const usePlaylistCoverOrFirstTrack = (
+    playlist: CoverSource & { firstTrack?: CoverTrack | null },
+    width: number,
+): null | string => {
+    const cover = usePlaylistCover(playlist);
+    const server = useCurrentServer();
+
+    if (cover) return cover;
+    if (!playlist.firstTrack) return null;
+
+    return trackArtworkUrl(playlist.firstTrack, server, width);
+};

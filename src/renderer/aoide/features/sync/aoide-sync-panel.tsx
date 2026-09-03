@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 
 import styles from './aoide-sync-panel.module.css';
 
+import { notifyAoideError } from '/@/renderer/aoide/features/playlists/aoide-playlists-api';
+import { useCoverRepair } from '/@/renderer/aoide/features/playlists/use-cover-repair';
 import { useHandoff, useQueueBroadcast } from '/@/renderer/aoide/features/queue/use-queue-handoff';
 import { syncOutcome, syncReportEntries } from '/@/renderer/aoide/features/sync/sync-report';
 import { useAoideSync } from '/@/renderer/aoide/features/sync/use-aoide-sync';
@@ -15,6 +17,7 @@ import { Group } from '/@/shared/components/group/group';
 import { Icon } from '/@/shared/components/icon/icon';
 import { Stack } from '/@/shared/components/stack/stack';
 import { Text } from '/@/shared/components/text/text';
+import { toast } from '/@/shared/components/toast/toast';
 import { Play } from '/@/shared/types/types';
 
 /**
@@ -35,6 +38,7 @@ import { Play } from '/@/shared/types/types';
 export const AoideSyncPanel = () => {
     const { t } = useTranslation();
     const { canPushLocalEdits, hasServer, state, sync } = useAoideSync();
+    const { repair } = useCoverRepair();
 
     const outcome = syncOutcome(state);
     const handoff = useHandoff();
@@ -64,6 +68,23 @@ export const AoideSyncPanel = () => {
         const start = songs[Math.min(handoff.position, songs.length - 1)];
         player.addToQueueByData(songs, Play.NOW, start?.id);
     };
+
+    // The same repair the app runs once after its first sync, on demand: for
+    // a playlist imported after that, or a Jellyfin playlist renamed to match.
+    const repairCovers = async () => {
+        try {
+            const repaired = await repair();
+            toast.success({
+                message:
+                    repaired > 0
+                        ? t('aoide.sync.coversRepaired', { count: repaired })
+                        : t('aoide.sync.coversRepairedNone'),
+            });
+        } catch (error) {
+            notifyAoideError(error, t('aoide.sync.repairCovers'));
+        }
+    };
+
     const isRunning = outcome === 'running';
     const result = state.result;
     const finishedAt = state.finishedAt ? new Date(state.finishedAt).toLocaleTimeString() : '';
@@ -107,15 +128,24 @@ export const AoideSyncPanel = () => {
                         </Text>
                     </Stack>
                 </div>
-                <Button
-                    disabled={!hasServer}
-                    leftSection={<Icon icon="refresh" />}
-                    loading={isRunning}
-                    onClick={() => void sync()}
-                    variant="filled"
-                >
-                    {t('aoide.sync.now')}
-                </Button>
+                <Group gap="sm">
+                    <Button
+                        disabled={!hasServer || !canPushLocalEdits}
+                        onClick={() => void repairCovers()}
+                        variant="default"
+                    >
+                        {t('aoide.sync.repairCovers')}
+                    </Button>
+                    <Button
+                        disabled={!hasServer}
+                        leftSection={<Icon icon="refresh" />}
+                        loading={isRunning}
+                        onClick={() => void sync()}
+                        variant="filled"
+                    >
+                        {t('aoide.sync.now')}
+                    </Button>
+                </Group>
             </div>
 
             {!hasServer && <Text className={styles.warning}>{t('aoide.sync.noServer')}</Text>}

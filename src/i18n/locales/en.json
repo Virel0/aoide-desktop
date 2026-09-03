@@ -94,6 +94,9 @@
         "sync": {
             "blocked_one": "{{count}} change cannot be sent: a playlist's share was revoked",
             "blocked_other": "{{count}} changes cannot be sent: a playlist's share was revoked",
+            "coversRepaired_one": "{{count}} playlist now wears its Jellyfin cover",
+            "coversRepaired_other": "{{count}} playlists now wear their Jellyfin covers",
+            "coversRepairedNone": "No covers to repair — every coverless playlist either has no Jellyfin playlist with exactly that name, or has more than one",
             "heldBack_one": "{{count}} change waiting on a cover upload",
             "heldBack_other": "{{count}} changes waiting on a cover upload",
             "idle": "Not synced yet",
@@ -105,6 +108,7 @@
             "noServer": "Sign in to a server first — the sidecar lives on the same host.",
             "noStoreBridge": "This build has no local playlist store, so \"Sync now\" only checks that the server answers. Use the desktop app to sync edits.",
             "now": "Sync now",
+            "repairCovers": "Repair covers",
             "quarantined_one": "{{count}} change was refused and will not be retried",
             "quarantined_other": "{{count}} changes were refused and will not be retried",
             "running": "Syncing…",

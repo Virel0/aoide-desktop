@@ -1,3 +1,5 @@
+import type { CoverTrack } from '/@/main/features/aoide/playlists';
+
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { generatePath, Link, useLocation } from 'react-router';
@@ -6,9 +8,10 @@ import styles from './aoide-sidebar-list.module.css';
 
 import { openCreateAoidePlaylistModal } from '/@/renderer/aoide/features/playlists/aoide-playlist-modals';
 import { useAoidePlaylistList } from '/@/renderer/aoide/features/playlists/aoide-playlists-api';
+import { ROW_ARTWORK_WIDTH } from '/@/renderer/aoide/features/playlists/track-artwork';
 import {
     CoverSource,
-    usePlaylistCover,
+    usePlaylistCoverOrFirstTrack,
 } from '/@/renderer/aoide/features/playlists/use-playlist-cover';
 import { isAoideAvailable } from '/@/renderer/aoide/features/shared/aoide-bridge';
 import { AppRoute } from '/@/renderer/router/routes';
@@ -108,13 +111,13 @@ const AoideSidebarRow = ({
     to,
 }: {
     count?: number;
-    cover?: CoverSource;
+    cover?: CoverSource & { firstTrack?: CoverTrack | null };
     icon?: 'mediaShuffle' | 'playlist' | 'search';
     isActive: boolean;
     label: string;
     to: string;
 }) => {
-    const coverUrl = usePlaylistCover(cover ?? EMPTY_COVER);
+    const coverUrl = usePlaylistCoverOrFirstTrack(cover ?? EMPTY_COVER, ROW_ARTWORK_WIDTH);
 
     return (
         <div className={clsx(styles.row, { [styles.rowActive]: isActive })}>

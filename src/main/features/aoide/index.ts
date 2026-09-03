@@ -142,6 +142,12 @@ handle('aoide:playlists-set-notes', ({ playlists }, playlistId: string, notes: n
     playlists.setNotes(playlistId, notes),
 );
 
+handle(
+    'aoide:playlists-set-artwork',
+    ({ playlists }, playlistId: string, artworkItemId: null | string) =>
+        playlists.setArtwork(playlistId, artworkItemId),
+);
+
 handle('aoide:playlists-remove', ({ playlists }, playlistId: string) => {
     playlists.remove(playlistId);
 });
