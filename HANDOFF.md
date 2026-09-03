@@ -174,11 +174,53 @@ Still open: the play/skip crossover, the Feishin-style playlist table, Discord.
 The iOS half of the cover fix — `importFromServer` recording `sourceJellyfinId`
 — is unchanged by this and still the real fix.
 
+### Also on 2026-09-03: Spotify playlist import, both apps
+
+Gabe asked for "someway for someone with a Spotify playlist to import their playlist
+and see what is missing from the server". Research first (see the reasoning in
+`src/shared/aoide/playlist-import.ts`): Spotify's Web API stopped returning the
+contents of playlists a developer does not own in February 2026, and Extended Quota
+Mode needs a registered business — so **no API key is asked for, and the OpenRouter
+pattern does not apply.** Two routes remain and both are built:
+
+- **A pasted link.** Spotify's *embed* page (`open.spotify.com/embed/playlist/{id}`)
+  still ships the first **100** tracks in a `__NEXT_DATA__` script, no account needed.
+  Title, comma-joined artists, duration. Undocumented, so the parser fails loudly
+  (`pageChanged`) rather than returning an empty playlist.
+- **A CSV export** (Exportify's headers, with aliases for other tools) carries the whole
+  playlist plus album and ISRC.
+
+**Matching is a written specification shared by both apps** — normalisation, noise
+words, scores, thresholds — in `TrackMatcher.swift` (JellyfinKit) and
+`src/shared/aoide/playlist-import.ts`, each checked against **the same table of cases**
+(`ImportTests.swift`, `playlist-import.test.ts`). Change a row in one, change it in the
+other. Desktop: `/aoide/import`, sidebar row "Import a playlist", main-process fetch in
+`playlist-import.ts` with an injectable page loader. iOS: "Import from Spotify…" in the
+Playlists screen's menu (`Aoide/Features/Import/`). Both save the found half as an Aoide
+playlist and copy the missing half as text.
+
+### Also on 2026-09-03: the iOS side of the feedback list
+
+All on `main`, pushed, installed on the phone (`f5acdaf`):
+
+- **Secrets out of the tree** (`7cbc225`): Team ID and default server live in the
+  gitignored `Config/Local.xcconfig`. History still holds them — the rewrite script is at
+  `~/aoide-scrub-history.sh` on the Mac and **Gabe has to run it** before going public.
+- **Streams that fail to load retry with backoff** instead of being dropped
+  (`LoadRetryPolicy`); the current track buffers ten minutes ahead.
+- **Library refreshes on return to foreground** if older than five minutes, in place.
+- **Downloads screen** lists playlists → albums → loose songs (`DownloadedCollection`);
+  local playlists can be downloaded whole.
+- **Playlists screen preference**: both / mine / server (`aoide.playlistSurface`, the
+  same three values as the desktop's `general.aoidePlaylistSurface`).
+- **Gapless:** FLAC downloads are converted to Apple Lossless on the phone, one at a
+  time, proven sample-exact by test. Streaming still plays FLAC and keeps the ~57 ms gap.
+
 ## The work order, agreed
 
 In this order. Each is self-contained; nothing here is blocked on anything else.
 
-### 1. Playlist covers  *(done on the desktop, 2026-09-03; iOS half still open)*
+### 1. Playlist covers  *(done, 2026-09-03)*
 
 **Symptom:** every Aoide playlist draws a placeholder. **Cause, measured on the real
 database rather than guessed:**
@@ -205,8 +247,10 @@ Two pieces:
   `sourceJellyfinId` — a name match cannot prove provenance, and writing provenance on
   a guess would corrupt the key that deduping depends on. Runs once per launch after
   the first successful sync, and from the sync panel.
-- **The real fix, iOS:** `LocalPlaylistStore.importFromServer` must record
-  `sourceJellyfinId` so this cannot recur.
+- **The real fix, iOS — already in place.** Checked on 2026-09-03:
+  `LocalPlaylistStore.importFromServer` calls `store.importPlaylist(named:from:tracks:at:)`
+  with the server playlist's id, which is `sourceJellyfinId`. The NULL rows came from an
+  older build; the desktop repair covers them and new imports carry provenance.
 
 ### 2. The play/skip crossover above twenty minutes
 
