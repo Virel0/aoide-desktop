@@ -5,6 +5,11 @@ import { useTranslation } from 'react-i18next';
 
 import styles from './sidebar.module.css';
 
+import {
+    showsAoidePlaylists,
+    showsJellyfinPlaylists,
+} from '/@/renderer/aoide/features/settings/playlist-surface';
+import { useAoidePlaylistSurface } from '/@/renderer/aoide/features/settings/use-playlist-surface';
 import { AoideSidebarList } from '/@/renderer/aoide/features/sidebar/aoide-sidebar-list';
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
 import { ContextMenuController } from '/@/renderer/features/context-menu/context-menu-controller';
@@ -22,6 +27,7 @@ import {
     SidebarSharedPlaylistList,
     useSidebarPlaylistAddDragMonitor,
 } from '/@/renderer/features/sidebar/components/sidebar-playlist-list';
+import { AppRoute } from '/@/renderer/router/routes';
 import {
     useAppStore,
     useAppStoreActions,
@@ -63,6 +69,12 @@ export const Sidebar = () => {
     const { t } = useTranslation();
 
     const sidebarPlaylistList = useSidebarPlaylistList();
+
+    // Aoide's preference for which playlists the sidebar carries. Jellyfin's
+    // own toggle above still applies on top; this can only hide, never show.
+    const playlistSurface = useAoidePlaylistSurface();
+    const showAoidePlaylists = showsAoidePlaylists(playlistSurface);
+    const showJellyfinPlaylists = showsJellyfinPlaylists(playlistSurface);
 
     const translatedSidebarItemMap = useMemo(
         () => ({
@@ -106,8 +118,15 @@ export const Sidebar = () => {
 
     /* Library accordion: only items with a route (exclude Collections section) */
     const libraryItemsWithRoute = useMemo(
-        () => sidebarItemsWithRoute.filter((item) => item.id !== 'Collections' && item.route),
-        [sidebarItemsWithRoute],
+        () =>
+            sidebarItemsWithRoute.filter(
+                (item) =>
+                    item.id !== 'Collections' &&
+                    item.route &&
+                    // The route stays; only the entry goes. Hidden is not gone.
+                    (showJellyfinPlaylists || item.route !== AppRoute.PLAYLISTS),
+            ),
+        [showJellyfinPlaylists, sidebarItemsWithRoute],
     );
 
     const isCustomWindowBar =
@@ -154,8 +173,8 @@ export const Sidebar = () => {
                         </Accordion.Panel>
                     </Accordion.Item>
                     <SidebarCollectionList />
-                    <AoideSidebarList />
-                    {sidebarPlaylistList && <SidebarPlaylistSection />}
+                    {showAoidePlaylists && <AoideSidebarList />}
+                    {sidebarPlaylistList && showJellyfinPlaylists && <SidebarPlaylistSection />}
                 </Accordion>
             </ScrollArea>
             <AnimatePresence initial={false} mode="popLayout">

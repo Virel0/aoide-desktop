@@ -78,7 +78,12 @@
             "keySaved": "OpenRouter key saved",
             "keyStored": "A key is saved — type a new one to replace it",
             "model": "Model",
-            "model_description": "Any OpenRouter model id. The default is small and cheap on purpose: the job is turning a phrase into filters, not choosing music."
+            "model_description": "Any OpenRouter model id. The default is small and cheap on purpose: the job is turning a phrase into filters, not choosing music.",
+            "playlistSurface": "Playlists in the sidebar",
+            "playlistSurface_description": "Which playlists the sidebar shows. Whichever kind is hidden is still there — it just is not listed.",
+            "playlistSurface_option_aoide": "Aoide only",
+            "playlistSurface_option_both": "Both",
+            "playlistSurface_option_jellyfin": "Jellyfin only"
         },
         "sidebar": {
             "all": "All playlists",

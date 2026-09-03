@@ -12,6 +12,10 @@ import { createWithEqualityFn } from 'zustand/traditional';
 
 import i18n from '/@/i18n/i18n';
 import {
+    AoidePlaylistSurfaceSchema,
+    DEFAULT_AOIDE_PLAYLIST_SURFACE,
+} from '/@/renderer/aoide/features/settings/playlist-surface';
+import {
     ALBUM_ARTIST_TABLE_COLUMNS,
     ALBUM_TABLE_COLUMNS,
     GENRE_TABLE_COLUMNS,
@@ -509,6 +513,7 @@ export const GeneralSettingsSchema = z.object({
     albumGroupItems: z.array(SortableItemSchema(AlbumGroupItemSchema)),
     albumGroupShowFavoriteRating: z.boolean(),
     albumGroupVerticalLayout: z.boolean(),
+    aoidePlaylistSurface: AoidePlaylistSurfaceSchema,
     artistBackground: z.boolean(),
     artistBackgroundBlur: z.number(),
     artistItems: z.array(SortableItemSchema(ArtistItemSchema)),
@@ -1294,6 +1299,7 @@ const initialState: SettingsState = {
         albumGroupItems,
         albumGroupShowFavoriteRating: true,
         albumGroupVerticalLayout: true,
+        aoidePlaylistSurface: DEFAULT_AOIDE_PLAYLIST_SURFACE,
         artistBackground: true,
         artistBackgroundBlur: 3,
         artistItems,

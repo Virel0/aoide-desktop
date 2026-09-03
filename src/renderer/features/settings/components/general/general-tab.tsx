@@ -1,6 +1,7 @@
 import { memo, useMemo } from 'react';
 import { Fragment } from 'react/jsx-runtime';
 
+import { PlaylistSurfaceSettings } from '/@/renderer/aoide/features/settings/playlist-surface-settings';
 import { SmartSearchSettings } from '/@/renderer/aoide/features/settings/smart-search-settings';
 import { ApplicationSettings } from '/@/renderer/features/settings/components/general/application-settings';
 import { ControlSettings } from '/@/renderer/features/settings/components/general/control-settings';
@@ -32,6 +33,7 @@ export const GeneralTab = memo(() => {
             // Aoide's own, kept in a file of its own so an upstream merge does not
             // have to reconcile it.
             { component: SmartSearchSettings, key: 'aoideSmartSearch' },
+            { component: PlaylistSurfaceSettings, key: 'aoidePlaylistSurface' },
         ];
 
         if (supportsSmartPlaylists) {
