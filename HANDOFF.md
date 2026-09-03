@@ -147,11 +147,38 @@ Build order and the reasoning behind each step: `docs/aoide-integration.md`. The
 two — the sidecar client and a local store with an op log — are the bulk of the work.
 Everything after that is screens.
 
+## What changed on 2026-09-03
+
+Four things, four commits, all on `development`, none pushed.
+
+- **Sync runs by itself.** Once when a signed-in server with an op log becomes
+  usable, and again whenever the window regains focus or becomes visible, at
+  most once a minute. It never toasts; a sidecar that is down is logged. After a
+  run that applied remote ops, Feishin's own Jellyfin playlist list is
+  invalidated, since the sidecar's export can create playlists on the server.
+  `useAoideSync().sync()` now resolves to the state it set.
+- **"Add to Aoide playlist" is in every menu** the Jellyfin one is in. It takes
+  the sibling's `items` + `itemType` and resolves them to songs through Feishin's
+  own lookups when a playlist is *chosen*, never when the menu opens. Past eight
+  playlists it grows a search box.
+- **One preference for which playlists the sidebar shows** — `both` (default,
+  nothing changes for an existing install), `aoide`, `jellyfin`. General settings
+  tab, its own Aoide section. The hidden kind keeps its route.
+- **Covers repaired by name, conservatively.** Once per launch after the first
+  successful sync, and from a "Repair covers" button. Exactly-one name match
+  writes `artworkItemId` through a new `setArtwork` (op recorded, syncs to the
+  phone); `sourceJellyfinId` is never touched, and that is tested from both
+  ends. Until then the hero, card and sidebar draw the first track's album art.
+
+Still open: the play/skip crossover, the Feishin-style playlist table, Discord.
+The iOS half of the cover fix — `importFromServer` recording `sourceJellyfinId`
+— is unchanged by this and still the real fix.
+
 ## The work order, agreed
 
 In this order. Each is self-contained; nothing here is blocked on anything else.
 
-### 1. Playlist covers  *(in progress)*
+### 1. Playlist covers  *(done on the desktop, 2026-09-03; iOS half still open)*
 
 **Symptom:** every Aoide playlist draws a placeholder. **Cause, measured on the real
 database rather than guessed:**
@@ -171,11 +198,13 @@ so no client has anything to draw. The desktop already reads the phone's precede
 
 Two pieces:
 
-- **The repair, desktop:** match a coverless playlist to a Jellyfin playlist **by name**
-  and write `artworkItemId`, which then syncs so the phone gets the cover too. Match
-  only when *exactly one* Jellyfin playlist carries that name, and record it as
-  **artwork**, never as `sourceJellyfinId` — a name match cannot prove provenance, and
-  writing provenance on a guess would corrupt the key that deduping depends on.
+- **The repair, desktop — done.** `cover-repair.ts` matches a coverless playlist to a
+  Jellyfin playlist **by name** and writes `artworkItemId` through `setArtwork`, which
+  then syncs so the phone gets the cover too. Only when *exactly one* Jellyfin
+  playlist carries that name, and recorded as **artwork**, never as
+  `sourceJellyfinId` — a name match cannot prove provenance, and writing provenance on
+  a guess would corrupt the key that deduping depends on. Runs once per launch after
+  the first successful sync, and from the sync panel.
 - **The real fix, iOS:** `LocalPlaylistStore.importFromServer` must record
   `sourceJellyfinId` so this cannot recur.
 
@@ -223,14 +252,15 @@ step, then paste the id into Settings.
 
 ## Where this was left
 
-Both repos are pushed. Desktop `cee2765d`, iOS `44ade8e`. 511 tests on the desktop,
-typecheck, lint and build clean; iOS builds clean.
+Both repos are pushed as of `cee2765d` (desktop) and `44ade8e` (iOS). The four
+commits of 2026-09-03 sit on `development` unpushed. 580 tests on the desktop,
+typecheck and lint clean; iOS builds clean.
 
 **Working and used:** sync against the sidecar, Aoide playlists with covers from
 Jellyfin, track resolution for synced playlists, natural-language search over
 OpenRouter, mixes on both apps, shared queue between devices.
 
-### The one open bug
+### The one open bug  *(desktop half repaired 2026-09-03 — see "What changed" above)*
 
 **Playlist covers are blank, and it is not a rendering fault.** Measured on the real
 database:
@@ -249,11 +279,11 @@ precedence (`imageHash`, then `artworkItemId`, then `sourceJellyfinId` — see
 re-import**, because `sourceJellyfinId` is what deduping matches on. One cause, two
 symptoms.
 
-Proposed repair, not yet done: match a coverless playlist to a Jellyfin playlist **by
-name**, and write `artworkItemId` — which then syncs, so the phone gets the cover too.
-Conservative only: match when exactly one Jellyfin playlist carries that name, and
-record it as *artwork* rather than as provenance, since a name match cannot prove where
-a playlist came from. The real fix belongs in the phone's import, which should record
+The desktop repair is now in: a coverless playlist is matched to a Jellyfin playlist
+**by name** and `artworkItemId` is written — which then syncs, so the phone gets the
+cover too. Conservative only: exactly one Jellyfin playlist with that name, recorded as
+*artwork* rather than as provenance, since a name match cannot prove where a playlist
+came from. The real fix still belongs in the phone's import, which should record
 `sourceJellyfinId` in the first place.
 
 ### Also open
