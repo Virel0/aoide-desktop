@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router';
 
 import styles from './aoide-mix.module.css';
 
+import { rememberMix } from '/@/renderer/aoide/features/home/use-recent-contexts';
 import { useMix } from '/@/renderer/aoide/features/mix/use-mix';
 import { aoidePlaylists, isAoideAvailable } from '/@/renderer/aoide/features/shared/aoide-bridge';
 import { useGenreList } from '/@/renderer/features/genres/api/genres-api';
@@ -30,7 +32,12 @@ export const AoideMix = () => {
     const { t } = useTranslation();
     const serverId = useCurrentServerId();
     const player = usePlayer();
-    const [description, setDescription] = useState('');
+    // A tile on Home hands the description back, so a mix is one tap and one
+    // click away rather than retyped.
+    const location = useLocation();
+    const [description, setDescription] = useState<string>(
+        (location.state as null | { description?: string })?.description ?? '',
+    );
     const mix = useMix(serverId);
 
     const genres = useGenreList();
@@ -48,6 +55,7 @@ export const AoideMix = () => {
     const play = () => {
         if (mix.songs.length === 0) return;
         player.addToQueueByData(mix.songs, Play.NOW);
+        rememberMix(serverId, description);
     };
 
     const save = async () => {

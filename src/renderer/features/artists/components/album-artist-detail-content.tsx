@@ -11,6 +11,7 @@ import { createSearchParams, generatePath, Link, useLocation, useParams } from '
 
 import styles from './album-artist-detail-content.module.css';
 
+import { rememberStation } from '/@/renderer/aoide/features/home/use-recent-contexts';
 import { queryKeys } from '/@/renderer/api/query-keys';
 import { DataRow, MemoizedItemCard } from '/@/renderer/components/item-card/item-card';
 import { useDefaultItemListControls } from '/@/renderer/components/item-list/helpers/item-list-controls';
@@ -1199,6 +1200,7 @@ export const AlbumArtistDetailContent = ({
     );
 
     const mbzId = detailQuery.data?.mbz;
+    const stationName = detailQuery.data?.name ?? '';
 
     const handleArtistRadio = useCallback(async () => {
         if (!server?.id || !routeId) return;
@@ -1216,11 +1218,12 @@ export const AlbumArtistDetailContent = ({
             });
             if (artistRadioSongs && artistRadioSongs.length > 0) {
                 addToQueueByData(artistRadioSongs, Play.NOW);
+                rememberStation(server.id, 'artist', { id: routeId, name: stationName });
             }
         } catch (error) {
             console.error('Failed to load artist radio:', error);
         }
-    }, [addToQueueByData, artistRadioCount, queryClient, routeId, server.id]);
+    }, [addToQueueByData, artistRadioCount, queryClient, routeId, server.id, stationName]);
 
     // Calculate order for genres and external links (show before other sections)
     // Use a very low order number to ensure they appear first

@@ -41,6 +41,12 @@ export interface Handoff {
     deviceId: string;
     deviceName: string;
     position: number;
+    /**
+     * This device's clock when `ageSeconds` was measured. The age is only
+     * meaningful relative to that instant, so anything comparing it to local
+     * timestamps starts from here rather than from whenever it happens to render.
+     */
+    receivedAt: number;
     trackIds: string[];
 }
 
@@ -59,8 +65,8 @@ export const useHandoff = (): Handoff | null => {
     const { data } = useQuery({
         enabled: isAoideAvailable(),
         queryFn: async (): Promise<Handoff | null> => {
-            const fromServer = await fromSidecar(transport);
-            return fromServer ?? (await fromLocalRows());
+            const found = (await fromSidecar(transport)) ?? (await fromLocalRows());
+            return found ? { ...found, receivedAt: Date.now() } : null;
         },
         queryKey: ['aoide', 'handoff'],
         // Long enough not to poll, short enough that picking up the phone and
@@ -75,7 +81,7 @@ export const useHandoff = (): Handoff | null => {
 
 const fromSidecar = async (
     transport: ReturnType<typeof useSidecarTransport>,
-): Promise<Handoff | null> => {
+): Promise<null | Omit<Handoff, 'receivedAt'>> => {
     if (!transport) return null;
 
     try {
@@ -100,7 +106,7 @@ const fromSidecar = async (
     }
 };
 
-const fromLocalRows = async (): Promise<Handoff | null> => {
+const fromLocalRows = async (): Promise<null | Omit<Handoff, 'receivedAt'>> => {
     const rows = await window.api.aoide.queue.others();
     const row = rows.find((candidate) => {
         const ids = parseTrackIds(candidate.trackIds);

@@ -1,0 +1,83 @@
+/*
+ * Six tiles across the top of Home. Achromatic chrome; the accent appears
+ * only on the play mark, which is the one thing a tile does.
+ */
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--theme-spacing-md);
+}
+
+.tile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--theme-spacing-sm);
+    min-width: 0;
+    padding: 0;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    background: none;
+    border: 0;
+}
+
+.artwork {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: var(--theme-colors-surface);
+    border-radius: var(--theme-radius-md);
+    box-shadow: 0 10px 20px rgb(0 0 0 / 25%);
+    transition: transform 0.15s ease;
+}
+
+.tile:hover .artwork,
+.tile:focus-visible .artwork {
+    transform: translateY(-2px);
+}
+
+.artwork-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* The play mark: hidden until hover, on the accent, bottom right of the cover. */
+.play {
+    position: absolute;
+    right: var(--theme-spacing-sm);
+    bottom: var(--theme-spacing-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    color: var(--theme-colors-primary-filled);
+    background: var(--theme-colors-primary);
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.tile:hover .play,
+.tile:focus-visible .play {
+    opacity: 1;
+}
+
+.text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.name,
+.kind {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

@@ -5,6 +5,10 @@ import { Link, useParams } from 'react-router';
 
 import styles from './album-detail-header.module.css';
 
+import {
+    rememberAlbum,
+    rememberStation,
+} from '/@/renderer/aoide/features/home/use-recent-contexts';
 import { queryKeys } from '/@/renderer/api/query-keys';
 import { albumQueries } from '/@/renderer/features/albums/api/album-api';
 import { JoinedArtists } from '/@/renderer/features/albums/components/joined-artists';
@@ -89,6 +93,7 @@ export const AlbumDetailHeader = forwardRef<HTMLDivElement>((_props, ref) => {
     const handlePlay = (type?: Play) => {
         if (!server?.id || !albumId) return;
         addToQueueByFetch(server.id, [albumId], LibraryItem.ALBUM, type || playButtonBehavior);
+        rememberAlbum(server.id, detailQuery?.data);
     };
 
     const handleMoreOptions = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -115,6 +120,7 @@ export const AlbumDetailHeader = forwardRef<HTMLDivElement>((_props, ref) => {
             });
             if (albumRadioSongs && albumRadioSongs.length > 0) {
                 addToQueueByData(albumRadioSongs, Play.NOW);
+                rememberStation(server.id, 'album', detailQuery?.data);
             }
         } catch (error) {
             console.error('Failed to load album radio:', error);

@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router';
 
 import styles from './aoide-playlist-detail.module.css';
 
+import { rememberAoidePlaylist } from '/@/renderer/aoide/features/home/use-recent-contexts';
 import {
     openDeleteAoidePlaylistModal,
     openEditAoidePlaylistModal,
@@ -127,8 +128,9 @@ export const AoidePlaylistDetail = ({ playlistId }: { playlistId: string }) => {
             }
 
             player.addToQueueByData(playback.songs, Play.NOW, playback.playSongId);
+            rememberAoidePlaylist(serverId, playlistQuery.data);
         },
-        [player, queryClient, serverId, t],
+        [player, playlistQuery.data, queryClient, serverId, t],
     );
 
     // The player's callbacks are synchronous, and a rejected promise nobody

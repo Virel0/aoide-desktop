@@ -34,6 +34,16 @@
             "nameRequired": "A playlist needs a name",
             "notesLabel": "Notes"
         },
+        "home": {
+            "kind_album": "Album",
+            "kind_aoidePlaylist": "Aoide playlist",
+            "kind_handoff": "Another device",
+            "kind_jellyfinPlaylist": "Playlist",
+            "kind_mix": "Mix",
+            "kind_station": "Station",
+            "pickUpFrom": "Pick up from {{device}}",
+            "resume": "Jump back in"
+        },
         "list": {
             "empty": "No Aoide playlists yet",
             "emptyHint": "Aoide playlists live on this device and sync with the phone. Jellyfin's own playlists are listed separately.",

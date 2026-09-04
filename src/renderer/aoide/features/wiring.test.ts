@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { RESUME_GRID_LIMIT } from './home/recent-contexts';
 import { INACTIVE_LINE_OPACITY } from './now-playing/now-playing-column';
 import { syncOutcome } from './sync/sync-report';
 import { FOCUS_SYNC_MIN_INTERVAL_MS } from './sync/sync-schedule';
@@ -310,7 +311,9 @@ describe('the shared queue', () => {
     });
 
     it('names the starting track rather than slicing the queue short', () => {
-        expect(panel).toMatch(/addToQueueByData\(songs, Play\.NOW, start\?\.id\)/);
+        const pickUp = sourceOf('queue/pick-up.ts');
+        expect(pickUp).toMatch(/addToQueueByData\(songs, Play\.NOW, start\?\.id\)/);
+        expect(panel).toContain('await pickUp(handoff, { player, queryClient, serverId })');
     });
 });
 
@@ -577,5 +580,90 @@ describe('the Now Playing column', () => {
     it('decides the active line and the scroll target with the tested helpers', () => {
         expect(lyrics).toContain('activeLineIndex(lines, timestamp * 1000 + offsetMs)');
         expect(lyrics).toContain('scrollTopForLine(');
+    });
+});
+
+describe('Home opens on the last six things you were in', () => {
+    const grid = sourceOf('home/resume-grid.tsx');
+    const handlers = sourceOf('home/use-resume-context.ts');
+    const home = readFileSync(
+        join(import.meta.dirname, '../../features/home/routes/home-route.tsx'),
+        'utf8',
+    );
+
+    it('is mounted at the top of the home route', () => {
+        expect(home).toContain('<ResumeGrid />');
+        // Above the feature carousel, which is the first thing Feishin draws.
+        expect(home.indexOf('<ResumeGrid />')).toBeLessThan(
+            home.indexOf('<AlbumInfiniteSingleFeatureCarousel />'),
+        );
+    });
+
+    // Six: the phone's "last six things", two rows of three. The number is
+    // the helper's, and the grid asks for it by name rather than restating it.
+    it('caps at six through the shared limit', () => {
+        expect(RESUME_GRID_LIMIT).toBe(6);
+        expect(grid).toContain(
+            'resumeTiles(recent, handoff, handoff?.receivedAt ?? 0, RESUME_GRID_LIMIT)',
+        );
+        expect(grid).not.toContain('Date.now()');
+        expect(grid).toContain('useRecentContexts(serverId, RESUME_GRID_LIMIT)');
+        expect(grid).not.toMatch(/[^A-Za-z_]6[^0-9]/);
+    });
+
+    // A placeholder on a page already full of things to play only pushes
+    // them down.
+    it('renders nothing when there is nothing to resume', () => {
+        expect(grid).toContain('if (tiles.length === 0) return null;');
+    });
+
+    it('resumes through the pages’ own play helpers and the shared pick-up', () => {
+        expect(handlers).toContain('LibraryItem.ALBUM, Play.NOW');
+        expect(handlers).toContain('LibraryItem.PLAYLIST,');
+        expect(handlers).toContain('resolvePlaylistPlayback(');
+        expect(handlers).toContain('songsQueries.artistRadio(');
+        expect(handlers).toContain('songsQueries.albumRadio(');
+        expect(handlers).toContain('pickUp(handoff, { player, queryClient, serverId })');
+    });
+
+    // Recorded where playback starts from the thing's own page, and nowhere
+    // else — a grid that fills with shuffle-alls is a grid nobody looks at.
+    const recorders: [string, string][] = [
+        [
+            '../../features/albums/components/album-detail-header.tsx',
+            'rememberAlbum(server.id, detailQuery?.data)',
+        ],
+        [
+            '../../features/albums/components/album-detail-header.tsx',
+            "rememberStation(server.id, 'album', detailQuery?.data)",
+        ],
+        [
+            '../../features/playlists/components/playlist-detail-song-list-header.tsx',
+            'rememberJellyfinPlaylist(server?.id, detailQuery?.data)',
+        ],
+        [
+            '../../features/artists/components/album-artist-detail-content.tsx',
+            "rememberStation(server.id, 'artist'",
+        ],
+        [
+            'playlists/aoide-playlist-detail.tsx',
+            'rememberAoidePlaylist(serverId, playlistQuery.data)',
+        ],
+        ['mix/aoide-mix.tsx', 'rememberMix(serverId, description)'],
+    ];
+
+    for (const [file, call] of recorders) {
+        it(`${file.split('/').pop()} records ${call.split('(')[0]}`, () => {
+            expect(readFileSync(join(import.meta.dirname, file), 'utf8')).toContain(call);
+        });
+    }
+
+    // A mix tile reopens the page with the words filled in rather than
+    // silently spending a model request.
+    it('hands a mix its description back', () => {
+        expect(handlers).toContain(
+            'navigate(AppRoute.AOIDE_MIX, { state: { description: context.name } })',
+        );
+        expect(sourceOf('mix/aoide-mix.tsx')).toContain('?.description ??');
     });
 });

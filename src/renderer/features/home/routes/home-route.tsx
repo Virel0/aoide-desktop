@@ -1,6 +1,7 @@
 import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { ResumeGrid } from '/@/renderer/aoide/features/home/resume-grid';
 import { useGridCarouselContainerQuery } from '/@/renderer/components/grid-carousel/grid-carousel-v2';
 import { NativeScrollArea } from '/@/renderer/components/native-scroll-area/native-scroll-area';
 import { AlbumInfiniteCarousel } from '/@/renderer/features/albums/components/album-infinite-carousel';
@@ -113,6 +114,7 @@ const HomeRoute = () => {
                         px="2rem"
                         ref={containerQuery.ref}
                     >
+                        <ResumeGrid />
                         {homeFeature && homeFeatureStyle === HomeFeatureStyle.SINGLE && (
                             <AlbumInfiniteSingleFeatureCarousel />
                         )}

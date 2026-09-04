@@ -3,6 +3,7 @@ import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useParams } from 'react-router';
 
+import { rememberJellyfinPlaylist } from '/@/renderer/aoide/features/home/use-recent-contexts';
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
 import { PageHeader } from '/@/renderer/components/page-header/page-header';
 import { useListContext } from '/@/renderer/context/list-context';
@@ -136,6 +137,7 @@ export const PlaylistDetailSongListHeader = ({
 
     const handlePlay = (type?: Play) => {
         player.addToQueueByData(listData as Song[], type || Play.NOW);
+        rememberJellyfinPlaylist(server?.id, detailQuery?.data);
     };
 
     const canUploadPlaylistImage =
