@@ -7,6 +7,7 @@ import { resolvePlaylistPlayback } from '/@/renderer/aoide/features/playlists/pl
 import { pickUp } from '/@/renderer/aoide/features/queue/pick-up';
 import { Handoff } from '/@/renderer/aoide/features/queue/use-queue-handoff';
 import { aoidePlaylists } from '/@/renderer/aoide/features/shared/aoide-bridge';
+import { dropNotInterested } from '/@/renderer/aoide/features/taste/not-interested';
 import { queryKeys } from '/@/renderer/api/query-keys';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { getSongById } from '/@/renderer/features/player/utils';
@@ -69,7 +70,10 @@ export const useResumeContext = () => {
                     return;
 
                 case 'station': {
-                    const songs =
+                    // Jellyfin seeds the station and knows nothing of the
+                    // flags, so the hidden tracks are dropped here, before
+                    // the queue — the phone's `withoutNotInterested`.
+                    const seeded =
                         context.seed === 'artist'
                             ? await queryClient.fetchQuery({
                                   ...songsQueries.artistRadio({
@@ -85,7 +89,8 @@ export const useResumeContext = () => {
                                   }),
                                   queryKey: queryKeys.player.fetch({ albumId: context.id }),
                               });
-                    if (songs && songs.length > 0) {
+                    const songs = await dropNotInterested(seeded ?? []);
+                    if (songs.length > 0) {
                         player.addToQueueByData(songs, Play.NOW);
                     }
                     return;

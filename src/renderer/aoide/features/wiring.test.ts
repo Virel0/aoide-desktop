@@ -853,3 +853,125 @@ describe('what is played at this desk is recorded', () => {
         }
     });
 });
+
+describe('taste flags: the phone’s "Not Interested" and "Don’t Count Plays"', () => {
+    const action = sourceOf('taste/taste-flag-actions.tsx');
+    const settings = sourceOf('settings/hidden-from-mixes-settings.tsx');
+    const station = sourceOf('home/use-resume-context.ts');
+    const preload = readFileSync(join(import.meta.dirname, '../../../preload/aoide.ts'), 'utf8');
+    const main = readFileSync(
+        join(import.meta.dirname, '../../../main/features/aoide/index.ts'),
+        'utf8',
+    );
+    const history = readFileSync(
+        join(import.meta.dirname, '../../../main/features/aoide/play-history.ts'),
+        'utf8',
+    );
+    const mix = readFileSync(
+        join(import.meta.dirname, '../../../main/features/aoide/mix.ts'),
+        'utf8',
+    );
+    const generalTab = readFileSync(
+        join(import.meta.dirname, '../../features/settings/components/general/general-tab.tsx'),
+        'utf8',
+    );
+
+    // Beside "Add to Aoide playlist" in the three menus that hold whole songs.
+    // The other menus hold albums, artists and folders, and a flag is a
+    // judgement about one song.
+    for (const menu of ['playlist-song-context-menu', 'queue-context-menu', 'song-context-menu']) {
+        it(`${menu} renders the flag items beside the Aoide playlist entry`, () => {
+            const source = readFileSync(
+                join(import.meta.dirname, `../../features/context-menu/menus/${menu}.tsx`),
+                'utf8',
+            );
+
+            expect(source).toContain('<AddToAoidePlaylistAction songs={items} />');
+            expect(source).toContain('<TasteFlagActions songs={items} />');
+        });
+    }
+
+    it('reads the current flags through the query hook and writes through the mutation', () => {
+        expect(action).toContain('useTrackFlags(song?.id)');
+        expect(action).toContain('useSetTrackFlag()');
+        expect(action).toContain("toggle('notInterested', !notInterested)");
+        expect(action).toContain("toggle('dontCount', !dontCount)");
+    });
+
+    // Each item reads as the action it will take, as on the phone.
+    it('offers the undo wording once a flag is set', () => {
+        expect(action).toContain("t('aoide.taste.offerAgain') : t('aoide.taste.notInterested')");
+        expect(action).toContain("t('aoide.taste.countPlays') : t('aoide.taste.dontCount')");
+    });
+
+    it('renders nothing without a store, and is disabled over a selection', () => {
+        expect(action).toContain('if (!isAoideAvailable() || songs.length === 0) return null;');
+        expect(action).toContain('songs.length === 1 ? songs[0] : undefined');
+        expect(action).toContain('disabled={!song}');
+    });
+
+    it('lists the flagged tracks in the general settings tab, with a way to clear each', () => {
+        // The mount, not the name: the import line alone would satisfy the
+        // name, and a section that is imported and never mounted is a list
+        // nobody can reach.
+        expect(generalTab).toContain(
+            "{ component: HiddenFromMixesSettings, key: 'aoideHiddenFromMixes' }",
+        );
+        expect(settings).toContain('useFlaggedTracks()');
+        expect(settings).toContain('useClearTrackFlags()');
+        expect(settings).toContain('clear.mutate(entry.jellyfinId');
+        // A track the cache does not know is still listed, by its id.
+        expect(settings).toContain('entry.title ?? entry.jellyfinId');
+    });
+
+    // The recorder's path: main reads the flag before it opens the row, and
+    // a null begin is, to the effect, nothing to finish.
+    it('checks "don’t count" before opening a play event', () => {
+        const begin = history.indexOf('beginPlay(input: BeginPlayInput): null | string');
+        const check = history.indexOf('if (this.dontCount(input.jellyfinId)) return null;', begin);
+        const open = history.indexOf("this.store.record('play_events'", begin);
+
+        expect(begin).toBeGreaterThan(-1);
+        expect(check).toBeGreaterThan(begin);
+        expect(open).toBeGreaterThan(check);
+        expect(sourceOf('history/aoide-play-recorder-effect.tsx')).toContain(
+            'Promise<null | string | undefined>',
+        );
+    });
+
+    // Mixes are narrowed in main; a station is seeded by Jellyfin and filtered
+    // here before it reaches the queue.
+    it('drops hidden tracks from mixes and from a re-seeded station', () => {
+        expect(mix).toContain('notInterestedAmong(this.db, candidateIds)');
+        expect(station).toContain('await dropNotInterested(seeded ?? [])');
+        expect(sourceOf('taste/not-interested.ts')).toContain('flags.notInterestedAmong(');
+    });
+
+    it('is published by preload and handled by main', () => {
+        for (const channel of [
+            'aoide:flags-get',
+            'aoide:flags-set-not-interested',
+            'aoide:flags-set-dont-count',
+            'aoide:flags-clear',
+            'aoide:flags-flagged',
+            'aoide:flags-not-interested-among',
+        ]) {
+            expect(preload).toContain(`ipcRenderer.invoke('${channel}'`);
+            expect(main).toContain(`'${channel}'`);
+        }
+    });
+
+    // The settings list names tracks from the cache, and the content key is
+    // computed in main from the same metadata the phone computes it from.
+    it('caches the track and computes its key in main when a flag is set', () => {
+        for (const channel of ['aoide:flags-set-not-interested', 'aoide:flags-set-dont-count']) {
+            const handler = main.indexOf(`'${channel}'`);
+            const cache = main.indexOf('playlists.cacheTracks([track])', handler);
+            const key = main.indexOf('track.contentKey ?? contentKeyFor(track)', handler);
+
+            expect(handler).toBeGreaterThan(-1);
+            expect(cache).toBeGreaterThan(handler);
+            expect(key).toBeGreaterThan(cache);
+        }
+    });
+});

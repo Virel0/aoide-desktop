@@ -67,19 +67,12 @@ export const aoide = {
         notInterestedAmong: (jellyfinIds: string[]): Promise<string[]> =>
             ipcRenderer.invoke('aoide:flags-not-interested-among', jellyfinIds),
 
-        setDontCount: (
-            jellyfinId: string,
-            contentKey: string,
-            value: boolean,
-        ): Promise<TrackFlagRow | undefined> =>
-            ipcRenderer.invoke('aoide:flags-set-dont-count', jellyfinId, contentKey, value),
+        /** The whole track: it is cached on the way, and its content key is computed there. */
+        setDontCount: (track: TrackInput, value: boolean): Promise<TrackFlagRow | undefined> =>
+            ipcRenderer.invoke('aoide:flags-set-dont-count', track, value),
 
-        setNotInterested: (
-            jellyfinId: string,
-            contentKey: string,
-            value: boolean,
-        ): Promise<TrackFlagRow | undefined> =>
-            ipcRenderer.invoke('aoide:flags-set-not-interested', jellyfinId, contentKey, value),
+        setNotInterested: (track: TrackInput, value: boolean): Promise<TrackFlagRow | undefined> =>
+            ipcRenderer.invoke('aoide:flags-set-not-interested', track, value),
     },
 
     /** Listening history: recorded and aggregated in the main process where the events live. */

@@ -350,6 +350,70 @@ imports `play-definition`, calls `classify`, or carries a `240`/`4 * 60` literal
 the first thing to check is that Replay shows a play after one track at the desk,
 and that the phone shows the same row after a sync.
 
+### Also on 2026-09-04: taste flags, matching the phone's
+
+Three commits on `development`, not pushed. 826 tests (from 778), typecheck and both
+lints clean.
+
+Two flags per track, synced like everything else, on the phone's `trackFlags` row —
+`track_flags` on the wire and as the local table (schema v2). **`notInterested`** keeps
+a track out of mixes and stations; it stays playable and stays in ordinary playlists.
+**`dontCount`** opens no play event; history already recorded stays, including plays
+another device recorded before it saw the flag, because evaluation reads the flag and
+never assumes the events do not exist.
+
+- **Store** (`track-flags.ts`). `setNotInterested` / `setDontCount` / `clear` through
+  `store.record`, so each is a row and an op. The row is minted on first write; both
+  flags off is recorded as a **delete** rather than an empty row; a flag set again reuses
+  the deleted row's id (the read ignores `deleted`), so the phone sees one row change
+  rather than a delete and a stranger. Merged **per field** like a playlist
+  (`PER_FIELD_ENTITIES`), then deduped by `jellyfinId` like a like: two devices that each
+  minted a row for one track keep the newer `(updatedAt, originDevice)` and hard-delete
+  the other (`writeDeduped`, the phone's `mergeTrackFlags`). That dedupe now covers
+  `likes` too — its unique index on `jellyfinId` had nothing keeping a second row from a
+  constraint failure. Found on the way: `restampChangedFields` compared a boolean the
+  caller wrote against the 0/1 SQLite read back and stamped it as an edit, which would
+  have restamped both flags on every write of either; it now compares as stored.
+- **Where the flags are read.** `Mix.narrow` drops hidden ids before any rule or limit
+  sees them. **On the desktop that is the only place smart rules are evaluated** — smart
+  playlists themselves are not evaluated here (the detail screen lists items, and a smart
+  playlist has none), so `narrow` is the one exclusion in main. In the renderer the
+  resume grid's station is Jellyfin's instant mix filtered through
+  `aoide:flags-not-interested-among` (`taste/not-interested.ts`, one call for the list);
+  Feishin's own shuffle and track radio are upstream and untouched. `PlayHistory.beginPlay`
+  returns `null` for a "don't count" track and the recorder effect finishes nothing for
+  it.
+- **Push gate.** The sidecar's `/aoide/sync/status` lists `acceptedEntities` (and
+  `pluginVersion`). The engine reads it once per sync, before the log, and asks the store
+  to leave out every entity in `ENTITIES_NEEDING_SERVER_SUPPORT` (`sync-types.ts`; only
+  `track_flags`) that is not listed — **in the SQL**, not after the LIMIT, so a log whose
+  oldest rows are all held still fills the page. No status, or no list, holds them all;
+  everything older than the advertisement goes as it always did. Held ops are neither
+  pushed nor quarantined and are reported as `SyncResult.held`. `SyncStore.pendingOps`
+  gained an optional `holding: string[]`; `sync-bridge.test.ts` pins that the bridge
+  forwards it.
+- **UI.** `TasteFlagActions` — "Not Interested" ↔ "Offer This Again", "Don't Count
+  Plays" ↔ "Count Plays" — beside "Add to Aoide playlist" in the song, playlist-song and
+  queue menus; one song at a time, disabled over a selection. Setting a flag sends the
+  whole `TrackInput`: main caches the track and computes the content key, so the
+  settings list can name it. "Hidden from mixes" in the general tab's Aoide section lists
+  every flagged track (title/artist from the cache, or the id when the phone flagged
+  something this device never cached) with which flags and a Clear that takes both off in
+  one op. Strings under `aoide.taste.*` and `aoide.settings.hiddenFromMixes*`.
+
+**Verified by test, and by breaking it.** Store (`track-flags.test.ts`, 23 cases): empty
+row deleted, id reused, dedupe present, dedupe direction, per-field merge, mix exclusion,
+`beginPlay` gate, the boolean restamp, booleans on the wire, the hard delete of the twin —
+ten mutations, ten caught. Push gate (`sync-engine.test.ts` + store + bridge): hold
+removed, status failure holding nothing, missing list holding nothing, status asked after
+the log, store ignoring `holding`, held op quarantined, preload dropping the argument —
+seven, seven caught. UI (`wiring.test.ts` + `not-interested.test.ts`): each mount, the
+station filter, the pure filter, the undo wording, the flag check before `record`, the
+cache in the handler — seven, seven caught. **Not verified in the running app**: the first
+things to check are that the menu shows the undo wording after a flag, that a flagged
+track shows in Settings after a sync from the phone, and that the sync panel reports
+nothing quarantined against a sidecar that does not list `track_flags` yet.
+
 ## The work order, agreed
 
 In this order. Each is self-contained; nothing here is blocked on anything else.

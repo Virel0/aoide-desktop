@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { AddToAoidePlaylistAction } from '/@/renderer/aoide/features/playlists/add-to-aoide-playlist-action';
+import { TasteFlagActions } from '/@/renderer/aoide/features/taste/taste-flag-actions';
 import { AddToPlaylistAction } from '/@/renderer/features/context-menu/actions/add-to-playlist-action';
 import { DownloadAction } from '/@/renderer/features/context-menu/actions/download-action';
 import { EditMetadataAction } from '/@/renderer/features/context-menu/actions/edit-metadata-action';
@@ -36,6 +37,7 @@ export const SongContextMenu = ({ items, type }: SongContextMenuProps) => {
             <ContextMenu.Divider />
             <AddToPlaylistAction items={ids} itemType={LibraryItem.SONG} />
             <AddToAoidePlaylistAction songs={items} />
+            <TasteFlagActions songs={items} />
             <ContextMenu.Divider />
             <SetFavoriteAction ids={ids} itemType={LibraryItem.SONG} />
             <SetRatingAction ids={ids} itemType={LibraryItem.SONG} />

@@ -13,7 +13,7 @@ import { ImageBlobStore } from './image-blobs';
 import { Mix } from './mix';
 import { PlayHistory } from './play-history';
 import { registerPlaylistImportHandlers } from './playlist-import';
-import { Playlists } from './playlists';
+import { contentKeyFor, Playlists } from './playlists';
 import { registerSmartSearchHandlers } from './smart-search';
 import { TrackFlags } from './track-flags';
 
@@ -369,17 +369,25 @@ handle('aoide:history-finish-play', ({ history }, eventId: string, input: Finish
  */
 handle('aoide:flags-get', ({ flags }, jellyfinId: string) => flags.flags(jellyfinId));
 
+// The whole track rather than an id and a key: the row's content key is
+// computed here from the same metadata the phone computes it from, and the
+// track goes into the cache on the way so the settings list can name it.
 handle(
     'aoide:flags-set-not-interested',
-    ({ flags }, jellyfinId: string, contentKey: string, value: boolean) =>
-        flags.setNotInterested(jellyfinId, contentKey, value),
+    ({ flags, playlists }, track: TrackInput, value: boolean) => {
+        playlists.cacheTracks([track]);
+        return flags.setNotInterested(
+            track.jellyfinId,
+            track.contentKey ?? contentKeyFor(track),
+            value,
+        );
+    },
 );
 
-handle(
-    'aoide:flags-set-dont-count',
-    ({ flags }, jellyfinId: string, contentKey: string, value: boolean) =>
-        flags.setDontCount(jellyfinId, contentKey, value),
-);
+handle('aoide:flags-set-dont-count', ({ flags, playlists }, track: TrackInput, value: boolean) => {
+    playlists.cacheTracks([track]);
+    return flags.setDontCount(track.jellyfinId, track.contentKey ?? contentKeyFor(track), value);
+});
 
 handle('aoide:flags-clear', ({ flags }, jellyfinId: string) => flags.clear(jellyfinId));
 

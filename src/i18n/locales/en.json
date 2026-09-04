@@ -147,7 +147,9 @@
             "playlistSurface_description": "Which playlists the sidebar shows. Whichever kind is hidden is still there — it just is not listed.",
             "playlistSurface_option_aoide": "Aoide only",
             "playlistSurface_option_both": "Both",
-            "playlistSurface_option_jellyfin": "Jellyfin only"
+            "playlistSurface_option_jellyfin": "Jellyfin only",
+            "hiddenFromMixes": "Hidden from mixes",
+            "hiddenFromMixes_description": "Tracks you marked Not Interested stay out of mixes and stations; tracks marked Don't Count Plays are played without being recorded. Both are synced with your other Aoide devices. Clear one here to have it offered and counted again."
         },
         "sidebar": {
             "all": "All playlists",
@@ -181,6 +183,16 @@
             "serverCursor": "Server is at sequence {{cursor}}",
             "summary": "Pushed {{pushed}}, pulled {{pulled}}, applied {{applied}}",
             "title": "Sync"
+        },
+        "taste": {
+            "countPlays": "Count Plays",
+            "dontCount": "Don't Count Plays",
+            "empty": "Nothing hidden. Right-click a track and choose Not Interested or Don't Count Plays; it will be listed here so you can undo it.",
+            "error": "Could not change the flag",
+            "flagDontCount": "Plays not counted",
+            "flagNotInterested": "Not interested",
+            "notInterested": "Not Interested",
+            "offerAgain": "Offer This Again"
         },
         "toast": {
             "added_one": "Added {{count}} track to {{name}}",
