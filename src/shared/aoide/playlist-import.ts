@@ -88,6 +88,8 @@ const NOISE_WORDS = new Set([
     'stereo',
     'version',
     'with',
+    'extended',
+    'reissue',
 ]);
 
 const containsNoise = (text: string): boolean =>
