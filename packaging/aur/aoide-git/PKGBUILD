@@ -1,0 +1,87 @@
+# Maintainer: Virel0
+#
+# The AUR package: builds Aoide from the repository's development branch, so
+# `yay -Syu` rebuilds it whenever there is a new commit. This is the published
+# counterpart of packaging/arch/PKGBUILD, which builds from a local checkout and
+# exists for working on the app itself.
+
+pkgname=aoide-git
+_pkgname=aoide
+pkgver=0
+pkgrel=1
+pkgdesc="Aoide for Linux — a Jellyfin music client with local playlists, play history, and sync with the Aoide iOS app"
+arch=('x86_64')
+url="https://github.com/Virel0/aoide-desktop"
+license=('GPL-3.0-or-later')
+
+# Electron is bundled by electron-builder, so these are the shared libraries it
+# expects rather than a runtime. mpv is a real dependency on purpose: it is what
+# gives gapless playback and the wider format support.
+depends=('gtk3' 'nss' 'alsa-lib' 'libxss' 'libnotify' 'mpv')
+makedepends=('git' 'nodejs' 'pnpm')
+provides=("$_pkgname")
+conflicts=("$_pkgname")
+
+# Electron ships prebuilt binaries. Stripping them breaks the app.
+options=('!strip' '!debug')
+
+source=("$_pkgname::git+https://github.com/Virel0/aoide-desktop.git#branch=development"
+        'com.gabereglat.aoide.desktop.desktop')
+sha256sums=('SKIP'
+            'de913766f38a6ab23b709fa51118a3e2ad71e5872645d55f03de91c8d3617c51')
+
+_appid='com.gabereglat.aoide.desktop'
+
+# Upstream's version, then how far this fork is past it, so every commit is an
+# upgrade to pacman.
+pkgver() {
+    cd "$srcdir/$_pkgname"
+    local _version
+    _version="$(sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' package.json | head -n1)"
+    printf '%s.r%s.g%s' "${_version:-0}" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+    cd "$srcdir/$_pkgname"
+    pnpm install --frozen-lockfile
+    pnpm run build:electron
+    # `dir` stops at the unpacked tree: pacman owns the files from here, so an
+    # installer to unpack would be a detour.
+    pnpm exec electron-builder --linux dir --publish never
+}
+
+package() {
+    local _repo="$srcdir/$_pkgname"
+    local _unpacked="$_repo/dist/linux-unpacked"
+    [[ $CARCH == 'x86_64' ]] || _unpacked="$_repo/dist/linux-$CARCH-unpacked"
+
+    install -dm755 "$pkgdir/opt/$_pkgname"
+    cp -a "$_unpacked/." "$pkgdir/opt/$_pkgname/"
+
+    # Chromium's sandbox helper must be setuid root or Electron refuses to start
+    # on a stock kernel. Every Electron package on Arch does this.
+    chmod 4755 "$pkgdir/opt/$_pkgname/chrome-sandbox"
+
+    # electron-builder.yml pins executableName to aoide; checked rather than
+    # assumed, because a symlink pointing at nothing starts nothing.
+    local _candidate _bin=''
+    for _candidate in "$_pkgname" 'aoide-desktop' 'Aoide'; do
+        if [[ -x $_unpacked/$_candidate ]]; then
+            _bin=$_candidate
+            break
+        fi
+    done
+    [[ -n $_bin ]] || { echo "error: no executable in $_unpacked" >&2; return 1; }
+
+    install -dm755 "$pkgdir/usr/bin"
+    ln -s "/opt/$_pkgname/$_bin" "$pkgdir/usr/bin/$_pkgname"
+
+    install -Dm644 "$srcdir/$_appid.desktop" "$pkgdir/usr/share/applications/$_appid.desktop"
+    install -Dm644 "$_repo/$_appid.metainfo.xml" "$pkgdir/usr/share/metainfo/$_appid.metainfo.xml"
+
+    local _size
+    for _size in 16 24 32 48 64 72 96 128 256 512 1024; do
+        install -Dm644 "$_repo/assets/icons/${_size}x${_size}.png" \
+            "$pkgdir/usr/share/icons/hicolor/${_size}x${_size}/apps/$_appid.png"
+    done
+}

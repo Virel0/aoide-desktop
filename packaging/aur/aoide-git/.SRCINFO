@@ -1,0 +1,26 @@
+pkgbase = aoide-git
+	pkgdesc = Aoide for Linux — a Jellyfin music client with local playlists, play history, and sync with the Aoide iOS app
+	pkgver = 0
+	pkgrel = 1
+	url = https://github.com/Virel0/aoide-desktop
+	arch = x86_64
+	license = GPL-3.0-or-later
+	makedepends = git
+	makedepends = nodejs
+	makedepends = pnpm
+	depends = gtk3
+	depends = nss
+	depends = alsa-lib
+	depends = libxss
+	depends = libnotify
+	depends = mpv
+	provides = aoide
+	conflicts = aoide
+	options = !strip
+	options = !debug
+	source = aoide::git+https://github.com/Virel0/aoide-desktop.git#branch=development
+	source = com.gabereglat.aoide.desktop.desktop
+	sha256sums = SKIP
+	sha256sums = de913766f38a6ab23b709fa51118a3e2ad71e5872645d55f03de91c8d3617c51
+
+pkgname = aoide-git

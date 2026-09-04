@@ -1,0 +1,20 @@
+[Desktop Entry]
+# --class is what makes the taskbar icon reliable. A desktop environment
+# generally prefers the icon from the .desktop entry it matches the window to,
+# and it matches on WM_CLASS. Electron derives WM_CLASS from the application
+# name, which has already differed from what this file claimed once; passing it
+# explicitly means the two cannot drift, and a window that matches nothing falls
+# back to a generic icon rather than to whatever else is installed.
+Type=Application
+Name=Aoide
+GenericName=Music player
+Comment=Jellyfin music, with local playlists and history that sync with the phone
+Exec=/usr/bin/aoide --class=aoide %U
+TryExec=/usr/bin/aoide
+Icon=com.gabereglat.aoide.desktop
+Terminal=false
+Categories=AudioVideo;Audio;Player;Music;
+Keywords=Jellyfin;Aoide;Music;
+MimeType=x-scheme-handler/aoide;
+StartupWMClass=aoide
+SingleMainWindow=true
