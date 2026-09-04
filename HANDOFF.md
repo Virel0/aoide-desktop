@@ -235,7 +235,7 @@ All on `main`, pushed, installed on the phone (`f5acdaf`):
 
 ## What changed on 2026-09-04 (desktop)
 
-Two commits on `development`, not pushed. 690 tests, typecheck and both lints clean.
+Four commits on `development`, not pushed. 718 tests, typecheck and both lints clean.
 
 - **Now Playing is a column beside the page** (`c61c5a31`). The phone's hierarchy on
   a wide screen: artwork with a wash behind it, title, artist in the accent, Feishin's
@@ -264,6 +264,31 @@ Two commits on `development`, not pushed. 690 tests, typecheck and both lints cl
 compiler's lint refuses `Date.now()` in render outright, which is how that came about.
 There is one radio-count setting (`useArtistRadioCount`) and the album header uses it
 for album radio too; the grid does the same.
+
+- **The built-in playlists are made here too** (`ad0ad459`). "Rediscover Mix" and
+  "Heavy Rotation" under `builtin:rediscover` and `builtin:heavy-rotation`, the same
+  ids and rules the phone pins (`src/shared/aoide/built-in-playlists.ts`), so
+  whichever device runs first makes the row and the other merges into it.
+  `Playlists.ensureBuiltIns()` creates a built-in only when **no row with that id has
+  ever existed** — `rowExists` reads the row deleted or not — so one that was removed
+  stays removed on every device rather than returning each launch. Both writes go
+  through `create` and `setSmartRules`, so they are ops and they sync. Main runs it
+  once in the `app.whenReady()` chain right after the store opens; the store is one per
+  machine, not per account, so nothing about the user has to be known first, and the
+  renderer never has to ask — though `aoide:playlists-ensure-built-ins` is published
+  in case a screen ever does.
+- **Replay** (`56fac6a2`) at `/aoide/replay`, sidebar row "Replay". This month / this
+  year / all time: plays, hours, songs, artists as tiles, busiest day, top songs
+  (playable, in rank order), top artists, top albums. `PlayHistory.recap(from, to)` in
+  the main process does all the counting, with `countsAsPlaySql` and nothing else, over
+  a half-open window on `startedAt`. Artist and album come from the local `tracks`
+  cache; a play whose track is not cached counts in `totalPlays` and `topTracks` and
+  is reported as `unattributedPlays` — said on the page, never hidden. Albums are
+  grouped on `COALESCE(albumArtist, artist)` so a compilation is one album. The
+  renderer decides only where a period starts (`replay-period.ts`, local calendar);
+  `to` is taken inside the `queryFn`. Not verified in the running app: the desktop
+  never writes `play_events` itself, so the page only has something to show once a
+  sync has brought the phone's events over — sign in and sync, then open it.
 
 ## The work order, agreed
 
