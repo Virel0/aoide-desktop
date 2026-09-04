@@ -84,6 +84,13 @@ export const aoide = {
         create: (name: string, options?: CreatePlaylistOptions): Promise<PlaylistSummary> =>
             ipcRenderer.invoke('aoide:playlists-create', name, options),
 
+        /**
+         * Create whichever built-in playlists have never existed here. Main
+         * does this at startup; resolves to the ids created by this call.
+         */
+        ensureBuiltIns: (): Promise<string[]> =>
+            ipcRenderer.invoke('aoide:playlists-ensure-built-ins'),
+
         /** Undefined when the playlist does not exist or has been deleted. */
         get: (playlistId: string): Promise<PlaylistSummary | undefined> =>
             ipcRenderer.invoke('aoide:playlists-get', playlistId),

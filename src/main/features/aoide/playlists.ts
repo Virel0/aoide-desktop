@@ -7,6 +7,7 @@ import type { CurationDatabase } from './database';
 
 import { CurationStore } from './curation-store';
 
+import { BUILT_IN_PLAYLISTS } from '/@/shared/aoide/built-in-playlists';
 import { positionBetween, positionsAfter } from '/@/shared/aoide/fractional-index';
 
 /**
@@ -31,6 +32,12 @@ export type CoverTrack = Pick<PlaylistTrack, 'albumId' | 'jellyfinId'>;
 
 export interface CreatePlaylistOptions {
     folderId?: null | string;
+    /**
+     * A fixed id instead of a minted one. Only the built-in playlists use it:
+     * every device creates them under the same id, so whichever runs first
+     * makes the row and the others merge into it rather than making twins.
+     */
+    id?: string;
     notes?: null | string;
 }
 
@@ -295,12 +302,40 @@ export class Playlists {
     create(name: string, options: CreatePlaylistOptions = {}): PlaylistSummary {
         const id = this.insertPlaylist({
             folderId: options.folderId ?? null,
+            id: options.id,
             name,
             notes: options.notes ?? null,
             sourceJellyfinId: null,
         });
 
         return this.requireSummary(id);
+    }
+
+    /**
+     * The playlists every library gets, created under their fixed ids.
+     *
+     * The same rule as the phone: a built-in is created only when no row with
+     * its id has *ever* existed here. A deleted row counts as existing, so a
+     * built-in somebody removed stays removed — on this device and, because the
+     * delete is an op like any other, on every device that syncs with it. Not
+     * "deleted = 0", which would resurrect it on every launch.
+     *
+     * Both writes go through the ordinary op-recording paths, so the rows reach
+     * the other devices; whichever device runs first makes the row and the rest
+     * merge into it. Idempotent, and returns the ids it created this time.
+     */
+    ensureBuiltIns(): string[] {
+        const created: string[] = [];
+
+        for (const builtIn of BUILT_IN_PLAYLISTS) {
+            if (this.rowExists(builtIn.id)) continue;
+
+            this.create(builtIn.name, { id: builtIn.id, notes: builtIn.notes });
+            this.setSmartRules(builtIn.id, JSON.stringify(builtIn.rules));
+            created.push(builtIn.id);
+        }
+
+        return created;
     }
 
     /** One playlist, or undefined when it does not exist or has been deleted. */
@@ -476,6 +511,18 @@ export class Playlists {
     }
 
     /**
+     * Whether a row with this id has ever existed, deleted or not.
+     *
+     * Deliberately not `get`, which hides deleted rows: the one caller is
+     * `ensureBuiltIns`, and "has this ever been here" is a different question
+     * from "is this here now". Answering the second would recreate a playlist
+     * the listener removed, on every launch, forever.
+     */
+    rowExists(playlistId: string): boolean {
+        return this.playlistRow(playlistId) !== undefined;
+    }
+
+    /**
      * Name a Jellyfin item whose picture this playlist wears.
      *
      * Artwork and nothing else. `sourceJellyfinId` is provenance — the key a
@@ -524,13 +571,14 @@ export class Playlists {
      */
     private insertPlaylist(values: {
         folderId: null | string;
+        id?: string;
         name: string;
         notes: null | string;
         sourceJellyfinId: null | string;
     }): string {
         if (values.folderId !== null) this.requireLiveFolder(values.folderId);
 
-        const id = randomUUID();
+        const id = values.id ?? randomUUID();
 
         this.store.record('playlists', {
             artworkItemId: null,

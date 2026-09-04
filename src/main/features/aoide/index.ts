@@ -169,12 +169,29 @@ handle('aoide:playlists-import', ({ playlists }, request: ImportRequest) =>
     playlists.importFromJellyfin(request),
 );
 
+/**
+ * The built-in playlists, on demand. Startup below already does this once the
+ * store is open; the channel exists so a renderer that has reason to ask again
+ * — a sign-in, a screen that lists them — can, at the cost of nothing when the
+ * rows are already there.
+ */
+handle('aoide:playlists-ensure-built-ins', ({ playlists }) => playlists.ensureBuiltIns());
+
 // Opened at startup rather than waiting for the first screen, so a schema this
 // build cannot understand — the one thing `migrate` refuses outright — is a line
 // in the log at launch instead of a broken playlist screen ten minutes later.
+//
+// The built-ins are made right after, in the same chain: the store is one per
+// machine rather than per account, so nothing about the user has to be known
+// first — only that the database opened. A store that failed to open never
+// reaches this line, and the catch below says why.
 app.whenReady()
     .then(() => curation())
-    .catch((error) => log.error('Aoide curation store failed to open', error));
+    .then(({ playlists }) => {
+        const created = playlists.ensureBuiltIns();
+        if (created.length > 0) log.info('Aoide built-in playlists created', { created });
+    })
+    .catch((error) => log.error('Aoide curation store failed to open or seed', error));
 
 app.on('before-quit', closeCuration);
 

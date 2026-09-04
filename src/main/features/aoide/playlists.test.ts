@@ -7,6 +7,8 @@ import { CurationStore } from './curation-store';
 import { CurationDatabase, openCurationDatabase } from './database';
 import { contentKeyFor, Playlists } from './playlists';
 
+import { BUILT_IN_PLAYLISTS } from '/@/shared/aoide/built-in-playlists';
+
 let database: CurationDatabase;
 let store: CurationStore;
 let playlists: Playlists;
@@ -546,5 +548,67 @@ describe('importing from Jellyfin', () => {
 
         expect(second.created).toBe(true);
         expect(second.playlistId).not.toBe(first.playlistId);
+    });
+});
+
+describe('built-in playlists', () => {
+    it('creates both under their fixed ids, with exactly the pinned rules', () => {
+        const created = playlists.ensureBuiltIns();
+
+        expect(created).toEqual(BUILT_IN_PLAYLISTS.map((builtIn) => builtIn.id));
+
+        for (const builtIn of BUILT_IN_PLAYLISTS) {
+            const row = playlists.get(builtIn.id);
+            expect(row?.name).toBe(builtIn.name);
+            expect(row?.notes).toBe(builtIn.notes);
+            expect(row?.isSmart).toBe(true);
+            expect(JSON.parse(row?.smartRules ?? 'null')).toEqual(builtIn.rules);
+        }
+    });
+
+    it('takes the fixed id through create, rather than minting one', () => {
+        const made = playlists.create('Pinned', { id: 'builtin:test' });
+        expect(made.id).toBe('builtin:test');
+        expect(playlists.get('builtin:test')?.name).toBe('Pinned');
+    });
+
+    it('records the rows through the op log, so they reach the other devices', () => {
+        playlists.ensureBuiltIns();
+
+        const ops = store.pendingOps();
+        // One create and one rules write per built-in, both as playlist ops.
+        expect(ops).toHaveLength(BUILT_IN_PLAYLISTS.length * 2);
+        expect(ops.every((op) => op.entity === 'playlists')).toBe(true);
+        expect(new Set(ops.map((op) => op.entityId))).toEqual(
+            new Set(BUILT_IN_PLAYLISTS.map((builtIn) => builtIn.id)),
+        );
+    });
+
+    it('creates nothing the second time', () => {
+        playlists.ensureBuiltIns();
+        store.markSynced(store.pendingOps().map((op) => op.opId));
+
+        expect(playlists.ensureBuiltIns()).toEqual([]);
+        expect(store.pendingOps()).toHaveLength(0);
+        expect(playlists.list()).toHaveLength(BUILT_IN_PLAYLISTS.length);
+    });
+
+    it('does not recreate one that was deleted', () => {
+        const [rediscover] = BUILT_IN_PLAYLISTS;
+        playlists.ensureBuiltIns();
+        playlists.remove(rediscover.id);
+        store.markSynced(store.pendingOps().map((op) => op.opId));
+
+        // A deleted row still exists; the phone applies the same rule, so a
+        // built-in removed on either device stays removed on both.
+        expect(playlists.rowExists(rediscover.id)).toBe(true);
+        expect(playlists.ensureBuiltIns()).toEqual([]);
+        expect(store.pendingOps()).toHaveLength(0);
+        expect(playlists.get(rediscover.id)).toBeUndefined();
+        expect(playlists.list().map((p) => p.id)).not.toContain(rediscover.id);
+    });
+
+    it('rowExists answers false for an id that was never here', () => {
+        expect(playlists.rowExists('builtin:never')).toBe(false);
     });
 });

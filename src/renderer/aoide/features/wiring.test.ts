@@ -667,3 +667,25 @@ describe('Home opens on the last six things you were in', () => {
         expect(sourceOf('mix/aoide-mix.tsx')).toContain('?.description ??');
     });
 });
+
+describe('the built-in playlists are made at startup', () => {
+    const main = readFileSync(
+        join(import.meta.dirname, '../../../main/features/aoide/index.ts'),
+        'utf8',
+    );
+    const preload = readFileSync(join(import.meta.dirname, '../../../preload/aoide.ts'), 'utf8');
+
+    // The store is one per machine, so nothing about the account has to be
+    // known first — only that the database opened. An `ensureBuiltIns` that is
+    // written but never called at launch seeds exactly as many rows as none.
+    it('runs once the store is open, in the same chain that opens it', () => {
+        expect(main).toMatch(
+            /app\.whenReady\(\)\s*\.then\(\(\) => curation\(\)\)\s*\.then\(\(\{ playlists \}\) => \{\s*const created = playlists\.ensureBuiltIns\(\);/,
+        );
+    });
+
+    it('is published by preload and handled by main', () => {
+        expect(preload).toContain("ipcRenderer.invoke('aoide:playlists-ensure-built-ins')");
+        expect(main).toContain("'aoide:playlists-ensure-built-ins'");
+    });
+});
