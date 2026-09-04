@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { INACTIVE_LINE_OPACITY } from './now-playing/now-playing-column';
 import { syncOutcome } from './sync/sync-report';
 import { FOCUS_SYNC_MIN_INTERVAL_MS } from './sync/sync-schedule';
 
@@ -517,5 +518,64 @@ describe('the playlist import is reachable and judges with the shared rules', ()
         expect(hook).toContain('searchTerm: term.slice(0, 60)');
         expect(hook).toContain('searchTerms(track.title)');
         expect(hook).toContain('best(track, songs.map(candidateFromSong))');
+    });
+});
+
+describe('the Now Playing column', () => {
+    const column = sourceOf('now-playing/aoide-now-playing-column.tsx');
+    const lyrics = sourceOf('now-playing/aoide-now-playing-lyrics.tsx');
+    const hook = sourceOf('now-playing/use-now-playing-column.ts');
+    const rightSidebar = readFileSync(
+        join(import.meta.dirname, '../../layouts/default-layout/right-sidebar.tsx'),
+        'utf8',
+    );
+    const mainContent = readFileSync(
+        join(import.meta.dirname, '../../layouts/default-layout/main-content.tsx'),
+        'utf8',
+    );
+
+    // The layout's right slot is Feishin's side queue. The column takes that
+    // slot behind the preference, and the grid opens the slot for it whether
+    // or not the queue toggle is on — a persistent column that only appeared
+    // after pressing the queue button would not be persistent.
+    it('is mounted in the default layout behind the preference', () => {
+        expect(rightSidebar).toContain('const nowPlayingColumn = useAoideNowPlayingColumn();');
+        expect(rightSidebar).toMatch(
+            /if \(nowPlayingColumn\) \{\s*return \(\s*<AoideNowPlayingColumn/,
+        );
+        expect(mainContent).toContain(
+            "nowPlayingColumn || (rightExpanded && sideQueueType === 'sideQueue')",
+        );
+    });
+
+    // Both the JS and the CSS ask the same media query, from one constant.
+    it('collapses through the shared media query rather than a second number', () => {
+        expect(hook).toContain('window.matchMedia(COLUMN_MEDIA_QUERY)');
+        expect(hook).not.toMatch(/1100/);
+    });
+
+    // The goal is the phone's hierarchy on a wide screen, not a new player
+    // engine: controls, seek and the queue list are Feishin's own.
+    it('reuses Feishin’s controls and side-queue list', () => {
+        expect(column).toContain('<CenterControls />');
+        expect(column).toContain('listKey={ItemListKey.SIDE_QUEUE}');
+        expect(column).not.toMatch(/setTimestamp\(|mediaSeekToTimestamp/);
+    });
+
+    it('fetches lyrics through Feishin’s query', () => {
+        expect(lyrics).toContain('lyricsQueries.songLyrics(');
+    });
+
+    // The phone: active line at full opacity, every other line at 45%. The
+    // number is the helper's, and the style reads it rather than restating it.
+    it('dims inactive lines with the constant from the helper module', () => {
+        expect(INACTIVE_LINE_OPACITY).toBe(0.45);
+        expect(lyrics).toMatch(/opacity: index === active \? 1 : INACTIVE_LINE_OPACITY/);
+        expect(lyrics).not.toMatch(/0\.45/);
+    });
+
+    it('decides the active line and the scroll target with the tested helpers', () => {
+        expect(lyrics).toContain('activeLineIndex(lines, timestamp * 1000 + offsetMs)');
+        expect(lyrics).toContain('scrollTopForLine(');
     });
 });

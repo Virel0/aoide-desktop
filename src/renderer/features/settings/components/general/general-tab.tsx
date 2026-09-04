@@ -1,6 +1,7 @@
 import { memo, useMemo } from 'react';
 import { Fragment } from 'react/jsx-runtime';
 
+import { NowPlayingColumnSettings } from '/@/renderer/aoide/features/settings/now-playing-column-settings';
 import { PlaylistSurfaceSettings } from '/@/renderer/aoide/features/settings/playlist-surface-settings';
 import { SmartSearchSettings } from '/@/renderer/aoide/features/settings/smart-search-settings';
 import { ApplicationSettings } from '/@/renderer/features/settings/components/general/application-settings';
@@ -34,6 +35,7 @@ export const GeneralTab = memo(() => {
             // have to reconcile it.
             { component: SmartSearchSettings, key: 'aoideSmartSearch' },
             { component: PlaylistSurfaceSettings, key: 'aoidePlaylistSurface' },
+            { component: NowPlayingColumnSettings, key: 'aoideNowPlayingColumn' },
         ];
 
         if (supportsSmartPlaylists) {

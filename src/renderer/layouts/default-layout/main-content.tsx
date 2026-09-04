@@ -6,6 +6,7 @@ import { shallow } from 'zustand/shallow';
 
 import styles from './main-content.module.css';
 
+import { useAoideNowPlayingColumn } from '/@/renderer/aoide/features/now-playing/use-now-playing-column';
 import { ExpandedListContainer } from '/@/renderer/components/item-list/expanded-list-container';
 import { ExpandedListItem } from '/@/renderer/components/item-list/expanded-list-item';
 import { FullScreenOverlay } from '/@/renderer/layouts/default-layout/full-screen-overlay';
@@ -38,6 +39,8 @@ export const MainContent = ({ shell }: { shell?: boolean }) => {
     const { setSideBar } = useAppStoreActions();
     const sideQueueType = useSideQueueType();
     const sideQueueLayout = useSideQueueLayout();
+    // Aoide's Now Playing column takes the right slot whenever it is on screen.
+    const nowPlayingColumn = useAoideNowPlayingColumn();
     const [isResizing, setIsResizing] = useState(false);
     const [isResizingRight, setIsResizingRight] = useState(false);
 
@@ -191,11 +194,13 @@ export const MainContent = ({ shell }: { shell?: boolean }) => {
     return (
         <motion.div
             className={clsx(styles.mainContentContainer, {
-                [styles.rightExpanded]: rightExpanded && sideQueueType === 'sideQueue',
+                [styles.rightExpanded]:
+                    nowPlayingColumn || (rightExpanded && sideQueueType === 'sideQueue'),
                 [styles.shell]: shell,
                 [styles.sidebarCollapsed]: collapsed,
                 [styles.sidebarExpanded]: !collapsed,
                 [styles.verticalLayout]:
+                    !nowPlayingColumn &&
                     rightExpanded &&
                     sideQueueType === 'sideQueue' &&
                     sideQueueLayout === 'vertical',

@@ -75,6 +75,12 @@
             "savedFrom": "From: {{description}}",
             "title": "Mixes"
         },
+        "nowPlaying": {
+            "lyrics": "Lyrics",
+            "noLyrics": "No lyrics for this track",
+            "nothingPlaying": "Nothing playing",
+            "queue": "Queue"
+        },
         "queue": {
             "pickUp": "Pick up",
             "resume_one": "{{device}} was playing {{count}} track",
@@ -104,6 +110,8 @@
             "keyStored": "A key is saved — type a new one to replace it",
             "model": "Model",
             "model_description": "Any OpenRouter model id. The default is small and cheap on purpose: the job is turning a phrase into filters, not choosing music.",
+            "nowPlayingColumn": "Now Playing beside the page",
+            "nowPlayingColumn_description": "Artwork, controls, lyrics and the queue in a column on the right, so you can browse and listen at once. Off, the bottom bar and its full-screen player are what you get. The column steps aside in a window narrower than about 1100 pixels.",
             "playlistSurface": "Playlists in the sidebar",
             "playlistSurface_description": "Which playlists the sidebar shows. Whichever kind is hidden is still there — it just is not listed.",
             "playlistSurface_option_aoide": "Aoide only",

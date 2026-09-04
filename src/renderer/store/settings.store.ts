@@ -12,6 +12,10 @@ import { createWithEqualityFn } from 'zustand/traditional';
 
 import i18n from '/@/i18n/i18n';
 import {
+    AoideNowPlayingColumnSchema,
+    DEFAULT_AOIDE_NOW_PLAYING_COLUMN,
+} from '/@/renderer/aoide/features/now-playing/now-playing-column';
+import {
     AoidePlaylistSurfaceSchema,
     DEFAULT_AOIDE_PLAYLIST_SURFACE,
 } from '/@/renderer/aoide/features/settings/playlist-surface';
@@ -513,6 +517,7 @@ export const GeneralSettingsSchema = z.object({
     albumGroupItems: z.array(SortableItemSchema(AlbumGroupItemSchema)),
     albumGroupShowFavoriteRating: z.boolean(),
     albumGroupVerticalLayout: z.boolean(),
+    aoideNowPlayingColumn: AoideNowPlayingColumnSchema,
     aoidePlaylistSurface: AoidePlaylistSurfaceSchema,
     artistBackground: z.boolean(),
     artistBackgroundBlur: z.number(),
@@ -1299,6 +1304,7 @@ const initialState: SettingsState = {
         albumGroupItems,
         albumGroupShowFavoriteRating: true,
         albumGroupVerticalLayout: true,
+        aoideNowPlayingColumn: DEFAULT_AOIDE_NOW_PLAYING_COLUMN,
         aoidePlaylistSurface: DEFAULT_AOIDE_PLAYLIST_SURFACE,
         artistBackground: true,
         artistBackgroundBlur: 3,

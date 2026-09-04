@@ -3,6 +3,8 @@ import { forwardRef, Ref } from 'react';
 
 import styles from './right-sidebar.module.css';
 
+import { AoideNowPlayingColumn } from '/@/renderer/aoide/features/now-playing/aoide-now-playing-column';
+import { useAoideNowPlayingColumn } from '/@/renderer/aoide/features/now-playing/use-now-playing-column';
 import { SidebarPlayQueue } from '/@/renderer/features/now-playing/components/sidebar-play-queue';
 import { ResizeHandle } from '/@/renderer/features/shared/components/resize-handle';
 import { useAppStore, useSideQueueLayout, useSideQueueType } from '/@/renderer/store';
@@ -59,6 +61,17 @@ export const RightSidebar = forwardRef(
         const sideQueueType = useSideQueueType();
         const sideQueueLayout = useSideQueueLayout();
         const isVerticalLayout = sideQueueLayout === 'vertical';
+        const nowPlayingColumn = useAoideNowPlayingColumn();
+
+        if (nowPlayingColumn) {
+            return (
+                <AoideNowPlayingColumn
+                    isResizing={isResizingRight}
+                    ref={ref}
+                    startResizing={startResizing}
+                />
+            );
+        }
 
         return (
             <>
