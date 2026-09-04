@@ -216,7 +216,9 @@ app.on('before-quit', closeCuration);
 
 handle('aoide:sync-device-id', ({ store }) => store.device);
 
-handle('aoide:sync-pending-ops', ({ store }, limit?: number) => store.pendingOps(limit));
+handle('aoide:sync-pending-ops', ({ store }, limit?: number, holding?: string[]) =>
+    store.pendingOps(limit, holding),
+);
 
 handle('aoide:sync-mark-synced', ({ store }, opIds: string[]) => store.markSynced(opIds));
 

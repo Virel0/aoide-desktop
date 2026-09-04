@@ -320,6 +320,42 @@ describe('the op log', () => {
     });
 });
 
+describe('holding an entity back from a page', () => {
+    // The engine holds `track_flags` while the server does not accept it. The
+    // exclusion has to happen in the query: a page whose LIMIT is filled by
+    // held rows, then filtered, hands back nothing forever.
+    it('leaves held entities out of the page rather than at its head', () => {
+        store.record('track_flags', {
+            contentKey: 'k',
+            id: 'tf-1',
+            jellyfinId: 't1',
+            notInterested: true,
+        });
+        store.record('playlists', playlist({ id: 'playlist-2' }));
+
+        expect(store.pendingOps(1, ['track_flags']).map((op) => op.entityId)).toEqual([
+            'playlist-2',
+        ]);
+        expect(store.pendingOps(1).map((op) => op.entityId)).toEqual(['tf-1']);
+        expect(store.pendingOps(undefined, []).map((op) => op.entityId)).toEqual([
+            'tf-1',
+            'playlist-2',
+        ]);
+    });
+
+    it('keeps a held op pending, so it goes once the hold lifts', () => {
+        store.record('track_flags', {
+            contentKey: 'k',
+            id: 'tf-1',
+            jellyfinId: 't1',
+            notInterested: true,
+        });
+
+        expect(store.pendingOps(500, ['track_flags'])).toEqual([]);
+        expect(store.pendingOps(500, [])).toHaveLength(1);
+    });
+});
+
 describe('quarantine', () => {
     it('takes a refused op out of the queue so it cannot wedge it', () => {
         const { op } = store.record('playlists', playlist());

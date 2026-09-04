@@ -53,6 +53,11 @@ const page = (overrides: Partial<PullResponse> = {}): PullResponse => ({
 });
 
 interface Harness {
+    /**
+     * What the server's status lists as accepted. `undefined` is a sidecar
+     * older than the field, which lists nothing.
+     */
+    accepted: string[] | undefined;
     /** Every call, in the order it happened. The ordering rules are assertions on this. */
     log: string[];
     pullPages: PullResponse[];
@@ -65,6 +70,8 @@ interface Harness {
     shares: PlaylistShare[];
     sharesFail: boolean;
     state: StoreState;
+    /** Whether `GET /aoide/sync/status` throws, standing in for a sidecar that is down. */
+    statusFails: boolean;
     store: SyncStore;
     transport: SyncTransport;
     /** Hashes whose PUT throws, standing in for a cover that will not upload. */
@@ -105,6 +112,7 @@ const harness = (): Harness => {
     };
 
     const rig: Harness = {
+        accepted: undefined,
         log,
         pullPages: [],
         pushHandler: (ops) => ({ accepted: ops.map((each) => each.opId), cursor: 999 }),
@@ -112,6 +120,7 @@ const harness = (): Harness => {
         shares: [],
         sharesFail: false,
         state,
+        statusFails: false,
         store: {
             applyRemote(remote, receivedAt) {
                 log.push(`apply:${remote.opId}`);
@@ -141,10 +150,11 @@ const harness = (): Harness => {
             },
             // Faithful to the real store, which applies a LIMIT in SQL: the
             // caller gets a page, not the log. Ignoring the limit here would
-            // hide anything that only goes wrong when the page is full.
-            pendingOps(limit = 500) {
+            // hide anything that only goes wrong when the page is full. Held
+            // entities leave the page before the limit, as the SQL does.
+            pendingOps(limit = 500, holding: string[] = []) {
                 log.push(`pendingOps:${limit}`);
-                return state.pending.slice(0, limit);
+                return state.pending.filter((op) => !holding.includes(op.entity)).slice(0, limit);
             },
             quarantine(opId, reason) {
                 log.push(`quarantine:${opId}`);
@@ -180,6 +190,13 @@ const harness = (): Harness => {
                 if (rig.uploadFails.has(sha256)) {
                     throw new SyncError('transient', `${sha256} would not upload`);
                 }
+            },
+            async status() {
+                log.push('status');
+                if (rig.statusFails) throw new SyncError('transient', 'status unreachable');
+                return rig.accepted === undefined
+                    ? { cursor: 0 }
+                    : { acceptedEntities: rig.accepted, cursor: 0 };
             },
         },
         uploadFails: new Set<string>(),
@@ -819,6 +836,111 @@ describe('SyncEngine', () => {
 
             // Only the ids a push named back are evidence of acceptance.
             expect(h.state.synced).toEqual([]);
+        });
+    });
+
+    describe('entities the server has not heard of', () => {
+        // The sidecar's entity list is an allow-list and an unknown name is
+        // refused, which quarantines the op — real edits lost to a deployment
+        // order, because a rejected op is never retried. The phone holds such
+        // ops until the server advertises the entity; so does this.
+        const OLD_ENTITIES = ['playlists', 'playlist_items', 'folders', 'likes'];
+
+        const flagOp = op({ createdAt: 1, entity: 'track_flags', opId: 'flag-1' });
+        const playlistOp = op({ createdAt: 2, entity: 'playlists', opId: 'playlist-1' });
+
+        beforeEach(() => {
+            // The flag op is the older of the two: it sits at the head of the
+            // log, where a hold that merely filtered the page would leave the
+            // playlist op behind it starved.
+            h.state.pending = [flagOp, playlistOp];
+        });
+
+        it('holds a track_flags op while the server lists only the old entities', async () => {
+            h.accepted = OLD_ENTITIES;
+
+            const result = await engineFor(h).sync();
+
+            expect(h.log).toContain('push:playlist-1');
+            expect(h.log.some((entry) => entry.includes('flag-1'))).toBe(false);
+            expect(h.state.synced).toEqual(['playlist-1']);
+            expect(result.held).toEqual(['track_flags']);
+            expect(result.pushed).toBe(1);
+        });
+
+        it('asks the server before it reads the log, and once per run', async () => {
+            h.accepted = OLD_ENTITIES;
+
+            await engineFor(h).sync();
+
+            expect(at(h.log, 'status')).toBeLessThan(at(h.log, 'pendingOps'));
+            expect(h.log.filter((entry) => entry === 'status')).toHaveLength(1);
+        });
+
+        it('pushes it once the server lists track_flags', async () => {
+            h.accepted = OLD_ENTITIES;
+            const engine = engineFor(h);
+            await engine.sync();
+            h.state.pending = h.state.pending.filter((each) => !h.state.synced.includes(each.opId));
+
+            h.accepted = [...OLD_ENTITIES, 'track_flags'];
+            const result = await engine.sync();
+
+            expect(h.log).toContain('push:flag-1');
+            expect(h.state.synced).toEqual(['playlist-1', 'flag-1']);
+            expect(result.held).toEqual([]);
+        });
+
+        it('holds when the status cannot be fetched at all', async () => {
+            h.statusFails = true;
+
+            const result = await engineFor(h).sync();
+
+            expect(h.log).toContain('push:playlist-1');
+            expect(h.log.some((entry) => entry.includes('flag-1'))).toBe(false);
+            expect(result.held).toEqual(['track_flags']);
+            // A status that failed is not a push that failed: the ops that
+            // could go went, and the sync is not reported as broken.
+            expect(syncFailed(result)).toBe(false);
+        });
+
+        it('holds when the status names no list, which an older sidecar does', async () => {
+            h.accepted = undefined;
+
+            const result = await engineFor(h).sync();
+
+            expect(h.log).toContain('push:playlist-1');
+            expect(h.log.some((entry) => entry.includes('flag-1'))).toBe(false);
+            expect(result.held).toEqual(['track_flags']);
+        });
+
+        it('never quarantines a held op, on any of those runs', async () => {
+            const engine = engineFor(h);
+
+            h.accepted = OLD_ENTITIES;
+            await engine.sync();
+            h.accepted = undefined;
+            await engine.sync();
+            h.statusFails = true;
+            await engine.sync();
+
+            expect(h.state.quarantined).toEqual([]);
+            expect(h.log.some((entry) => entry.startsWith('quarantine:'))).toBe(false);
+            expect(h.state.pending.map((each) => each.opId)).toContain('flag-1');
+        });
+
+        it('leaves the old entities alone whatever the server says', async () => {
+            h.state.pending = [
+                op({ entity: 'likes', opId: 'like-1' }),
+                op({ entity: 'play_events', opId: 'event-1' }),
+            ];
+            h.accepted = undefined;
+
+            await engineFor(h).sync();
+
+            // The advertisement is newer than these entities; a sidecar that
+            // lists nothing still accepts everything it always did.
+            expect(h.state.synced).toEqual(['like-1', 'event-1']);
         });
     });
 

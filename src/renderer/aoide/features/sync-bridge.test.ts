@@ -65,6 +65,21 @@ describe('the op log bridge', () => {
         expect(invoked.filter((channel) => !registered.includes(channel))).toEqual([]);
     });
 
+    // The engine leaves entities the server has not advertised out of the page
+    // by asking the store to. A bridge that dropped the second argument would
+    // hand every held op back at the head of the page, where it would be
+    // pushed, refused and quarantined — the exact loss the hold exists to
+    // prevent, and one nothing would report.
+    it('forwards the hold list from the engine to the store', () => {
+        expect(engine).toMatch(/pendingOps\(limit\?: number, holding\?: string\[\]\)/);
+        expect(preload).toMatch(
+            /pendingOps: \(limit\?: number, holding\?: string\[\]\)[\s\S]*?invoke\('aoide:sync-pending-ops', limit, holding\)/,
+        );
+        expect(main).toMatch(
+            /'aoide:sync-pending-ops',[\s\S]*?holding\?: string\[\]\) =>\s*store\.pendingOps\(limit, holding\)/,
+        );
+    });
+
     it('exposes the bridge under the name the renderer looks for', () => {
         // `aoideSyncStore` tests `window.api.aoide.sync.pendingOps`.
         const shim = read('shared/aoide-bridge.ts');

@@ -13,6 +13,7 @@ const emptyResult = (overrides: Partial<SyncResult> = {}): SyncResult => ({
     blocked: [],
     cursor: 0,
     foreignAuthors: [],
+    held: [],
     heldBack: [],
     imageErrors: [],
     pulled: 0,

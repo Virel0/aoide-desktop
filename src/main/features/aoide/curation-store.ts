@@ -222,10 +222,18 @@ export class CurationStore {
      * receives them, and a later edit arriving before the earlier one it
      * supersedes would leave every other device on the wrong version.
      */
-    pendingOps(limit = 500): SyncOp[] {
+    pendingOps(limit = 500, holding: readonly string[] = []): SyncOp[] {
+        // Held entities are excluded in the query rather than filtered after
+        // it, so a log whose oldest rows are all held still fills the page
+        // with what can go. Filtering a full page afterwards would hand the
+        // engine nothing, forever, for as long as the server stayed old.
+        const excluded = holding.map(() => '?').join(', ');
+        const where = holding.length > 0 ? `AND entity NOT IN (${excluded})` : '';
         const rows = this.db
-            .prepare('SELECT * FROM ops WHERE synced = 0 ORDER BY created_at, rowid LIMIT ?')
-            .all(limit) as Array<{
+            .prepare(
+                `SELECT * FROM ops WHERE synced = 0 ${where} ORDER BY created_at, rowid LIMIT ?`,
+            )
+            .all(...holding, limit) as Array<{
             created_at: number;
             entity: string;
             entity_id: string;

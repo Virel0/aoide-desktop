@@ -1,12 +1,14 @@
 import { partitionRejections, QuarantineOutcome, ShareRevokedOutcome, SyncError } from './errors';
 
 import {
+    entitiesToHold,
     imageHashesInOp,
     PlaylistShare,
     PullResponse,
     PushResponse,
     QueueEntry,
     SyncOp,
+    SyncStatus,
 } from '/@/shared/aoide/sync-types';
 
 /**
@@ -36,6 +38,10 @@ import {
  *    pruned out from under it.
  * 6. **A 5xx is bisected**, not retried. Retrying the same bytes forever wedges
  *    every innocent change behind one the server cannot swallow.
+ * 7. **An entity the server has not advertised is held, not pushed.** The
+ *    sidecar's entity list is an allow-list; an unknown name is refused, and a
+ *    refusal is a quarantine. Real edits lost to a deployment order, unless the
+ *    op waits in the log until `GET /sync/status` lists the entity.
  */
 
 /**
@@ -148,6 +154,13 @@ export interface SyncResult {
      * cannot claim anybody's op as its own.
      */
     foreignAuthors: string[];
+    /**
+     * Entities whose ops were held this run because the server does not list
+     * them as accepted — `track_flags` on a sidecar older than the flags. Held,
+     * not quarantined: the ops stay pending and go the first sync after the
+     * server advertises the entity.
+     */
+    held: string[];
     /** Ops kept back because a cover they name is not on the server yet. */
     heldBack: string[];
     /** Covers that would not upload. Never fatal; the op naming one simply waits. */
@@ -193,8 +206,13 @@ export interface SyncStore {
     imagesToUpload(ops: SyncOp[]): MaybePromise<OutboundImage[]>;
     markSynced(opIds: string[]): MaybePromise<void>;
     markUploaded(sha256: string): MaybePromise<void>;
-    /** Oldest first. Order matters: the server assigns sequence numbers as it receives them. */
-    pendingOps(limit?: number): MaybePromise<SyncOp[]>;
+    /**
+     * Oldest first. Order matters: the server assigns sequence numbers as it
+     * receives them. Ops for the entities in `holding` are left out of the
+     * page altogether — not at its head, where they would fill the limit and
+     * starve everything queued behind them.
+     */
+    pendingOps(limit?: number, holding?: string[]): MaybePromise<SyncOp[]>;
     quarantine(opId: string, reason: string): MaybePromise<void>;
     setCursor(cursor: number): MaybePromise<void>;
 }
@@ -212,6 +230,8 @@ export interface SyncTransport {
     pull(since: number, limit?: number): Promise<PullResponse>;
     push(ops: SyncOp[]): Promise<PushResponse>;
     putImage(sha256: string, bytes: Uint8Array, mime: string): Promise<void>;
+    /** `GET /aoide/sync/status`, read before a push for what the server accepts. */
+    status(): Promise<SyncStatus>;
 }
 
 /**
@@ -355,6 +375,27 @@ export class SyncEngine {
     }
 
     /**
+     * Which entities must wait for the server, asked once per sync.
+     *
+     * A status that cannot be fetched, or that names no list, holds every
+     * entity that needs support — the safe direction: a held op waits, a
+     * refused op is quarantined. The phone's `entitiesToHold`, and the same
+     * shared decision in `sync-types.ts`, so the two clients cannot disagree
+     * about what an older sidecar is allowed to see.
+     */
+    private async entitiesToHold(): Promise<string[]> {
+        let accepted: string[] | undefined;
+
+        try {
+            accepted = (await this.transport.status()).acceptedEntities;
+        } catch {
+            accepted = undefined;
+        }
+
+        return entitiesToHold(accepted);
+    }
+
+    /**
      * Whether a share row is evidence that **this** user may edit that playlist.
      *
      * A share names the person it was granted to, and `/aoide/shares` lists more
@@ -395,12 +436,12 @@ export class SyncEngine {
      * rows than the last one, which is the log ending rather than the limit
      * biting.
      */
-    private async pendingUnblocked(): Promise<SyncOp[]> {
+    private async pendingUnblocked(held: string[]): Promise<SyncOp[]> {
         let limit = this.pushLimit;
         let widest = 0;
 
         for (;;) {
-            const page = await this.store.pendingOps(limit);
+            const page = await this.store.pendingOps(limit, held);
             const pushable = page.filter((op) => !this.blocked.has(op.opId));
 
             if (pushable.length > 0 || page.length <= widest) return pushable;
@@ -579,6 +620,7 @@ export class SyncEngine {
             blocked: [],
             cursor: 0,
             foreignAuthors: [],
+            held: [],
             heldBack: [],
             imageErrors: [],
             pulled: 0,
@@ -599,10 +641,17 @@ export class SyncEngine {
             sharesRead = true;
         }
 
+        // 0b. Ask what the server accepts, before reading the log. An entity
+        //     the server has not heard of is refused, and a refusal is a
+        //     quarantine — real edits lost to a deployment order. Those ops are
+        //     left in the log instead, out of the page rather than at its head,
+        //     so nothing queued behind them waits.
+        result.held = await this.entitiesToHold();
+
         let pending: SyncOp[] = [];
 
         try {
-            pending = await this.pendingUnblocked();
+            pending = await this.pendingUnblocked(result.held);
         } catch (error) {
             // A store that cannot be read has nothing to push, which is not the
             // same as having nothing to push. Recorded and carried on with,

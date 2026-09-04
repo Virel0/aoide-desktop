@@ -269,8 +269,9 @@ export const aoide = {
         markUploaded: (sha256: string): Promise<void> =>
             ipcRenderer.invoke('aoide:sync-mark-uploaded', sha256),
 
-        pendingOps: (limit?: number): Promise<SyncOp[]> =>
-            ipcRenderer.invoke('aoide:sync-pending-ops', limit),
+        /** `holding` names entities to leave out of the page — see `SyncStore`. */
+        pendingOps: (limit?: number, holding?: string[]): Promise<SyncOp[]> =>
+            ipcRenderer.invoke('aoide:sync-pending-ops', limit, holding),
 
         quarantine: (opId: string, reason: string): Promise<void> =>
             ipcRenderer.invoke('aoide:sync-quarantine', opId, reason),
