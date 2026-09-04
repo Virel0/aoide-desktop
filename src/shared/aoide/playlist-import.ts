@@ -92,6 +92,7 @@ const NOISE_WORDS = new Set([
 
 const containsNoise = (text: string): boolean =>
     text
+        .toLowerCase()
         .split(/[^\p{L}\p{N}]+/u)
         .filter(Boolean)
         .some((word) => NOISE_WORDS.has(word));
@@ -127,6 +128,43 @@ export const normalize = (text: string): string => {
         .split(' ')
         .filter(Boolean)
         .join(' ');
+};
+
+/** The title without its noise groups and suffix, spelling otherwise untouched. */
+export const stripNoise = (title: string): string => {
+    let s = stripNoisyGroups(title, '(', ')');
+    s = stripNoisyGroups(s, '[', ']');
+    s = stripNoisySuffix(s);
+    return s.split(/\s+/).filter(Boolean).join(' ');
+};
+
+/**
+ * Phrases to search the library with, most specific first.
+ *
+ * The server matches names as typed, so it must be asked in the title's own
+ * spelling: the *normalised* form — "don t stop me now" — matches nothing,
+ * which is how an import once reported a library's own songs as missing. The
+ * search widens step by step: the title as given; the title with the noise
+ * stripped but punctuation intact; the normalised words; and finally the single
+ * longest word, for the case where the two sides spell punctuation differently.
+ * The matcher judges whatever comes back, so a wide net costs only a request.
+ */
+export const searchTerms = (title: string): string[] => {
+    const terms: string[] = [];
+    const add = (term: string) => {
+        const trimmed = term.trim();
+        if (trimmed.length > 0 && !terms.includes(trimmed)) terms.push(trimmed);
+    };
+    add(title);
+    add(stripNoise(title));
+    const normalized = normalize(title);
+    add(normalized);
+    const longest = normalized
+        .split(' ')
+        .filter(Boolean)
+        .reduce((best, word) => (word.length > best.length ? word : best), '');
+    if (longest.length >= 4) add(longest);
+    return terms;
 };
 
 export const similarity = (a: string, b: string): number => {
@@ -311,7 +349,10 @@ const ISRC_HEADERS = ['isrc'];
  * tolerance for the other tools' column names.
  */
 export const parsePlaylistCSV = (text: string, name: string): ImportedPlaylist => {
-    const rows = csvRows(text).filter((row) => row.some((cell) => cell.length > 0));
+    // Some exporters lead with a byte-order mark, which would glue itself to the
+    // first header and hide it from the aliases.
+    const clean = text.startsWith('\uFEFF') ? text.slice(1) : text;
+    const rows = csvRows(clean).filter((row) => row.some((cell) => cell.length > 0));
     const header = rows[0];
     if (!header) throw new PlaylistCSVError('empty');
 

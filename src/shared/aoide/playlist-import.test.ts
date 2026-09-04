@@ -6,6 +6,7 @@ import {
     parsePlaylistCSV,
     parseSpotifyEmbed,
     PlaylistCSVError,
+    searchTerms,
     SpotifyEmbedError,
     spotifyPlaylistId,
     verdict,
@@ -204,6 +205,21 @@ describe('track matching', () => {
         expect(normalize(input)).toBe(expected);
     });
 
+    it.each([
+        [
+            "Don't Stop Me Now - 2011 Mix",
+            ["Don't Stop Me Now - 2011 Mix", "Don't Stop Me Now", 'don t stop me now', 'stop'],
+        ],
+        ['Karma Police', ['Karma Police', 'karma police', 'police']],
+        [
+            'Crazy in Love (feat. Jay-Z)',
+            ['Crazy in Love (feat. Jay-Z)', 'Crazy in Love', 'crazy in love', 'crazy'],
+        ],
+        ['Hey', ['Hey', 'hey']],
+    ])('search terms for %j start with the title as spelled and widen', (title, expected) => {
+        expect(searchTerms(title)).toEqual(expected);
+    });
+
     it('best picks the highest-scoring accepted candidate, not the first', () => {
         const track = { artists: ['Radiohead'], durationMs: 264_000, title: 'Karma Police' };
         const candidates = [
@@ -307,6 +323,11 @@ describe('playlist CSV', () => {
                 title: 'Karma Police',
             },
         ]);
+    });
+
+    it('a byte-order mark does not hide the first header', () => {
+        const playlist = parsePlaylistCSV('\uFEFFTitle,Artist\nKarma Police,Radiohead\n', 'x');
+        expect(playlist.tracks.map((track) => track.title)).toEqual(['Karma Police']);
     });
 
     it('refuses a file with no title column', () => {

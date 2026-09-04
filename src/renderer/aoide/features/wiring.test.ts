@@ -509,8 +509,8 @@ describe('the playlist import is reachable and judges with the shared rules', ()
     });
 
     it('searches by the normalised title and decides with the shared matcher', () => {
-        expect(hook).toContain('searchTerm: term');
-        expect(hook).toContain('normalize(track.title)');
+        expect(hook).toContain('searchTerm: term.slice(0, 60)');
+        expect(hook).toContain('searchTerms(track.title)');
         expect(hook).toContain('best(track, songs.map(candidateFromSong))');
     });
 });

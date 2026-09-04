@@ -8,9 +8,9 @@ import { isAoideAvailable } from '/@/renderer/aoide/features/shared/aoide-bridge
 import { api } from '/@/renderer/api';
 import {
     best,
-    normalize,
     parsePlaylistCSV,
     PlaylistCSVError,
+    searchTerms,
 } from '/@/shared/aoide/playlist-import';
 import { SongListSort, SortOrder } from '/@/shared/types/domain-types';
 
@@ -44,27 +44,29 @@ export const usePlaylistImport = (serverId: string) => {
 
     const lookUp = useCallback(
         async (track: ImportedTrack): Promise<null | Song> => {
-            const term = normalize(track.title).slice(0, 60);
-            if (term.length === 0) return null;
-            try {
-                const result = await api.controller.getSongList({
-                    apiClientProps: { serverId },
-                    query: {
-                        limit: 15,
-                        searchTerm: term,
-                        sortBy: SongListSort.NAME,
-                        sortOrder: SortOrder.ASC,
-                        startIndex: 0,
-                    },
-                });
-                const songs = result?.items ?? [];
-                const index = best(track, songs.map(candidateFromSong));
-                return index === null ? null : songs[index];
-            } catch {
-                // A search that fails is a track reported missing, which is the
-                // honest answer from here.
-                return null;
+            // Asked in the title's own spelling first, then wider. See `searchTerms`.
+            for (const term of searchTerms(track.title)) {
+                try {
+                    const result = await api.controller.getSongList({
+                        apiClientProps: { serverId },
+                        query: {
+                            limit: 40,
+                            searchTerm: term.slice(0, 60),
+                            sortBy: SongListSort.NAME,
+                            sortOrder: SortOrder.ASC,
+                            startIndex: 0,
+                        },
+                    });
+                    const songs = result?.items ?? [];
+                    const index = best(track, songs.map(candidateFromSong));
+                    if (index !== null) return songs[index];
+                } catch {
+                    // A search that fails is a track reported missing, which is
+                    // the honest answer from here.
+                    return null;
+                }
             }
+            return null;
         },
         [serverId],
     );
