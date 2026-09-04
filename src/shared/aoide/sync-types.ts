@@ -30,9 +30,39 @@ export const SYNC_ENTITIES = [
     'likes',
     'play_events',
     'queue_state',
+    'track_flags',
 ] as const;
 
 export type SyncEntity = (typeof SYNC_ENTITIES)[number];
+
+/**
+ * Entities a server may not know yet.
+ *
+ * The sidecar's entity list is an allow-list and an unknown name is refused,
+ * which by the contract quarantines the op — real user data lost to a
+ * deployment order, because a rejected op is never retried. Ops for these are
+ * held locally instead, until the server advertises the entity in
+ * `GET /aoide/sync/status`'s `acceptedEntities`. Everything older than the
+ * advertisement itself is assumed accepted, so a sidecar that lists nothing
+ * holds only what is named here and sends the rest as it always did.
+ *
+ * The phone keeps the same set (`SyncEntity.needsServerSupport`). An entity
+ * leaves this list once every deployed sidecar accepts it — never before, and
+ * never merely because this client's own server does.
+ */
+export const ENTITIES_NEEDING_SERVER_SUPPORT: ReadonlySet<SyncEntity> = new Set<SyncEntity>([
+    'track_flags',
+]);
+
+/**
+ * Which of the entities needing support the server has not advertised.
+ *
+ * `undefined` — the status could not be fetched, or names no list at all — holds
+ * every one of them. That is the safe direction: a held op waits, a refused op
+ * is quarantined.
+ */
+export const entitiesToHold = (accepted: readonly string[] | undefined): SyncEntity[] =>
+    [...ENTITIES_NEEDING_SERVER_SUPPORT].filter((entity) => !accepted?.includes(entity));
 
 /**
  * Where a cover's hash sits inside an op payload.
@@ -260,11 +290,18 @@ export type SyncOperation = 'delete' | 'upsert';
  * a device that has fallen behind becomes visible before its history is gone.
  */
 export interface SyncStatus {
+    /**
+     * The entity names this server accepts on push. Absent on a sidecar older
+     * than the field, which is read as "nothing new is accepted": the entities
+     * in `ENTITIES_NEEDING_SERVER_SUPPORT` are held and everything older goes.
+     */
+    acceptedEntities?: string[];
     /** The server's head sequence. Still not a pull cursor. */
     cursor: number;
     devices?: SyncStatusDevice[];
     /** The lowest cursor among recently seen devices; retention is bounded by it. */
     lowestCursor?: number;
+    pluginVersion?: string;
 }
 
 export interface SyncStatusDevice {

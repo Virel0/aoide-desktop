@@ -220,6 +220,36 @@ export const MIGRATIONS: ReadonlyArray<(db: DatabaseSync) => void> = [
             );
         `);
     },
+
+    // v2 — taste flags: the phone's \`trackFlags\` (Schema.swift v8), spelled
+    // \`track_flags\` here for the reason in the header.
+    (db) => {
+        db.exec(`
+            -- Two flags per track. notInterested keeps it out of mixes,
+            -- stations, shuffle and every smart-playlist result; dontCount
+            -- stops new plays being recorded. Neither touches history already
+            -- written — evaluation reads the flag and never assumes the events
+            -- do not exist.
+            --
+            -- Not columns on likes, and merged per field like a playlist: a
+            -- "not interested" set on one device and a "don't count" set on
+            -- another at the same moment must both survive, and likes merge
+            -- whole-row. One row per track — the unique index on jellyfinId is
+            -- what the merge dedupes on when two devices each minted a row for
+            -- the same track before either saw the other's.
+            CREATE TABLE track_flags (
+                id             TEXT PRIMARY KEY,
+                jellyfinId     TEXT NOT NULL UNIQUE,
+                contentKey     TEXT NOT NULL,
+                notInterested  INTEGER NOT NULL DEFAULT 0,
+                dontCount      INTEGER NOT NULL DEFAULT 0,
+                updatedAt      INTEGER NOT NULL,
+                deleted        INTEGER NOT NULL DEFAULT 0,
+                originDevice   TEXT NOT NULL,
+                fieldUpdatedAt TEXT
+            );
+        `);
+    },
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

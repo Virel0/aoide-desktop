@@ -11,7 +11,9 @@ import {
     FIELD_STAMPS_KEY,
     mergeRows,
     METADATA_COLUMNS,
+    ONE_ROW_PER_TRACK,
     PER_FIELD_ENTITIES,
+    rowWinner,
     Stamps,
     stampsFromPayload,
     stampsFromRow,
@@ -42,6 +44,9 @@ const ENTITIES: Record<SyncEntity, { key: string; softDeletes: boolean }> = {
     // One row per device, replaced wholesale. A queue is not something you
     // delete; you replace it or you leave it alone.
     queue_state: { key: 'deviceId', softDeletes: false },
+    // One row per track, like `likes`, and a soft delete is what "neither flag
+    // set" is stored as — see `TrackFlags.setFlag`.
+    track_flags: { key: 'id', softDeletes: true },
 };
 
 /**
@@ -66,6 +71,7 @@ const BOOLEAN_COLUMNS: Record<SyncEntity, readonly string[]> = {
     playlist_items: ['deleted'],
     playlists: ['deleted', 'isSmart'],
     queue_state: [],
+    track_flags: ['deleted', 'dontCount', 'notInterested'],
 };
 
 export type CurationRow = Record<string, boolean | null | number | string>;
@@ -166,8 +172,7 @@ export class CurationStore {
                     : null;
             }
 
-            this.inTransaction(() => this.upsertRow(op.entity, first));
-            return 'applied';
+            return this.writeDeduped(op.entity, first);
         }
 
         const merged = mergeRows({
@@ -185,8 +190,7 @@ export class CurationStore {
             row[FIELD_STAMPS_COLUMN] = merged.stamps ? JSON.stringify(merged.stamps) : null;
         }
 
-        this.inTransaction(() => this.upsertRow(op.entity, row));
-        return 'applied';
+        return this.writeDeduped(op.entity, row);
     }
 
     /** Rows of a table that have not been soft-deleted. */
@@ -457,6 +461,37 @@ export class CurationStore {
             )
             .run(...present.map((column) => normalise(row[column])));
     }
+
+    /**
+     * Write an inbound row, retiring any other row that claims the same track.
+     *
+     * `likes` and `track_flags` hold one row per track, and two devices that
+     * each minted one for the same track before seeing the other's have two ids
+     * for one fact — which the unique index on `jellyfinId` would otherwise turn
+     * into a constraint failure on the second to arrive. The phone's
+     * `mergeLike` and `mergeTrackFlags`, exactly: the newer `(updatedAt,
+     * originDevice)` row wins and the other is deleted outright — hard, not
+     * soft, because a row that lost to its twin is a duplicate to forget rather
+     * than a delete to sync — and a row that loses to the twin already here is
+     * ignored whole; nothing of it is written.
+     */
+    private writeDeduped(entity: SyncEntity, row: CurationRow): 'applied' | 'ignored' {
+        const clash = ONE_ROW_PER_TRACK.has(entity)
+            ? (this.db
+                  .prepare(`SELECT * FROM ${entity} WHERE jellyfinId = ? AND id != ?`)
+                  .get(String(row.jellyfinId), String(row.id)) as CurationRow | undefined)
+            : undefined;
+
+        if (clash && rowWinner(row, clash) !== 'incoming') return 'ignored';
+
+        this.inTransaction(() => {
+            if (clash) {
+                this.db.prepare(`DELETE FROM ${entity} WHERE id = ?`).run(String(clash.id));
+            }
+            this.upsertRow(entity, row);
+        });
+        return 'applied';
+    }
 }
 
 /**
@@ -489,7 +524,12 @@ const restampChangedFields = (
     const stamps: Stamps = {};
     for (const [field, value] of Object.entries(row)) {
         if (METADATA_COLUMNS.has(field)) continue;
-        const unchanged = previous !== undefined && previous[field] === value;
+        // Compared as SQLite stores them. The row read back holds 0 and 1
+        // where the caller wrote true and false, and a boolean that merely
+        // changed *type* on the way through is not an edit — stamping it as
+        // one would restamp both taste flags on every write of either, which
+        // is the whole-row merge per-field stamping exists to prevent.
+        const unchanged = previous !== undefined && normalise(previous[field]) === normalise(value);
         stamps[field] = unchanged ? (previousStamps[field] ?? previousAt) : now;
     }
 

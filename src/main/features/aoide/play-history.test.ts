@@ -4,6 +4,7 @@ import { CurationStore } from './curation-store';
 import { CurationDatabase, openCurationDatabase } from './database';
 import { MAX_PARAMETERS, PlayHistory, RECAP_TOP_LIMIT } from './play-history';
 import { contentKeyFor } from './playlists';
+import { TrackFlags } from './track-flags';
 
 import {
     classify,
@@ -627,7 +628,7 @@ describe('a recap of a window', () => {
 
 describe('recording a listen at this desk', () => {
     const duration = 200_000;
-    const begin = (over: Partial<Parameters<PlayHistory['beginPlay']>[0]> = {}) =>
+    const tryBegin = (over: Partial<Parameters<PlayHistory['beginPlay']>[0]> = {}) =>
         history.beginPlay({
             album: 'An Album',
             artist: 'An Artist',
@@ -638,6 +639,52 @@ describe('recording a listen at this desk', () => {
             title: 'A Song',
             ...over,
         });
+
+    /** A begin that must open something — every case below but the flagged one. */
+    const begin = (over: Partial<Parameters<PlayHistory['beginPlay']>[0]> = {}): string => {
+        const id = tryBegin(over);
+        if (id === null) throw new Error('beginPlay opened nothing for an unflagged track');
+        return id;
+    };
+
+    // "Don't count this" means exactly that: no event is opened, so nothing is
+    // there to count later — and nothing is in the op log to reach the phone.
+    describe('a track flagged "don’t count"', () => {
+        const flag = (jellyfinId: string, dontCount: boolean) =>
+            new TrackFlags(database, store).setDontCount(jellyfinId, 'key', dontCount);
+
+        it('opens no event and writes no op', () => {
+            flag('desk-track', true);
+
+            expect(tryBegin()).toBeNull();
+            expect(database.db.prepare('SELECT COUNT(*) AS n FROM play_events').get()).toEqual({
+                n: 0,
+            });
+            expect(store.pendingOps().filter((op) => op.entity === 'play_events')).toEqual([]);
+        });
+
+        it('leaves history already recorded exactly as it was', () => {
+            const earlier = begin({ startedAt: now - 10_000 });
+            history.finishPlay(earlier, { durationMs: duration, endedAt: now, msPlayed: duration });
+            flag('desk-track', true);
+
+            expect(tryBegin()).toBeNull();
+            expect(history.statsFor('desk-track').playCount).toBe(1);
+        });
+
+        it('records again once the flag is taken off', () => {
+            flag('desk-track', true);
+            flag('desk-track', false);
+
+            expect(tryBegin()).not.toBeNull();
+        });
+
+        it('is the one flag that matters here: "not interested" still records', () => {
+            new TrackFlags(database, store).setNotInterested('desk-track', 'key', true);
+
+            expect(tryBegin()).not.toBeNull();
+        });
+    });
 
     const row = (id: string) =>
         database.db.prepare('SELECT * FROM play_events WHERE id = ?').get(id) as Record<

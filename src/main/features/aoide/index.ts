@@ -15,6 +15,7 @@ import { PlayHistory } from './play-history';
 import { registerPlaylistImportHandlers } from './playlist-import';
 import { Playlists } from './playlists';
 import { registerSmartSearchHandlers } from './smart-search';
+import { TrackFlags } from './track-flags';
 
 import log from '/@/main/logger';
 
@@ -33,6 +34,7 @@ import log from '/@/main/logger';
  */
 export interface Curation {
     database: CurationDatabase;
+    flags: TrackFlags;
     history: PlayHistory;
     images: ImageBlobStore;
     mix: Mix;
@@ -83,6 +85,7 @@ export const curation = (): Curation => {
 
     opened = {
         database,
+        flags: new TrackFlags(database, store),
         history: new PlayHistory(database, store),
         images: new ImageBlobStore(database),
         mix: new Mix(database),
@@ -355,6 +358,36 @@ handle(
 handle('aoide:history-finish-play', ({ history }, eventId: string, input: FinishPlayInput) =>
     history.finishPlay(eventId, input),
 );
+
+/*
+ * Taste flags. One call per user action; the one list call — which of these
+ * candidates are hidden — takes the whole candidate list at once, because a
+ * station asks it about a hundred tracks and must not cross the bridge a
+ * hundred times to find out.
+ */
+handle('aoide:flags-get', ({ flags }, jellyfinId: string) => flags.flags(jellyfinId));
+
+handle(
+    'aoide:flags-set-not-interested',
+    ({ flags }, jellyfinId: string, contentKey: string, value: boolean) =>
+        flags.setNotInterested(jellyfinId, contentKey, value),
+);
+
+handle(
+    'aoide:flags-set-dont-count',
+    ({ flags }, jellyfinId: string, contentKey: string, value: boolean) =>
+        flags.setDontCount(jellyfinId, contentKey, value),
+);
+
+handle('aoide:flags-clear', ({ flags }, jellyfinId: string) => flags.clear(jellyfinId));
+
+handle('aoide:flags-flagged', ({ flags }) => flags.flagged());
+
+// An array over the wire rather than the Set the class answers with: a plain
+// list is what the renderer filters against, and it survives every serialiser.
+handle('aoide:flags-not-interested-among', ({ flags }, jellyfinIds: string[]) => [
+    ...flags.notInterestedAmong(jellyfinIds),
+]);
 
 /** The phone keeps 500; matching it keeps a handover the same size on both. */
 const MAX_QUEUE_TRACKS = 500;

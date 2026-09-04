@@ -22,7 +22,7 @@ const playlist = (overrides: Record<string, unknown> = {}) => ({
 
 /**
  * Every column of every table that ever appears in a payload, transcribed from
- * `CurationKit/Schema.swift` migrations v1 through v7.
+ * `CurationKit/Schema.swift` migrations v1 through v8.
  *
  * A payload is the row on both clients, so these names are the wire and this is
  * the contract with the phone rather than a restatement of the migration. The
@@ -93,6 +93,18 @@ const PHONE_COLUMNS: Record<string, string[]> = {
         'elapsedMs',
         'updatedAt',
         'originDevice',
+    ],
+    // Schema.swift v8.
+    track_flags: [
+        'id',
+        'jellyfinId',
+        'contentKey',
+        'notInterested',
+        'dontCount',
+        'updatedAt',
+        'deleted',
+        'originDevice',
+        'fieldUpdatedAt',
     ],
     // Local, and matching the phone anyway: the shared play/skip SQL is
     // interpolated against these names on both clients.

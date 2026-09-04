@@ -62,6 +62,7 @@ describe('the payload is the whole row', () => {
                 'queue_state',
                 { deviceId: 'd1', deviceName: 'Laptop', elapsedMs: 0, position: 0, trackIds: '[]' },
             ],
+            ['track_flags', { contentKey: 'k', id: 'tf1', jellyfinId: 't1', notInterested: true }],
         ];
 
         for (const [entity, values] of rows) {

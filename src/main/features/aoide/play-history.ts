@@ -189,9 +189,15 @@ export class PlayHistory {
      * `msPlayed: 0` and no outcome, and `play-definition`'s SQL knows to count
      * it as neither a play nor a skip until it is finished.
      *
-     * Returns the event's id, which is what `finishPlay` wants back.
+     * Returns the event's id, which is what `finishPlay` wants back — or null
+     * for a track flagged "don't count", which opens no event at all. Nothing
+     * is written, so there is nothing to finish and nothing to count later; the
+     * phone's `CurationRecorder` does the same. History already recorded stays,
+     * because the flag is read here and never used to disbelieve an event.
      */
-    beginPlay(input: BeginPlayInput): string {
+    beginPlay(input: BeginPlayInput): null | string {
+        if (this.dontCount(input.jellyfinId)) return null;
+
         const id = randomUUID();
 
         this.store.record('play_events', {
@@ -476,6 +482,21 @@ export class PlayHistory {
      */
     statsFor(jellyfinId: string): TrackStats {
         return this.stats([jellyfinId]).get(jellyfinId) ?? emptyTrackStats(jellyfinId);
+    }
+
+    /**
+     * Whether the listener has asked for this track's plays not to be counted.
+     *
+     * Read off `track_flags` directly — the same rows `TrackFlags` writes —
+     * rather than through that class, so this module owes it nothing at import
+     * time. A deleted row is a flag taken off again.
+     */
+    private dontCount(jellyfinId: string): boolean {
+        const row = this.db
+            .prepare('SELECT dontCount FROM track_flags WHERE jellyfinId = ? AND deleted = 0')
+            .get(jellyfinId) as undefined | { dontCount: number };
+
+        return row !== undefined && Number(row.dontCount) !== 0;
     }
 }
 

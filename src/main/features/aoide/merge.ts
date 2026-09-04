@@ -40,8 +40,26 @@ export const FIELD_STAMPS_KEY = 'fieldUpdatedAt';
  * field by field could pair one device's playback position with another
  * device's track list — a state that existed on neither device and describes
  * nothing.
+ *
+ * `track_flags` is in, and is why it is not two columns on `likes`: "not
+ * interested" set on one device and "don't count" set on another at the same
+ * moment must both survive, and a whole-row merge keeps one.
  */
-export const PER_FIELD_ENTITIES: ReadonlySet<SyncEntity> = new Set(['folders', 'playlists']);
+export const PER_FIELD_ENTITIES: ReadonlySet<SyncEntity> = new Set([
+    'folders',
+    'playlists',
+    'track_flags',
+]);
+
+/**
+ * Entities that hold one row per track, keyed by `jellyfinId` beneath the id.
+ *
+ * Two devices that each minted a row for the same track before seeing the
+ * other's have two ids for one fact. `applyRemote` keeps the newer `(updatedAt,
+ * originDevice)` row and deletes the other — the phone's `mergeLike` and
+ * `mergeTrackFlags` — so every device ends on the same single row.
+ */
+export const ONE_ROW_PER_TRACK: ReadonlySet<SyncEntity> = new Set(['likes', 'track_flags']);
 
 /** Columns that carry the merge rather than being merged. */
 // The phone's `FieldStamped.metadataColumns`, exactly: id, updatedAt, deleted,

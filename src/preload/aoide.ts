@@ -19,6 +19,7 @@ import type {
     OpenRouterModel,
     SmartSearchOutcome,
 } from '/@/main/features/aoide/smart-search';
+import type { FlaggedTrack, TrackFlagRow } from '/@/main/features/aoide/track-flags';
 import type { SmartRules } from '/@/shared/aoide/smart-rules';
 import type { SyncOp } from '/@/shared/aoide/sync-types';
 
@@ -45,14 +46,55 @@ interface OutboundImage {
  * the crossing per row.
  */
 export const aoide = {
+    /**
+     * Taste flags — "not interested" and "don't count plays" — per track.
+     * Written as ops, so they reach the phone; read here for menus, for the
+     * settings list, and to drop hidden tracks from a station before it plays.
+     */
+    flags: {
+        /** Both flags off, as one write. */
+        clear: (jellyfinId: string): Promise<void> =>
+            ipcRenderer.invoke('aoide:flags-clear', jellyfinId),
+
+        /** Every flagged track, newest first, with what the cache knows of it. */
+        flagged: (): Promise<FlaggedTrack[]> => ipcRenderer.invoke('aoide:flags-flagged'),
+
+        /** Undefined when nothing has been said about the track. */
+        get: (jellyfinId: string): Promise<TrackFlagRow | undefined> =>
+            ipcRenderer.invoke('aoide:flags-get', jellyfinId),
+
+        /** Which of these ids are marked not interested. One call for the whole list. */
+        notInterestedAmong: (jellyfinIds: string[]): Promise<string[]> =>
+            ipcRenderer.invoke('aoide:flags-not-interested-among', jellyfinIds),
+
+        setDontCount: (
+            jellyfinId: string,
+            contentKey: string,
+            value: boolean,
+        ): Promise<TrackFlagRow | undefined> =>
+            ipcRenderer.invoke('aoide:flags-set-dont-count', jellyfinId, contentKey, value),
+
+        setNotInterested: (
+            jellyfinId: string,
+            contentKey: string,
+            value: boolean,
+        ): Promise<TrackFlagRow | undefined> =>
+            ipcRenderer.invoke('aoide:flags-set-not-interested', jellyfinId, contentKey, value),
+    },
+
     /** Listening history: recorded and aggregated in the main process where the events live. */
     history: {
         /**
          * A track has started. Resolves to the event id, which `finishPlay`
          * takes back; the track is cached on the way so the play has an artist
-         * and album to be filed under.
+         * and album to be filed under. Null for a track flagged "don't count":
+         * nothing was opened, so there is nothing to finish.
          */
-        beginPlay: (track: TrackInput, source: PlaySource, startedAt: number): Promise<string> =>
+        beginPlay: (
+            track: TrackInput,
+            source: PlaySource,
+            startedAt: number,
+        ): Promise<null | string> =>
             ipcRenderer.invoke('aoide:history-begin-play', track, source, startedAt),
 
         /** The track ended or was left. Finishing twice is a no-op. */

@@ -1,6 +1,7 @@
 import type { SmartRule, SmartRules } from '/@/shared/aoide/smart-rules';
 
 import { CurationDatabase } from './database';
+import { notInterestedAmong } from './track-flags';
 
 import { countsAsPlaySql, countsAsSkipSql } from '/@/shared/aoide/play-definition';
 
@@ -44,14 +45,20 @@ export class Mix {
 
         if (candidateIds.length === 0) return [];
 
+        // "Not interested" is the one thing a listener can say that outranks
+        // every rule: the track is dropped before any rule sees it, and before
+        // the limit is counted, so a hidden track never costs a mix a slot.
+        const hidden = notInterestedAmong(this.db, candidateIds);
+        const offered = candidateIds.filter((id) => !hidden.has(id));
+
         // No history rules means the library filters already said everything
         // there was to say, and every candidate qualifies.
         if (historyRules.length === 0) {
-            return rules.limit ? [...candidateIds].slice(0, rules.limit) : [...candidateIds];
+            return rules.limit ? offered.slice(0, rules.limit) : offered;
         }
 
-        const stats = this.statsFor(candidateIds);
-        const matches = candidateIds.filter((id) => {
+        const stats = this.statsFor(offered);
+        const matches = offered.filter((id) => {
             const row = stats.get(id) ?? EMPTY_STATS;
             const verdicts = historyRules.map((rule) => satisfies(rule, row));
 

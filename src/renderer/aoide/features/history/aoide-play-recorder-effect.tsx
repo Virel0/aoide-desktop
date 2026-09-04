@@ -42,7 +42,9 @@ export const AoidePlayRecorderEffect = () => (isAoideAvailable() ? <Recorder /> 
 
 const Recorder = () => {
     const state = useRef(initialState());
-    const eventIds = useRef(new Map<number, Promise<string | undefined>>());
+    // Null is a begin the store declined — a track flagged "don't count"
+    // opens no event — and undefined is one that failed. Both finish nothing.
+    const eventIds = useRef(new Map<number, Promise<null | string | undefined>>());
 
     const perform = useCallback((call: RecorderCall) => {
         const { history } = window.api.aoide;
