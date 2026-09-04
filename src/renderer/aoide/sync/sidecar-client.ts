@@ -1,3 +1,5 @@
+import type { ImportedTrack } from '/@/shared/aoide/playlist-import';
+
 import { SyncError, syncErrorFromReply } from './errors';
 
 import {
@@ -88,6 +90,32 @@ const finiteOrUndefined = (value: unknown): number | undefined => {
  * engine, which needs the local op log to do any of it. Keeping them apart is
  * what lets this be tested without a database.
  */
+/** The sidecar refuses more than this many rows in one call. */
+export const MATCH_ROWS_PER_REQUEST = 5000;
+
+/** A library track the sidecar chose for an imported one, with its reasons. */
+export interface SidecarMatch {
+    album?: null | string;
+    artists?: null | string[];
+    artistScore: number;
+    confidence: number;
+    durationMs?: null | number;
+    durationScore: number;
+    jellyfinId: string;
+    title?: null | string;
+    titleScore: number;
+}
+
+/** The wire form of an imported track, spelled the way the sidecar reads it. */
+export const matchRequestBody = (tracks: ImportedTrack[]) =>
+    tracks.map((track) => ({
+        album: track.album ?? null,
+        artists: track.artists,
+        durationMs: track.durationMs ?? null,
+        isrc: track.isrc ?? null,
+        title: track.title,
+    }));
+
 export class SidecarClient {
     private readonly baseUrl: string;
 
@@ -154,6 +182,48 @@ export class SidecarClient {
             await this.readJson<unknown>(response, 'aoide/shares'),
             'shares',
         );
+    }
+
+    /**
+     * Every device's queue, most recently updated first.
+     *
+     * "Resume across devices" offers the first entry that is **not**
+     * `isCurrentDevice`, and judges how recent it is on `ageSeconds` or
+     * `receivedAt` — never on `updatedAt`. The first two are the server's clock;
+     * `updatedAt` is the writing device's, so a machine whose clock is set wrong
+     * would otherwise claim to be the most recent one and win every handover.
+     */
+    /**
+     * `POST /aoide/match`: the sidecar's answer for each imported track, or null
+     * where the library has nothing for it.
+     *
+     * One request instead of several per track. The sidecar carries the same
+     * matching rules as `playlist-import.ts` and is checked against the same
+     * table of cases, so it answers as this device would — only from inside the
+     * library, where a thousand rows is a lookup rather than a thousand round
+     * trips. Throws when the sidecar is absent or fails; the caller matches
+     * locally then.
+     */
+    async match(tracks: ImportedTrack[]): Promise<Array<null | SidecarMatch>> {
+        const results: Array<null | SidecarMatch> = [];
+        for (let at = 0; at < tracks.length; at += MATCH_ROWS_PER_REQUEST) {
+            const response = await this.send('/aoide/match', {
+                body: JSON.stringify(
+                    matchRequestBody(tracks.slice(at, at + MATCH_ROWS_PER_REQUEST)),
+                ),
+                headers: { 'Content-Type': 'application/json' },
+                method: 'POST',
+            });
+            if (!response.ok) {
+                throw syncErrorFromReply('aoide/match', await this.readReply(response));
+            }
+            const body = await this.readJson<{ results?: unknown }>(response, 'aoide/match');
+            if (!Array.isArray(body.results)) {
+                throw new SyncError('permanent', 'aoide/match answered without results');
+            }
+            results.push(...(body.results as Array<null | SidecarMatch>));
+        }
+        return results;
     }
 
     /**
@@ -288,15 +358,6 @@ export class SidecarClient {
         }
     }
 
-    /**
-     * Every device's queue, most recently updated first.
-     *
-     * "Resume across devices" offers the first entry that is **not**
-     * `isCurrentDevice`, and judges how recent it is on `ageSeconds` or
-     * `receivedAt` — never on `updatedAt`. The first two are the server's clock;
-     * `updatedAt` is the writing device's, so a machine whose clock is set wrong
-     * would otherwise claim to be the most recent one and win every handover.
-     */
     async queues(): Promise<QueueEntry[]> {
         const response = await this.send('/aoide/queue', { method: 'GET' });
 

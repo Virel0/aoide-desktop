@@ -1,11 +1,15 @@
+import type { SidecarMatch } from '/@/renderer/aoide/sync/sidecar-client';
 import type { ImportedPlaylist, ImportedTrack } from '/@/shared/aoide/playlist-import';
 import type { Song } from '/@/shared/types/domain-types';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { candidateFromSong } from '/@/renderer/aoide/features/import/song-candidate';
 import { isAoideAvailable } from '/@/renderer/aoide/features/shared/aoide-bridge';
+import { useSidecarTransport } from '/@/renderer/aoide/features/sync/use-sidecar-transport';
 import { api } from '/@/renderer/api';
+import { getSongById } from '/@/renderer/features/player/utils';
 import {
     best,
     parsePlaylistCSV,
@@ -37,6 +41,8 @@ const LOOKUPS_AT_ONCE = 4;
  * server is not asked for "(Remastered 2009)" — and lets the matcher judge them.
  */
 export const usePlaylistImport = (serverId: string) => {
+    const transport = useSidecarTransport();
+    const queryClient = useQueryClient();
     const [phase, setPhase] = useState<ImportPhase>({ kind: 'idle' });
     const [playlist, setPlaylist] = useState<ImportedPlaylist | null>(null);
     const [matches, setMatches] = useState<ImportMatch[]>([]);
@@ -71,6 +77,47 @@ export const usePlaylistImport = (serverId: string) => {
         [serverId],
     );
 
+    /**
+     * The sidecar's answers, as rows this screen can show and save — or null
+     * when there is no sidecar, or it failed, and the lookups below must do it.
+     */
+    const matchOnServer = useCallback(
+        async (imported: ImportedPlaylist): Promise<ImportMatch[] | null> => {
+            if (!transport) return null;
+            let answers: Array<null | SidecarMatch>;
+            try {
+                answers = await transport.match(imported.tracks);
+            } catch {
+                return null;
+            }
+            if (answers.length !== imported.tracks.length) return null;
+
+            // The sidecar names ids; the songs are fetched by id, a few at a
+            // time, which is one request per hit rather than several per track.
+            const songs = new Map<string, Song>();
+            const ids = [
+                ...new Set(answers.flatMap((answer) => (answer ? [answer.jellyfinId] : []))),
+            ];
+            for (let at = 0; at < ids.length; at += LOOKUPS_AT_ONCE) {
+                const fetched = await Promise.allSettled(
+                    ids
+                        .slice(at, at + LOOKUPS_AT_ONCE)
+                        .map((id) => getSongById({ id, queryClient, serverId })),
+                );
+                for (const result of fetched) {
+                    if (result.status === 'fulfilled') {
+                        for (const song of result.value.items) songs.set(song.id, song);
+                    }
+                }
+            }
+            return imported.tracks.map((track, index) => {
+                const answer = answers[index];
+                return { song: answer ? (songs.get(answer.jellyfinId) ?? null) : null, track };
+            });
+        },
+        [queryClient, serverId, transport],
+    );
+
     const match = useCallback(
         async (imported: ImportedPlaylist) => {
             const thisRun = (run.current += 1);
@@ -78,6 +125,17 @@ export const usePlaylistImport = (serverId: string) => {
             setMatches([]);
             const total = imported.tracks.length;
             setPhase({ done: 0, kind: 'matching', total });
+
+            // The sidecar first: one request, answered from inside the library
+            // by the same rules this device would apply. Without it, the same
+            // answer, only slower.
+            const served = await matchOnServer(imported);
+            if (run.current !== thisRun) return;
+            if (served) {
+                setMatches(served);
+                setPhase({ kind: 'finished' });
+                return;
+            }
 
             const results: ImportMatch[] = [];
             for (let at = 0; at < total; at += LOOKUPS_AT_ONCE) {
@@ -91,7 +149,7 @@ export const usePlaylistImport = (serverId: string) => {
             setMatches(results);
             setPhase({ kind: 'finished' });
         },
-        [lookUp],
+        [lookUp, matchOnServer],
     );
 
     const importSpotify = useCallback(

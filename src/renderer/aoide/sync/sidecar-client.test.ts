@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { SyncError } from './errors';
 import { SidecarClient } from './sidecar-client';
@@ -425,5 +425,59 @@ describe('SidecarClient', () => {
             expect(calls[0].url).toBe('https://example.invalid/aoide/images/abc');
             expect(calls[0].headers['Content-Type']).toBe('image/jpeg');
         });
+    });
+});
+
+describe('match', () => {
+    it('posts the imported rows as the sidecar reads them and returns its answers, nulls kept', async () => {
+        const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
+            const rows = JSON.parse(String(init?.body));
+            expect(rows).toEqual([
+                {
+                    album: null,
+                    artists: ['Radiohead'],
+                    durationMs: 264_000,
+                    isrc: null,
+                    title: 'Karma Police',
+                },
+            ]);
+            return new Response(
+                JSON.stringify({
+                    librarySize: 10,
+                    matched: 1,
+                    results: [
+                        {
+                            artistScore: 1,
+                            confidence: 0.97,
+                            durationScore: 0.8,
+                            jellyfinId: 'j1',
+                            titleScore: 1,
+                        },
+                    ],
+                }),
+                { headers: { 'Content-Type': 'application/json' }, status: 200 },
+            );
+        });
+
+        const answers = await client(fetchImpl as unknown as typeof fetch).match([
+            { artists: ['Radiohead'], durationMs: 264_000, title: 'Karma Police' },
+        ]);
+
+        expect(answers).toEqual([
+            {
+                artistScore: 1,
+                confidence: 0.97,
+                durationScore: 0.8,
+                jellyfinId: 'j1',
+                titleScore: 1,
+            },
+        ]);
+        expect(fetchImpl.mock.calls[0][0]).toMatch(/\/aoide\/match$/);
+    });
+
+    it('asks nothing for an empty import', async () => {
+        const fetchImpl = vi.fn();
+        expect(await client(fetchImpl as unknown as typeof fetch).match([])).toEqual([]);
+        expect(fetchImpl).not.toHaveBeenCalled();
     });
 });
