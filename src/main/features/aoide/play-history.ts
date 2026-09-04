@@ -1,25 +1,86 @@
 import type { DatabaseSync } from 'node:sqlite';
 
+import { randomUUID } from 'node:crypto';
+
+import type { CurationStore } from './curation-store';
 import type { CurationDatabase } from './database';
 
+import { contentKeyFor } from './playlists';
+
 import {
+    classify,
     countsAsPlaySql,
     countsAsSkipSql,
     MINIMUM_SKIP_SAMPLE,
 } from '/@/shared/aoide/play-definition';
 
 /**
- * Aggregating listening history.
+ * Listening history: recording it, and aggregating it.
  *
  * What a play *is* — and what a skip is — lives in `play-definition.ts`, shared
  * with the smart-playlist evaluator so that the count printed beside a track and
  * the membership of "played more than five times" cannot disagree. Nothing in
  * this file re-types a threshold; every predicate below is one of that module's
- * fragments, interpolated.
+ * fragments, interpolated, and the two flags `finishPlay` stores come from its
+ * `classify` and nowhere else.
  *
- * Read-only. Events are written through `CurationStore.record`, which is what
- * puts the row and its op in the log together.
+ * Events are written through `CurationStore.record`, which is what puts the row
+ * and its op in the log together — so a listen at this desk reaches the phone
+ * the same way a phone listen reaches here.
  */
+
+/** What opening a listen needs: the track, and when and from where it started. */
+export interface BeginPlayInput {
+    album: string;
+    artist: string;
+    durationMs: null | number;
+    jellyfinId: string;
+    source: PlaySource;
+    /** Milliseconds since the epoch, this device's clock. */
+    startedAt: number;
+    title: string;
+}
+
+/** What closing a listen needs: when, how much was heard, and how long the track was. */
+export interface FinishPlayInput {
+    /**
+     * The duration the *player* had, which is what the verdict is judged
+     * against. The track cache may hold a different one, and the player was the
+     * one with the asset open.
+     */
+    durationMs: null | number;
+    endedAt: number;
+    /** Milliseconds actually heard. Fractions and negatives are tidied here. */
+    msPlayed: number;
+    /**
+     * Optionally, a better answer than the one given at `beginPlay`. The page a
+     * queue was started from sometimes says so a moment *after* the first track
+     * starts, and the finish is the one amendment this append-only row gets.
+     */
+    source?: PlaySource;
+}
+
+/**
+ * What `finishPlay` did. `already` is the idempotent case — a second finish for
+ * the same listen writes nothing — and `unknown` is an id this device never
+ * opened.
+ */
+export type FinishPlayOutcome = 'already' | 'finished' | 'unknown';
+
+/**
+ * Where a listen was started from. The phone's `PlayEvent.source` values,
+ * spelled the same because the column travels. `unknown` is the honest default
+ * for anything the desktop cannot tell cheaply.
+ */
+export type PlaySource =
+    | 'album'
+    | 'carplay'
+    | 'playlist'
+    | 'search'
+    | 'shuffle'
+    | 'siri'
+    | 'smart'
+    | 'unknown';
 
 /** What is known about one track's listening history. */
 export interface TrackStats {
@@ -106,13 +167,82 @@ export interface RecapTrack {
 export class PlayHistory {
     private readonly db: DatabaseSync;
 
+    private readonly store: CurationStore;
+
     /**
      * Takes the curation store's own database rather than opening a second one:
      * these aggregates join `play_events` against the `tracks` cache, and both
-     * only ever exist in there.
+     * only ever exist in there. The store itself is what the two writers below
+     * go through, so each event is a row *and* an op.
      */
-    constructor(database: CurationDatabase) {
+    constructor(database: CurationDatabase, store: CurationStore) {
         this.db = database.db;
+        this.store = store;
+    }
+
+    /**
+     * Open a listen the moment a track starts, and say which one it was.
+     *
+     * Written immediately rather than when the track ends, exactly as the
+     * phone's `CurationRecorder` does: an app that is quit mid-track would
+     * otherwise leave no trace of a listen that happened. The open row carries
+     * `msPlayed: 0` and no outcome, and `play-definition`'s SQL knows to count
+     * it as neither a play nor a skip until it is finished.
+     *
+     * Returns the event's id, which is what `finishPlay` wants back.
+     */
+    beginPlay(input: BeginPlayInput): string {
+        const id = randomUUID();
+
+        this.store.record('play_events', {
+            completed: false,
+            contentKey: contentKeyFor(input),
+            endedAt: null,
+            id,
+            jellyfinId: input.jellyfinId,
+            msPlayed: 0,
+            skipped: false,
+            source: input.source,
+            startedAt: input.startedAt,
+        });
+
+        return id;
+    }
+
+    /**
+     * Close a listen with what was heard, and let the shared definition say
+     * what it amounted to.
+     *
+     * An amendment of the same row under the same id, never a second row — the
+     * op it records carries the finished row, and every other device applies it
+     * over the open copy through `isMoreFinished`. Idempotent: a row that
+     * already has an `endedAt` is left exactly as it is, so a finish sent twice
+     * (a window unloading while the ordinary finish is in flight) cannot
+     * overwrite a real verdict with a later, emptier one.
+     */
+    finishPlay(eventId: string, input: FinishPlayInput): FinishPlayOutcome {
+        const existing = this.db.prepare('SELECT * FROM play_events WHERE id = ?').get(eventId) as
+            | Record<string, null | number | string>
+            | undefined;
+
+        if (!existing) return 'unknown';
+        if (existing.endedAt !== null && existing.endedAt !== undefined) return 'already';
+
+        // Integer and never negative: the column is INTEGER, the phone decodes
+        // it as one, and a clock that ran backwards is not negative listening.
+        const msPlayed = Math.max(0, Math.floor(input.msPlayed));
+        const outcome = classify(msPlayed, input.durationMs);
+
+        this.store.record('play_events', {
+            ...existing,
+            completed: outcome.completed,
+            endedAt: input.endedAt,
+            msPlayed,
+            skipped: outcome.skipped,
+            source: input.source ?? existing.source,
+        });
+
+        return 'finished';
     }
 
     /**

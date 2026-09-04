@@ -4,6 +4,7 @@ import type { SyncOp } from '/@/shared/aoide/sync-types';
 import { app, ipcMain } from 'electron';
 import { join } from 'path';
 
+import type { FinishPlayInput, PlaySource } from './play-history';
 import type { CreatePlaylistOptions, ImportRequest, MoveTarget, TrackInput } from './playlists';
 
 import { CurationStore } from './curation-store';
@@ -82,7 +83,7 @@ export const curation = (): Curation => {
 
     opened = {
         database,
-        history: new PlayHistory(database),
+        history: new PlayHistory(database, store),
         images: new ImageBlobStore(database),
         mix: new Mix(database),
         playlists: new Playlists(database, store),
@@ -328,6 +329,32 @@ handle('aoide:mix-narrow', ({ mix }, candidateIds: string[], rules: SmartRules) 
  * period change, never per row — the leaderboards come back whole.
  */
 handle('aoide:history-recap', ({ history }, from: number, to: number) => history.recap(from, to));
+
+/**
+ * A listen starting at this desk. The track goes into the cache first, so the
+ * Replay page can file the play under its artist and album rather than
+ * reporting it unattributed — this is the one moment the desktop knows for
+ * certain what it is playing.
+ */
+handle(
+    'aoide:history-begin-play',
+    ({ history, playlists }, track: TrackInput, source: PlaySource, startedAt: number) => {
+        playlists.cacheTracks([track]);
+        return history.beginPlay({
+            album: track.album,
+            artist: track.artist,
+            durationMs: track.durationMs ?? null,
+            jellyfinId: track.jellyfinId,
+            source,
+            startedAt,
+            title: track.title,
+        });
+    },
+);
+
+handle('aoide:history-finish-play', ({ history }, eventId: string, input: FinishPlayInput) =>
+    history.finishPlay(eventId, input),
+);
 
 /** The phone keeps 500; matching it keeps a handover the same size on both. */
 const MAX_QUEUE_TRACKS = 500;

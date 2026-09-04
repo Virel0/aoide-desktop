@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -733,5 +733,123 @@ describe('Replay: listening as a story', () => {
 
     it('lines the numbers up with tabular digits', () => {
         expect(css).toContain('font-variant-numeric: tabular-nums;');
+    });
+});
+
+describe('what is played at this desk is recorded', () => {
+    const effect = sourceOf('history/aoide-play-recorder-effect.tsx');
+    const app = readFileSync(join(import.meta.dirname, '../../app.tsx'), 'utf8');
+    const preload = readFileSync(join(import.meta.dirname, '../../../preload/aoide.ts'), 'utf8');
+    const main = readFileSync(
+        join(import.meta.dirname, '../../../main/features/aoide/index.ts'),
+        'utf8',
+    );
+
+    // Until this existed the store only ever received play events from the
+    // phone. A recorder that is written but not mounted records exactly as
+    // much as none.
+    it('is mounted with the app’s other effects', () => {
+        expect(app).toContain('<AoidePlayRecorderEffect />');
+    });
+
+    it('only in a build with a store to write to', () => {
+        expect(effect).toContain('isAoideAvailable() ? <Recorder /> : null');
+    });
+
+    // Every transition is the pure module's; the effect forwards events in and
+    // calls out. A rule that lived in the effect would be a rule with no test.
+    it('decides every transition in the pure module', () => {
+        for (const transition of [
+            'onContextStarted(',
+            'onQueueReplaced(',
+            'onStatusChanged(',
+            'onStop(',
+            'onTick(',
+            'onTrackChanged(',
+            'queueWasReplaced(',
+        ]) {
+            expect(effect).toContain(transition);
+        }
+    });
+
+    it('measures listening from the player’s own progress samples, not a timer of its own', () => {
+        expect(effect).toContain('onPlayerProgress');
+        expect(effect).toContain('usePlayerEvents(');
+        expect(effect).not.toMatch(/setInterval|setTimeout|requestAnimationFrame/);
+    });
+
+    it('reads the status at the moment of the sample, the way the scrobbler does', () => {
+        expect(effect).toContain(
+            'usePlayerStore.getState().player.status === PlayerStatus.PLAYING',
+        );
+    });
+
+    it('finishes the open listen when the window goes, and when it unmounts', () => {
+        expect(effect).toContain("window.addEventListener('beforeunload', finish)");
+        expect(effect).toMatch(/return \(\) => \{[\s\S]*finish\(\);\s*\};/);
+    });
+
+    // The event id arrives asynchronously; a finish sent before its begin
+    // resolved would name an id the store has never seen and be ignored.
+    it('waits for the begin before finishing', () => {
+        expect(effect).toContain('eventIds.current.get(call.token)');
+        expect(effect).toMatch(/pending\.then\(\(eventId\) =>/);
+    });
+
+    it('hears a page announce what it started playback from', () => {
+        expect(effect).toContain('useRecentContextsStore.subscribe(');
+        expect(sourceOf('home/use-recent-contexts.ts')).toContain('smart: playlist.isSmart');
+    });
+
+    it('is published by preload and handled by main', () => {
+        expect(preload).toContain("ipcRenderer.invoke('aoide:history-begin-play'");
+        expect(preload).toContain("ipcRenderer.invoke('aoide:history-finish-play'");
+        expect(main).toContain("'aoide:history-begin-play'");
+        expect(main).toContain("'aoide:history-finish-play'");
+    });
+
+    // The SQL judges the threshold arm against the cache's duration. An
+    // uncached track is judged on the duration-free half of the rule, and the
+    // Replay page has nothing to file it under.
+    it('caches the track before opening the listen', () => {
+        const handler = main.indexOf("'aoide:history-begin-play'");
+        const cache = main.indexOf('playlists.cacheTracks([track])', handler);
+        const begin = main.indexOf('history.beginPlay(', handler);
+
+        expect(handler).toBeGreaterThan(-1);
+        expect(cache).toBeGreaterThan(handler);
+        expect(begin).toBeGreaterThan(cache);
+    });
+
+    // The whole reason for the shared definition. A second one — a literal
+    // four minutes anywhere in the renderer, or the classifier called from it —
+    // is the drift that made two devices disagree about the same listen.
+    it('holds no play definition of its own', () => {
+        const sources = (root: string): string[] =>
+            readdirSync(root, { recursive: true, withFileTypes: true })
+                .filter(
+                    (entry) =>
+                        entry.isFile() &&
+                        /\.tsx?$/.test(entry.name) &&
+                        !/\.test\.tsx?$/.test(entry.name),
+                )
+                .map((entry) => join(entry.parentPath, entry.name));
+
+        const renderer = sources(join(import.meta.dirname, '..'));
+        const mainProcess = sources(join(import.meta.dirname, '../../../main/features/aoide'));
+        expect(renderer.length).toBeGreaterThan(0);
+
+        for (const file of [...renderer, ...mainProcess]) {
+            const text = readFileSync(file, 'utf8');
+            expect(text, file).not.toMatch(/\b240(_000|000)?\b|\b4 \* 60\b/);
+        }
+
+        for (const file of renderer) {
+            const text = readFileSync(file, 'utf8');
+            // The import, not the word: the effect's comment names the file
+            // to say where the verdict lives, and that is worth keeping.
+            expect(text, file).not.toMatch(/from '[^']*play-definition'/);
+            expect(text, file).not.toMatch(/\bclassify\(|countsAsPlay/);
+        }
     });
 });

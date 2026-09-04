@@ -28,6 +28,8 @@ export interface RecentContext {
     name: string;
     /** Only for a station: which kind of thing seeded it. */
     seed?: StationSeed;
+    /** Only for an Aoide playlist: whether its contents are rules rather than a list. */
+    smart?: boolean;
     subtitle?: string;
 }
 

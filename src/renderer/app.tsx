@@ -15,6 +15,7 @@ import { useCheckForUpdates } from '/@/renderer/hooks/use-check-for-updates';
 import { useFullscreenToggle } from '/@/renderer/hooks/use-fullscreen-toggle';
 import { useNativeMenuSync } from '/@/renderer/hooks/use-native-menu-sync';
 import { useSyncSettingsToMain } from '/@/renderer/hooks/use-sync-settings-to-main';
+import { AoidePlayRecorderEffect } from '/@/renderer/aoide/features/history/aoide-play-recorder-effect';
 import { AoideSyncOnLaunchEffect } from '/@/renderer/aoide/features/sync/aoide-sync-on-launch-effect';
 import { AppRouter } from '/@/renderer/router/app-router';
 import {
@@ -123,6 +124,7 @@ const AppEffects = () => (
         <FullscreenToggleEffect />
         <InputFocusEffect />
         <AoideSyncOnLaunchEffect />
+        <AoidePlayRecorderEffect />
     </>
 );
 

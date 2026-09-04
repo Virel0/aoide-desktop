@@ -1,4 +1,9 @@
-import type { Recap } from '/@/main/features/aoide/play-history';
+import type {
+    FinishPlayInput,
+    FinishPlayOutcome,
+    PlaySource,
+    Recap,
+} from '/@/main/features/aoide/play-history';
 import type { CapturedCsv, SpotifyFetchOutcome } from '/@/main/features/aoide/playlist-import';
 import type {
     CreatePlaylistOptions,
@@ -40,8 +45,20 @@ interface OutboundImage {
  * the crossing per row.
  */
 export const aoide = {
-    /** Listening history, aggregated in the main process where the events live. */
+    /** Listening history: recorded and aggregated in the main process where the events live. */
     history: {
+        /**
+         * A track has started. Resolves to the event id, which `finishPlay`
+         * takes back; the track is cached on the way so the play has an artist
+         * and album to be filed under.
+         */
+        beginPlay: (track: TrackInput, source: PlaySource, startedAt: number): Promise<string> =>
+            ipcRenderer.invoke('aoide:history-begin-play', track, source, startedAt),
+
+        /** The track ended or was left. Finishing twice is a no-op. */
+        finishPlay: (eventId: string, input: FinishPlayInput): Promise<FinishPlayOutcome> =>
+            ipcRenderer.invoke('aoide:history-finish-play', eventId, input),
+
         /** Plays over `[from, to)`, as the Replay screen shows them. */
         recap: (from: number, to: number): Promise<Recap> =>
             ipcRenderer.invoke('aoide:history-recap', from, to),

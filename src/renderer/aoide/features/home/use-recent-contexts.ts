@@ -94,10 +94,17 @@ export const rememberJellyfinPlaylist = (
 
 export const rememberAoidePlaylist = (
     serverId: string | undefined,
-    playlist: Pick<PlaylistSummary, 'id' | 'name'> | undefined,
+    playlist: Pick<PlaylistSummary, 'id' | 'isSmart' | 'name'> | undefined,
 ): void => {
     if (!playlist) return;
-    rememberContext(serverId, { id: playlist.id, kind: 'aoidePlaylist', name: playlist.name });
+    rememberContext(serverId, {
+        id: playlist.id,
+        kind: 'aoidePlaylist',
+        name: playlist.name,
+        // The play recorder files a listen started here as `smart` or
+        // `playlist`, which is the phone's distinction.
+        smart: playlist.isSmart,
+    });
 };
 
 /**

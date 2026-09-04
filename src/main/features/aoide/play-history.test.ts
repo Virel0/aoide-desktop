@@ -3,8 +3,16 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CurationStore } from './curation-store';
 import { CurationDatabase, openCurationDatabase } from './database';
 import { MAX_PARAMETERS, PlayHistory, RECAP_TOP_LIMIT } from './play-history';
+import { contentKeyFor } from './playlists';
 
-import { classify, MINIMUM_SKIP_SAMPLE } from '/@/shared/aoide/play-definition';
+import {
+    classify,
+    COMPLETION_TOLERANCE_MS,
+    MINIMUM_SKIP_SAMPLE,
+    playThreshold,
+    SCROBBLE_CEILING_MS,
+    skipThreshold,
+} from '/@/shared/aoide/play-definition';
 
 /**
  * The cross-check.
@@ -23,10 +31,12 @@ import { classify, MINIMUM_SKIP_SAMPLE } from '/@/shared/aoide/play-definition';
 
 let database: CurationDatabase;
 let history: PlayHistory;
+let store: CurationStore;
 
 beforeEach(() => {
     database = openCurationDatabase(':memory:');
-    history = new PlayHistory(database);
+    store = new CurationStore(database);
+    history = new PlayHistory(database, store);
 });
 
 afterEach(() => database.close());
@@ -612,5 +622,185 @@ describe('a recap of a window', () => {
             totalPlays: 0,
             unattributedPlays: 0,
         });
+    });
+});
+
+describe('recording a listen at this desk', () => {
+    const duration = 200_000;
+    const begin = (over: Partial<Parameters<PlayHistory['beginPlay']>[0]> = {}) =>
+        history.beginPlay({
+            album: 'An Album',
+            artist: 'An Artist',
+            durationMs: duration,
+            jellyfinId: 'desk-track',
+            source: 'unknown',
+            startedAt: now,
+            title: 'A Song',
+            ...over,
+        });
+
+    const row = (id: string) =>
+        database.db.prepare('SELECT * FROM play_events WHERE id = ?').get(id) as Record<
+            string,
+            null | number | string
+        >;
+
+    const eventOps = () =>
+        database.db
+            .prepare(`SELECT * FROM ops WHERE entity = 'play_events' ORDER BY rowid`)
+            .all() as Array<{ entity_id: string; payload: string }>;
+
+    it('opens the row as the phone would: no outcome, nothing heard yet', () => {
+        const id = begin();
+        const stored = row(id);
+
+        expect(stored).toMatchObject({
+            completed: 0,
+            contentKey: contentKeyFor({
+                album: 'An Album',
+                artist: 'An Artist',
+                durationMs: duration,
+                title: 'A Song',
+            }),
+            endedAt: null,
+            jellyfinId: 'desk-track',
+            msPlayed: 0,
+            originDevice: store.device,
+            skipped: 0,
+            source: 'unknown',
+            startedAt: now,
+        });
+        // Open, so it is neither — the SQL side of the same rule.
+        expect(history.statsFor('desk-track')).toMatchObject({
+            lastStartedAt: now,
+            playCount: 0,
+            skipCount: 0,
+        });
+    });
+
+    // The IPC handler caches the track before opening the listen, which is
+    // what gives the SQL a duration to judge the threshold arm against; the
+    // tests do the same by hand.
+    it('begin then finish is one row and two ops on the same id', () => {
+        cacheTrack('desk-track', duration);
+        const id = begin();
+        const outcome = history.finishPlay(id, {
+            durationMs: duration,
+            endedAt: now + 150_000,
+            msPlayed: 150_000,
+        });
+
+        expect(outcome).toBe('finished');
+        expect(database.db.prepare('SELECT COUNT(*) AS n FROM play_events').get()).toEqual({
+            n: 1,
+        });
+
+        const ops = eventOps();
+        expect(ops).toHaveLength(2);
+        expect(ops.map((op) => op.entity_id)).toEqual([id, id]);
+
+        // The wire: the finished payload is the whole row, booleans as
+        // booleans, so the phone's `isMoreFinished` applies it over its open copy.
+        const finished = JSON.parse(ops[1].payload) as Record<string, unknown>;
+        expect(finished).toMatchObject({
+            completed: false,
+            endedAt: now + 150_000,
+            id,
+            msPlayed: 150_000,
+            skipped: false,
+        });
+        expect(history.playCount('desk-track')).toBe(1);
+    });
+
+    it('takes the verdict from the shared definition, on its exact boundaries', () => {
+        // The constants are the phone's; pinned so a drift in the shared file
+        // is a failure here and not a quiet disagreement between devices.
+        expect(SCROBBLE_CEILING_MS).toBe(240_000);
+        expect(playThreshold(duration)).toBe(100_000);
+        expect(skipThreshold(duration)).toBe(40_000);
+
+        const cases: Array<[number, { completed: number; play: number; skipped: number }]> = [
+            [skipThreshold(duration) - 1, { completed: 0, play: 0, skipped: 1 }],
+            [skipThreshold(duration), { completed: 0, play: 0, skipped: 0 }],
+            [playThreshold(duration) - 1, { completed: 0, play: 0, skipped: 0 }],
+            [playThreshold(duration), { completed: 0, play: 1, skipped: 0 }],
+            [duration - COMPLETION_TOLERANCE_MS - 1, { completed: 0, play: 1, skipped: 0 }],
+            [duration - COMPLETION_TOLERANCE_MS, { completed: 1, play: 1, skipped: 0 }],
+        ];
+
+        for (const [msPlayed, expected] of cases) {
+            const jellyfinId = `boundary-${msPlayed}`;
+            cacheTrack(jellyfinId, duration);
+            const id = begin({ jellyfinId });
+            history.finishPlay(id, { durationMs: duration, endedAt: now + msPlayed, msPlayed });
+
+            const stored = row(id);
+            expect(stored.completed, `completed at ${msPlayed}`).toBe(expected.completed);
+            expect(stored.skipped, `skipped at ${msPlayed}`).toBe(expected.skipped);
+            expect(history.playCount(jellyfinId), `play at ${msPlayed}`).toBe(expected.play);
+        }
+    });
+
+    it('judges by the duration the player had, not the cache', () => {
+        // The cache says the track is four seconds long; the player, which had
+        // the asset open, says two hundred. The classifier believes the player,
+        // and the stored `skipped` then vetoes what the stale cache would count.
+        cacheTrack('desk-track', 4_000);
+        const id = begin();
+        history.finishPlay(id, { durationMs: duration, endedAt: now + 3_000, msPlayed: 3_000 });
+
+        expect(row(id).skipped).toBe(1);
+        expect(history.playCount('desk-track')).toBe(0);
+    });
+
+    it('finishing twice writes nothing more', () => {
+        const id = begin();
+        history.finishPlay(id, { durationMs: duration, endedAt: now + 150_000, msPlayed: 150_000 });
+        const before = row(id);
+
+        const again = history.finishPlay(id, {
+            durationMs: duration,
+            endedAt: now + 900_000,
+            msPlayed: 1_000,
+        });
+
+        expect(again).toBe('already');
+        expect(row(id)).toEqual(before);
+        expect(eventOps()).toHaveLength(2);
+    });
+
+    it('ignores a finish for an id it never opened', () => {
+        expect(
+            history.finishPlay('never-opened', { durationMs: duration, endedAt: now, msPlayed: 1 }),
+        ).toBe('unknown');
+        expect(eventOps()).toHaveLength(0);
+        expect(database.db.prepare('SELECT COUNT(*) AS n FROM play_events').get()).toEqual({
+            n: 0,
+        });
+    });
+
+    it('stores what was heard as a non-negative integer', () => {
+        const negative = begin({ jellyfinId: 'negative' });
+        history.finishPlay(negative, { durationMs: duration, endedAt: now, msPlayed: -5.7 });
+        expect(row(negative).msPlayed).toBe(0);
+
+        const fractional = begin({ jellyfinId: 'fractional' });
+        history.finishPlay(fractional, { durationMs: duration, endedAt: now, msPlayed: 1234.9 });
+        expect(row(fractional).msPlayed).toBe(1234);
+    });
+
+    it('lets the finish say where the listen came from, and otherwise keeps the beginning’s answer', () => {
+        const amended = begin({ jellyfinId: 'amended' });
+        history.finishPlay(amended, {
+            durationMs: duration,
+            endedAt: now + 1,
+            msPlayed: 1,
+            source: 'playlist',
+        });
+        expect(row(amended).source).toBe('playlist');
+
+        const kept = begin({ jellyfinId: 'kept', source: 'album' });
+        history.finishPlay(kept, { durationMs: duration, endedAt: now + 1, msPlayed: 1 });
+        expect(row(kept).source).toBe('album');
     });
 });
