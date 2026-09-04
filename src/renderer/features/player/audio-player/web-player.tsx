@@ -4,6 +4,7 @@ import type ReactPlayer from 'react-player';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useTrimPlayers } from '/@/renderer/aoide/features/playback/use-trim-players';
 import { eventEmitter } from '/@/renderer/events/event-emitter';
 import {
     WebPlayerEngine,
@@ -46,6 +47,7 @@ export function WebPlayer() {
     const isMuted = usePlayerMuted();
     const volume = usePlayerVolume();
     const { audioFadeOnStatusChange, preservePitch, transcode } = usePlaybackSettings();
+    const trim = useTrimPlayers({ num, player1, player2, playerRef });
 
     const [localPlayerStatus, setLocalPlayerStatus] = useState<PlayerStatus>(status);
     const [isTransitioning, setIsTransitioning] = useState<boolean | string>(false);
@@ -130,6 +132,7 @@ export function WebPlayer() {
             if (num === 1) {
                 setTimestamp(e.playedSeconds);
             }
+            trim.onProgress1(e.playedSeconds);
 
             if (repeat === PlayerRepeat.ONE) {
                 handleRepeatOne(1, e.playedSeconds, getDuration(playerRef.current.player1().ref));
@@ -180,6 +183,7 @@ export function WebPlayer() {
             repeat,
             setTimestamp,
             transitionType,
+            trim,
             volume,
         ],
     );
@@ -193,6 +197,7 @@ export function WebPlayer() {
             if (num === 2) {
                 setTimestamp(e.playedSeconds);
             }
+            trim.onProgress2(e.playedSeconds);
 
             if (repeat === PlayerRepeat.ONE) {
                 handleRepeatOne(2, e.playedSeconds, getDuration(playerRef.current.player2().ref));
@@ -243,6 +248,7 @@ export function WebPlayer() {
             repeat,
             setTimestamp,
             transitionType,
+            trim,
             volume,
         ],
     );

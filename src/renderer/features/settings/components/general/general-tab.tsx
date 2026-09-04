@@ -5,6 +5,7 @@ import { HiddenFromMixesSettings } from '/@/renderer/aoide/features/settings/hid
 import { NowPlayingColumnSettings } from '/@/renderer/aoide/features/settings/now-playing-column-settings';
 import { PlaylistSurfaceSettings } from '/@/renderer/aoide/features/settings/playlist-surface-settings';
 import { SmartSearchSettings } from '/@/renderer/aoide/features/settings/smart-search-settings';
+import { TrimSilenceSettings } from '/@/renderer/aoide/features/settings/trim-silence-settings';
 import { ApplicationSettings } from '/@/renderer/features/settings/components/general/application-settings';
 import { ControlSettings } from '/@/renderer/features/settings/components/general/control-settings';
 import { ExternalLinksSettings } from '/@/renderer/features/settings/components/general/external-links-settings';
@@ -38,6 +39,7 @@ export const GeneralTab = memo(() => {
             { component: PlaylistSurfaceSettings, key: 'aoidePlaylistSurface' },
             { component: NowPlayingColumnSettings, key: 'aoideNowPlayingColumn' },
             { component: HiddenFromMixesSettings, key: 'aoideHiddenFromMixes' },
+            { component: TrimSilenceSettings, key: 'aoideTrimSilence' },
         ];
 
         if (supportsSmartPlaylists) {

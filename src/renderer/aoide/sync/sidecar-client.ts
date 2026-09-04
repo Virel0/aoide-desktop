@@ -1,4 +1,5 @@
 import type { ImportedTrack } from '/@/shared/aoide/playlist-import';
+import type { SoundBounds, SoundBoundsReply } from '/@/shared/aoide/trim-plan';
 
 import { SyncError, syncErrorFromReply } from './errors';
 
@@ -105,6 +106,38 @@ export interface SidecarMatch {
     title?: null | string;
     titleScore: number;
 }
+
+/** `GET /aoide/sound-bounds` takes at most this many ids in one call. */
+export const SOUND_BOUNDS_IDS_PER_REQUEST = 200;
+
+/**
+ * The sidecar's answer about where tracks' sound starts and stops, plus
+ * whether it could answer at all.
+ *
+ * `absent` is a 404: the endpoint is newer than this sidecar. Read as "no
+ * bounds for anyone", never as an error — the feature simply waits for the
+ * upgrade, and nothing about playback changes.
+ */
+export interface SoundBoundsAnswer extends SoundBoundsReply {
+    absent: boolean;
+}
+
+const NO_BOUNDS: SoundBoundsAnswer = { absent: false, bounds: {}, pending: [] };
+
+const isFiniteNumber = (value: unknown): value is number =>
+    typeof value === 'number' && Number.isFinite(value);
+
+/**
+ * One track's bounds off the wire, or undefined for a row that is not one.
+ * Null is kept: it is the server's "measured, nothing to trim".
+ */
+const readBounds = (value: unknown): null | SoundBounds | undefined => {
+    if (value === null) return null;
+    if (!value || typeof value !== 'object') return undefined;
+    const row = value as Record<string, unknown>;
+    if (!isFiniteNumber(row.soundStartMs) || !isFiniteNumber(row.soundEndMs)) return undefined;
+    return { soundEndMs: row.soundEndMs, soundStartMs: row.soundStartMs };
+};
 
 /** The wire form of an imported track, spelled the way the sidecar reads it. */
 export const matchRequestBody = (tracks: ImportedTrack[]) =>
@@ -422,6 +455,54 @@ export class SidecarClient {
         if (!response.ok) {
             throw syncErrorFromReply('aoide/shares', await this.readReply(response));
         }
+    }
+
+    /**
+     * `GET /aoide/sound-bounds?ids=…`: where each track's sound starts and
+     * stops, as the sidecar measured it. See `docs/sound-bounds.md`.
+     *
+     * Chunked at the server's ceiling. A 404 ends the call at once with
+     * `absent` — the sidecar predates the endpoint, and asking it two hundred
+     * more times would not change that. Any other failure throws, and the
+     * caller plays the track whole. A row that is not a pair of finite numbers
+     * is left out rather than trusted; the track then reads as unknown and is
+     * asked about again, which is the honest state for a row nobody can read.
+     */
+    async soundBounds(ids: readonly string[]): Promise<SoundBoundsAnswer> {
+        if (ids.length === 0) return NO_BOUNDS;
+
+        const bounds: Record<string, null | SoundBounds> = {};
+        const pending: string[] = [];
+
+        for (let at = 0; at < ids.length; at += SOUND_BOUNDS_IDS_PER_REQUEST) {
+            const chunk = ids.slice(at, at + SOUND_BOUNDS_IDS_PER_REQUEST);
+            const response = await this.send(
+                `/aoide/sound-bounds?ids=${encodeURIComponent(chunk.join(','))}`,
+                { method: 'GET' },
+            );
+
+            if (response.status === 404) return { absent: true, bounds: {}, pending: [] };
+            if (!response.ok) {
+                throw syncErrorFromReply('aoide/sound-bounds', await this.readReply(response));
+            }
+
+            const body = await this.readJson<{ bounds?: unknown; pending?: unknown }>(
+                response,
+                'aoide/sound-bounds',
+            );
+
+            if (body.bounds && typeof body.bounds === 'object') {
+                for (const [id, value] of Object.entries(body.bounds)) {
+                    const row = readBounds(value);
+                    if (row !== undefined) bounds[id] = row;
+                }
+            }
+            for (const id of listFrom<unknown>(body.pending)) {
+                if (typeof id === 'string') pending.push(id);
+            }
+        }
+
+        return { absent: false, bounds, pending };
     }
 
     /**

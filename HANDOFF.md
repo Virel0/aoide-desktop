@@ -414,6 +414,112 @@ things to check are that the menu shows the undo wording after a flag, that a fl
 track shows in Settings after a sync from the phone, and that the sync panel reports
 nothing quarantined against a sidecar that does not list `track_flags` yet.
 
+### Also on 2026-09-04: a mix can name things, and a name implies a mood
+
+One commit on `development` (`e900a970`), not pushed. 869 tests (from 826), typecheck
+and both lints clean. The phone's two mix additions, matched here:
+
+- **Names.** The model may return `names` — artists, albums, bands, games, films,
+  shows the description named, spelled as written (`parseRules`, tolerant: a reply
+  without the field is still valid; a reply whose rules were refused but which named
+  something goes ahead on the names). Each name is searched the way the search page
+  searches (`api.controller.search`: songs, albums, album artists), then every song of
+  each album (`getSongList` by `albumIds`) and the songs of each artist (`artistIds`),
+  fifty per lookup. Those ids go **first**, before the rule candidates, and are put
+  first again after `Mix.narrow`, which sorts by last played. Beside a name, "all of
+  nothing" no longer fetches the whole library (`wantsRuleCandidates`). Names are not
+  saved with a mix: a smart playlist has no rule for "the library's search for X".
+- **The mood a name implies.** The prompt (`buildMixPrompt`, the phone's words) says a
+  war game or action film implies driving genres, a study session or building game calm
+  ones, that someone naming a game wants music to play it to and not only its
+  soundtrack, and to prefer two or three genres. The model's genres are matched to the
+  library's by whole word either way, lower-cased, punctuation ignored (`matchGenres`):
+  "rock" is "Rock", "Hard Rock", "Alternative Rock" and not "Rockabilly"; "soundtrack"
+  is "Video Game Soundtrack" — the same rule as `MixComposer.libraryGenres`. **Genres
+  are ORed** on the desktop: Jellyfin's `GenreIds` is a comma list answered with a
+  track in any of them.
+- **What was understood.** Under the input after a build: "Looked for: Helldivers 2 ·
+  Rock, Metal, Electronic · not played in 6 months · 40 tracks" (`describePlan`). An
+  empty mix says "Nothing in your library mentions X, Y." when names missed, or the old
+  "Nothing in your library matched."; a mix that found the rest still names the misses.
+
+All rules live in `mix/mix-plan.ts` and `mix/name-search.ts` (the latter behind a
+`LibrarySearch` interface, so the collecting is tested without Feishin's controller);
+`use-mix.ts` wires them. Eleven mutations, eleven caught. **Not verified in the running
+app**: the first thing to check is a mix for a game the library has no soundtrack for,
+which should come back non-empty on genres alone, with the line under the input saying
+which.
+
+### Also on 2026-09-04: sound bounds from the sidecar (silence trimming)
+
+One commit on `development`, not pushed. 935 tests (from 869), typecheck and both lints
+clean. The spec is `docs/sound-bounds.md` in the iOS repo. **The sidecar endpoint does
+not exist yet**; everything here is built to be correct against a sidecar that answers
+404 (no bounds for anyone, never a toast, left alone for ten minutes, then asked again)
+and against one that answers `pending` (play whole this time, ask again after a minute).
+
+- **Transport.** `SidecarClient.soundBounds(ids)` — `GET /aoide/sound-bounds?ids=…`,
+  chunked at 200, a 404 ends the call at once with `absent: true`, any other failure
+  throws, a row that is not two finite numbers is left out (the track then reads as
+  unknown and is asked about again).
+- **The plan** (`src/shared/aoide/trim-plan.ts`, shared so main can read it):
+  `trimFor(bounds, durationMs) → { startSec, endSec | null } | null` — under 300 ms at
+  either end is not worth a seek (the phone's rule, per end); an end past the track's
+  length is a file replaced since it was measured and is refused; `shouldAdvance` is
+  `>=`; `mpvFileOptions` spells the plan as `start=`/`end=` strings.
+- **Cache** (`playback/sound-bounds-cache.ts`, pure; `sound-bounds-store.ts` around it):
+  unknown → ask; in flight → wait 30 s before presuming lost; `pending` → re-ask after
+  60 s; bounds or `null` → kept for the session; an id the server named in neither list
+  → "nothing to trim", since nothing is coming. `useSoundBounds(trackId)` answers
+  `undefined` until known and always `undefined` with the setting off — **the setting
+  gates every consumer through that one hook**.
+- **Web player.** `useTrimPlayers` over Feishin's two `<audio>` slots, fed from the same
+  progress samples it scrobbles from (two one-line calls in `web-player.tsx`). Per slot,
+  `trim-tracker.ts` (pure) issues the seek once and the end once, and again after a
+  restart (Repeat One's loop, or a drag back to the intro). A seek is only ever from
+  *before* the sound — a track picked up in the middle, or one whose bounds arrived late,
+  is left alone. **Ending early is done by seeking the element to its own end**, which
+  fires the element's `ended`, which is what Feishin's `onEnded` is wired to — so
+  `handleOnEndedPlayerN` runs unchanged (auto-next, the pause, the volume, the
+  transition flag) and only the audible slot may do it. An element whose duration is not
+  finite (some transcoded streams) cannot be ended this way and plays to its own end.
+  Crossfade and gapless compute their handover from the file's duration, so a trimmed
+  end arrives before either has started its transition; the jump is clean but not
+  crossfaded.
+- **mpv.** Per-file `start=` and `end=` on `loadfile`, which mpv keeps per playlist entry
+  and applies when that entry begins — the right shape for Feishin's two-item queue,
+  where the next track is appended long before it plays. **Verified against the manual,
+  not against Feishin's own code, because Feishin never passes options:** since mpv
+  0.38.0 the third positional argument of `loadfile` is an insertion index and the
+  options are fourth, with `-1` in the index slot (DOCS/man/input.rst). node-mpv
+  2.0.0-beta.3's own `load(file, mode, options)` sends the options third — wrong on every
+  current mpv — so `main/features/aoide/mpv-trim.ts` reads `mpv-version` once per
+  instance and sends `command('loadfile', [url, mode, -1, options])` (or the old order
+  below 0.38) through the wrapper's `command()`. Without a plan it is Feishin's own
+  `load()`. All four loads in `core/player/index.ts` go through `loadWithTrim`; the
+  renderer effect (`aoide-trim-effect.tsx`, mounted in `AppEffects`) tells main the plans
+  for the current and next track by Jellyfin id over `aoide:trim-remember`, and main
+  finds them by the id in the stream URL's path. **A plan that arrives after the load is
+  a plan for next time**: the first track of a fresh session, and the one after it,
+  tend to play whole once; the effect also asks ahead for the next fifty of the queue,
+  so every later track is told before it is appended. Turning the setting off sends
+  `aoide:trim-forget`.
+- **Setting.** `general.aoideTrimSilence`, default on, its own section in the general
+  tab with a footer saying where the numbers come from (`aoide.settings.trimSilence*`).
+
+Nineteen mutations, nineteen caught (plan, tracker, cache, client, mpv helper, and the
+wiring: a dropped slot, a bypassed load, an ignored setting, an inactive slot ending a
+track). **Not verified in the running app, and cannot be until the sidecar ships the
+endpoint.** When it does: (1) `curl -H 'Authorization: MediaBrowser Token="…"'
+"$SERVER/aoide/sound-bounds?ids=<id>"` should answer the spec's shape; (2) play a track
+with a long lead-in on the web player and watch the seek bar start past it and the next
+track begin before the old one's tail; (3) the same on mpv — the seek bar starts past
+the lead-in on the *second* track of a queue, and `mpv --msg-level=all=v` shows
+`start=`/`end=` in the loadfile; (4) turn the setting off and confirm the next track
+plays whole; (5) against a sidecar without the endpoint, nothing changes and nothing
+toasts. If the mpv `loadfile` errors on an old mpv, the version read is the place to
+look.
+
 ## The work order, agreed
 
 In this order. Each is self-contained; nothing here is blocked on anything else.

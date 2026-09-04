@@ -22,6 +22,7 @@ import type {
 import type { FlaggedTrack, TrackFlagRow } from '/@/main/features/aoide/track-flags';
 import type { SmartRules } from '/@/shared/aoide/smart-rules';
 import type { SyncOp } from '/@/shared/aoide/sync-types';
+import type { TrimPlan } from '/@/shared/aoide/trim-plan';
 
 import { ipcRenderer } from 'electron';
 
@@ -271,6 +272,20 @@ export const aoide = {
 
         setCursor: (cursor: number): Promise<void> =>
             ipcRenderer.invoke('aoide:sync-set-cursor', cursor),
+    },
+
+    /**
+     * Silence trimming for the mpv backend, which loads files in the main
+     * process and so has to be told each track's plan before the load. Fire
+     * and forget: a plan that arrives late is a plan for next time.
+     */
+    trim: {
+        /** Every known plan is dropped; the next load is untrimmed. */
+        forget: (): void => ipcRenderer.send('aoide:trim-forget'),
+
+        /** Plans by Jellyfin id. `null` forgets one — "measured, nothing to trim". */
+        remember: (plans: Record<string, null | TrimPlan>): void =>
+            ipcRenderer.send('aoide:trim-remember', plans),
     },
 };
 

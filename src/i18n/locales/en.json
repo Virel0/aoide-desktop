@@ -150,6 +150,9 @@
             "playlistSurface_option_aoide": "Aoide only",
             "playlistSurface_option_both": "Both",
             "playlistSurface_option_jellyfin": "Jellyfin only",
+            "trimSilence": "Skip the silence in recordings",
+            "trimSilence_description": "Start each track at its first sound and move on after its last, so the quiet at the ends of recordings does not sit between songs. Nothing is cut from the music: the bounds are measured well outside it.",
+            "trimSilence_footer": "The bounds come from the Aoide sidecar, which measures each track once; a track it has not measured yet plays whole, and one it measured as having nothing to trim is left alone.",
             "hiddenFromMixes": "Hidden from mixes",
             "hiddenFromMixes_description": "Tracks you marked Not Interested stay out of mixes and stations; tracks marked Don't Count Plays are played without being recorded. Both are synced with your other Aoide devices. Clear one here to have it offered and counted again."
         },

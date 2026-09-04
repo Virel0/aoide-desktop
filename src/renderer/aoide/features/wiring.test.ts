@@ -1016,3 +1016,121 @@ describe('taste flags: the phone’s "Not Interested" and "Don’t Count Plays"'
         }
     });
 });
+
+describe('silence trimming: both players consult the trim plan, the setting gates it', () => {
+    const webPlayer = readFileSync(
+        join(import.meta.dirname, '../../features/player/audio-player/web-player.tsx'),
+        'utf8',
+    );
+    const mpvMain = readFileSync(
+        join(import.meta.dirname, '../../../main/features/core/player/index.ts'),
+        'utf8',
+    );
+    const mpvTrim = readFileSync(
+        join(import.meta.dirname, '../../../main/features/aoide/mpv-trim.ts'),
+        'utf8',
+    );
+    const store = sourceOf('playback/sound-bounds-store.ts');
+    const players = sourceOf('playback/use-trim-players.ts');
+    const effect = sourceOf('playback/aoide-trim-effect.tsx');
+    const settings = readFileSync(
+        join(import.meta.dirname, '../../store/settings.store.ts'),
+        'utf8',
+    );
+    const generalTab = readFileSync(
+        join(import.meta.dirname, '../../features/settings/components/general/general-tab.tsx'),
+        'utf8',
+    );
+    const app = readFileSync(join(import.meta.dirname, '../../app.tsx'), 'utf8');
+    const preload = readFileSync(join(import.meta.dirname, '../../../preload/aoide.ts'), 'utf8');
+    const main = readFileSync(
+        join(import.meta.dirname, '../../../main/features/aoide/index.ts'),
+        'utf8',
+    );
+
+    // The web player: a hook over its two slots, fed from the same progress
+    // samples it scrobbles and crossfades from.
+    it('the web player feeds both slots’ progress to the trim hook', () => {
+        expect(webPlayer).toContain('useTrimPlayers({ num, player1, player2, playerRef })');
+        expect(webPlayer).toContain('trim.onProgress1(e.playedSeconds)');
+        expect(webPlayer).toContain('trim.onProgress2(e.playedSeconds)');
+    });
+
+    it('the web player’s hook decides with the pure tracker and the shared plan', () => {
+        expect(players).toContain('trimFor(bounds1, player1?.duration)');
+        expect(players).toContain('trimFor(bounds2, player2?.duration)');
+        expect(players).toMatch(/step\(tracker1\.current, plan1, playedSeconds\)/);
+        expect(players).toMatch(/step\(tracker2\.current, plan2, playedSeconds\)/);
+    });
+
+    // Ending early runs Feishin's own `ended` path: the element is seeked to
+    // its end and fires `ended`, which `onEnded` is wired to. Nothing of
+    // `handleOnEndedPlayerN` is restated. Only the audible slot may do it.
+    it('ends a track through the element’s own ended event, only from the audible slot', () => {
+        expect(players).toContain('element.currentTime = element.duration');
+        expect(players).toContain('if (slot !== num) return;');
+        expect(players).not.toMatch(/\bmediaAutoNext\s*\(/);
+    });
+
+    it('seeks the way Feishin seeks', () => {
+        expect(players).toContain("ref.seekTo(action.toSec, 'seconds')");
+    });
+
+    // mpv: every load in Feishin's player goes through the trim-aware load,
+    // and none goes around it.
+    it('every mpv load goes through loadWithTrim', () => {
+        expect(mpvMain).toContain("import { loadWithTrim } from '/@/main/features/aoide/mpv-trim'");
+        expect(mpvMain.match(/loadWithTrim\(getMpvInstance\(\), /g)).toHaveLength(4);
+        expect(mpvMain).not.toMatch(/getMpvInstance\(\)\?\.load\(/);
+    });
+
+    // DOCS/man/input.rst: from 0.38.0 the third argument is an index and
+    // options need -1 there. node-mpv's own load() gets this wrong.
+    it('mpv gets start= and end= as per-file loadfile options, never as global properties', () => {
+        expect(mpvTrim).toContain("mpv.command('loadfile', loadfileArgs(");
+        expect(mpvTrim).toContain('mpvFileOptions(plan)');
+        expect(mpvTrim).not.toMatch(/setProperty\(\s*['"](start|end)['"]/);
+    });
+
+    it('main learns the plans from the renderer, and forgets them on request', () => {
+        expect(preload).toContain("ipcRenderer.send('aoide:trim-remember', plans)");
+        expect(preload).toContain("ipcRenderer.send('aoide:trim-forget')");
+        expect(mpvTrim).toContain("ipcMain.on('aoide:trim-remember'");
+        expect(mpvTrim).toContain("ipcMain.on('aoide:trim-forget'");
+        expect(main).toContain('registerTrimHandlers();');
+    });
+
+    it('the effect that tells main is mounted, only in a build with a main', () => {
+        expect(app).toContain('<AoideTrimEffect />');
+        expect(effect).toContain('isAoideAvailable() ? <Trimmer /> : null');
+        expect(effect).toContain('window.api.aoide.trim.remember(update)');
+        expect(effect).toContain('window.api.aoide.trim.forget()');
+        expect(effect).toContain('trimFor(bounds, duration)');
+    });
+
+    // The setting gates every consumer at once: the hook answers undefined
+    // when it is off, and the effect tells main to forget.
+    it('the setting exists, defaults on, and is in the general tab', () => {
+        expect(settings).toContain('aoideTrimSilence: AoideTrimSilenceSchema');
+        expect(settings).toContain('aoideTrimSilence: DEFAULT_AOIDE_TRIM_SILENCE');
+        expect(generalTab).toContain("{ component: TrimSilenceSettings, key: 'aoideTrimSilence' }");
+        expect(sourceOf('settings/trim-silence-settings.tsx')).toContain(
+            'aoideTrimSilence: e.currentTarget.checked',
+        );
+    });
+
+    it('the setting gates the bounds every player reads', () => {
+        expect(store).toContain('const enabled = useAoideTrimSilenceEnabled();');
+        expect(store).toContain('const wanted = enabled ? trackId : undefined;');
+        expect(effect).toContain('if (!enabled) {');
+        expect(effect).toContain('if (!enabled || !client || key.length === 0) return;');
+    });
+
+    // Never a toast. A sidecar without the endpoint is the normal state today.
+    it('a sidecar that cannot answer is logged, never toasted', () => {
+        expect(store).toContain('logger.warn(');
+        expect(store).not.toMatch(/\btoast\b\s*[.(]/);
+        expect(store).not.toMatch(/import .*toast/);
+        expect(store).toContain('if (answer.absent) {');
+    });
+});

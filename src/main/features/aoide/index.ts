@@ -11,6 +11,7 @@ import { CurationStore } from './curation-store';
 import { CurationDatabase, openCurationDatabase } from './database';
 import { ImageBlobStore } from './image-blobs';
 import { Mix } from './mix';
+import { registerTrimHandlers } from './mpv-trim';
 import { PlayHistory } from './play-history';
 import { registerPlaylistImportHandlers } from './playlist-import';
 import { contentKeyFor, Playlists } from './playlists';
@@ -277,6 +278,7 @@ handle('aoide:sync-mark-uploaded', ({ images }, sha256: string) => images.markUp
 
 registerSmartSearchHandlers();
 registerPlaylistImportHandlers();
+registerTrimHandlers();
 
 /**
  * Narrow a mix's candidates by what has actually been listened to.

@@ -428,6 +428,103 @@ describe('SidecarClient', () => {
     });
 });
 
+describe('soundBounds', () => {
+    it('asks by id and keeps bounds, "nothing to trim" and "pending" apart', async () => {
+        const { calls, impl } = stubFetch([
+            () =>
+                json(200, {
+                    bounds: { a: { soundEndMs: 5200, soundStartMs: 1940 }, b: null },
+                    pending: ['c'],
+                }),
+        ]);
+
+        const answer = await client(impl).soundBounds(['a', 'b', 'c']);
+
+        expect(calls[0].method).toBe('GET');
+        expect(calls[0].url).toBe(
+            'https://example.invalid/aoide/sound-bounds?ids=' + encodeURIComponent('a,b,c'),
+        );
+        expect(calls[0].headers.Authorization).toBe('MediaBrowser Token="secret-token"');
+        expect(answer).toEqual({
+            absent: false,
+            bounds: { a: { soundEndMs: 5200, soundStartMs: 1940 }, b: null },
+            pending: ['c'],
+        });
+    });
+
+    it('sends at most two hundred ids per request', async () => {
+        const ids = Array.from({ length: 401 }, (_, i) => `t${i}`);
+        const { calls, impl } = stubFetch([() => json(200, { bounds: {}, pending: [] })]);
+
+        await client(impl).soundBounds(ids);
+
+        expect(calls).toHaveLength(3);
+        const sent = calls.map(
+            (call) => decodeURIComponent(call.url.split('ids=')[1]).split(',').length,
+        );
+        expect(sent).toEqual([200, 200, 1]);
+    });
+
+    it('gathers the answers across chunks', async () => {
+        const ids = Array.from({ length: 201 }, (_, i) => `t${i}`);
+        const { impl } = stubFetch([
+            () => json(200, { bounds: { t0: null }, pending: ['t1'] }),
+            () => json(200, { bounds: { t200: { soundEndMs: 2000, soundStartMs: 500 } } }),
+        ]);
+
+        const answer = await client(impl).soundBounds(ids);
+
+        expect(answer.bounds).toEqual({ t0: null, t200: { soundEndMs: 2000, soundStartMs: 500 } });
+        expect(answer.pending).toEqual(['t1']);
+    });
+
+    // The endpoint is newer than most sidecars. That is not an error.
+    it('reads a 404 as "no bounds for anyone", at once, without throwing', async () => {
+        const ids = Array.from({ length: 300 }, (_, i) => `t${i}`);
+        const { calls, impl } = stubFetch([() => new Response('Not Found', { status: 404 })]);
+
+        const answer = await client(impl).soundBounds(ids);
+
+        expect(answer).toEqual({ absent: true, bounds: {}, pending: [] });
+        expect(calls).toHaveLength(1);
+    });
+
+    it('throws for any other failure, so the caller plays whole', async () => {
+        const { impl } = stubFetch([() => new Response('down', { status: 503 })]);
+        const error = await expectSyncError(client(impl).soundBounds(['a']));
+        expect(error.kind).toBe('serverFault');
+    });
+
+    it('leaves out a row that is not a pair of numbers, rather than trusting it', async () => {
+        const { impl } = stubFetch([
+            () =>
+                json(200, {
+                    bounds: {
+                        bad: { soundEndMs: 'soon', soundStartMs: 1 },
+                        good: { soundEndMs: 2, soundStartMs: 1 },
+                        half: { soundStartMs: 1 },
+                    },
+                    pending: [7, 'p'],
+                }),
+        ]);
+
+        const answer = await client(impl).soundBounds(['bad', 'good', 'half', 'p']);
+
+        expect(answer.bounds).toEqual({ good: { soundEndMs: 2, soundStartMs: 1 } });
+        expect(answer.pending).toEqual(['p']);
+    });
+
+    it('asks nothing for no ids', async () => {
+        const { calls, impl } = stubFetch([() => json(200, {})]);
+        expect(await client(impl).soundBounds([])).toEqual({
+            absent: false,
+            bounds: {},
+            pending: [],
+        });
+        expect(calls).toHaveLength(0);
+    });
+});
+
 describe('match', () => {
     it('posts the imported rows as the sidecar reads them and returns its answers, nulls kept', async () => {
         const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {

@@ -12,6 +12,7 @@ import log from '../../../logger';
 import { store } from '../settings';
 
 import { isWindows } from '/@/main/env';
+import { loadWithTrim } from '/@/main/features/aoide/mpv-trim';
 import { PlayerData } from '/@/shared/types/domain-types';
 
 declare module 'node-mpv';
@@ -468,14 +469,14 @@ ipcMain.on('player-set-queue', async (_event, current?: string, next?: string, p
     try {
         if (current) {
             try {
-                await getMpvInstance()?.load(current, 'replace');
+                await loadWithTrim(getMpvInstance(), current, 'replace');
             } catch (error: any | NodeMpvError) {
                 mpvLog({ action: `Failed to load current song` }, error);
                 await getMpvInstance()?.play();
             }
 
             if (next) {
-                await getMpvInstance()?.load(next, 'append');
+                await loadWithTrim(getMpvInstance(), next, 'append');
             }
         }
 
@@ -500,7 +501,7 @@ ipcMain.on('player-set-queue-next', async (_event, url?: string) => {
         }
 
         if (url) {
-            getMpvInstance()?.load(url, 'append');
+            await loadWithTrim(getMpvInstance(), url, 'append');
         }
     } catch (err: any | NodeMpvError) {
         mpvLog({ action: `Failed to set play queue` }, err);
@@ -521,7 +522,7 @@ ipcMain.on('player-auto-next', async (_event, url?: string) => {
             });
 
         if (url) {
-            await getMpvInstance()?.load(url, 'append');
+            await loadWithTrim(getMpvInstance(), url, 'append');
         }
     } catch (err: any | NodeMpvError) {
         mpvLog({ action: `Failed to load next song` }, err);
