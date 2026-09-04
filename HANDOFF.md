@@ -118,7 +118,7 @@ Two other things from the sidecar's 1.7.0.0 contract that change client rules:
 
 ## Environment
 
-- Phone: `Phone`, `11111111-2222-4333-8444-555555555555`. Simulator: iPhone 17,
+- Phone: the paired iPhone (find it with `xcrun devicectl list devices`). Simulator: iPhone 17,
   `00000000-0000-4000-8000-000000000000`.
 - Jellyfin 10.11.11, on a private host. The hostname is deliberately **not** written
   down here — it is in three tracked files in `Virel0/aoide`, which is why that
