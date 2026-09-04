@@ -286,9 +286,69 @@ for album radio too; the grid does the same.
   is reported as `unattributedPlays` — said on the page, never hidden. Albums are
   grouped on `COALESCE(albumArtist, artist)` so a compilation is one album. The
   renderer decides only where a period starts (`replay-period.ts`, local calendar);
-  `to` is taken inside the `queryFn`. Not verified in the running app: the desktop
-  never writes `play_events` itself, so the page only has something to show once a
-  sync has brought the phone's events over — sign in and sync, then open it.
+  `to` is taken inside the `queryFn`. Not verified in the running app at the time; the
+  desktop now records its own listening (next entry), so the page fills from the first
+  track played at the desk rather than waiting for a sync.
+
+### Also on 2026-09-04: the desktop records what it plays
+
+Two commits on `development` (the feature, then this note), not pushed. 778 tests, typecheck and both lints clean.
+
+Until this, the store only ever *received* `play_events` — from the phone, through
+`applyRemote`. Nothing recorded a listen at the desk, so every smart playlist, both
+built-in mixes and Replay described the phone's listening and none of the desktop's.
+Now the desktop does what the phone's `CurationRecorder` does, on the same row shape:
+
+- **Main.** `PlayHistory.beginPlay` opens the row the moment a track starts —
+  `msPlayed: 0`, `endedAt: null`, no outcome, `contentKey` from `contentKeyFor` — and
+  `finishPlay` closes it with what was heard. Both go through `store.record`, so each
+  is a row *and* an op; the finish is an **amendment of the same id**, which the
+  phone applies over its open copy through `isMoreFinished`. `completed`/`skipped`
+  come from `classify` in `play-definition.ts` and nowhere else; the finish also
+  carries a `source` so the answer given at the beginning can be improved. Finishing
+  twice is a no-op (`already`); an id never opened is ignored (`unknown`);
+  `msPlayed` is floored at zero and made an integer. The IPC handler
+  (`aoide:history-begin-play`) caches the track first, because the SQL judges the
+  threshold arm against the cache's duration and Replay files plays by the cache's
+  artist and album — a play of an uncached track is honest but unattributed.
+- **Renderer.** `AoidePlayRecorderEffect` (mounted in `AppEffects`, only when
+  `isAoideAvailable()`) forwards Feishin's own player events — `usePlayerEvents`,
+  the same progress samples the scrobbler measures from, no timer of its own — into
+  the pure state machine in `history/play-recorder.ts`, and its calls out over the
+  bridge. A listen begins when a track is current *and* playing (a queue restored at
+  launch arrives paused and opens nothing); it ends on the next track, on Stop, on
+  the queue emptying, on `beforeunload`, and on unmount. Listening is the sum of
+  forward steps of at most `MAX_LISTEN_GAP_SEC` between samples while playing —
+  seeks, stalls and paused samples count nothing but move the baseline. A jump back
+  to the first five seconds from past ten is a restart and a new listen, which is
+  what keeps Repeat One from being one play that outgrew its track. The event id
+  comes back asynchronously; the effect keys begins by a token and a finish waits
+  for its begin.
+- **Source.** `unknown` unless a page said what it started playback from — the
+  same `remember*` calls that feed the resume grid, now also carrying `smart` for an
+  Aoide playlist. Because pages that hold their songs queue first and announce
+  second, an announcement within `SOURCE_TOLD_AFTER_MS` of a begin names that
+  listen (at its finish); because the album page announces, fetches, then queues,
+  an announcement within `SOURCE_TOLD_BEFORE_MS` before a queue replacement is that
+  queue's. Either way it is claimed once. Kinds map to the phone's names: album →
+  `album`, playlists → `playlist` (smart ones → `smart`), mix → `smart`, station →
+  `unknown`.
+
+**Verified by test, and by breaking it.** Every guarantee above has a test and was
+mutation-checked — the rule broken in source, the test seen to fail, the file
+restored from a pristine copy and `diff -q`'d. Main (`play-history.test.ts`): the
+idempotent finish, the verdict from `classify` (both flags), the integer floor, the
+unknown id, the kept/amended source, the content key — seven mutations, seven
+caught. Renderer (`play-recorder.test.ts`, 41 cases): paused ticks, the restart
+boundary, the gap boundary, duplicate track changes, begin-while-paused, the
+fractional millisecond, both source windows, stop, queue replacement, and the
+finish-before-begin order — eleven mutations, eleven caught. `wiring.test.ts` pins
+the mount, the pure-module wiring, `beforeunload`, the cache-before-begin order in
+the handler, and that nothing under `src/renderer/aoide` or `src/main/features/aoide`
+imports `play-definition`, calls `classify`, or carries a `240`/`4 * 60` literal.
+**Not verified in the running app** — nothing here was run against a real player;
+the first thing to check is that Replay shows a play after one track at the desk,
+and that the phone shows the same row after a sync.
 
 ## The work order, agreed
 
