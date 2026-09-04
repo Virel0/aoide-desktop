@@ -1,0 +1,90 @@
+/* The phone's Replay: four tiles, then three lists, through the theme. */
+
+.page {
+    max-width: var(--theme-content-max-width);
+    padding: var(--theme-spacing-lg);
+    margin: 0 auto;
+}
+
+.tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--theme-spacing-md);
+}
+
+.tile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--theme-spacing-xs);
+    padding: var(--theme-spacing-md);
+    background-color: var(--theme-colors-surface);
+    border-radius: var(--theme-radius-md);
+}
+
+/* Digits of equal width, so "1,234" and "987" sit in the same columns. */
+.value,
+.count,
+.rank {
+    font-variant-numeric: tabular-nums;
+}
+
+.heading {
+    margin-bottom: var(--theme-spacing-sm);
+}
+
+.list {
+    padding-left: var(--theme-spacing-xl);
+    margin: 0;
+}
+
+.item {
+    display: flex;
+    gap: var(--theme-spacing-md);
+    align-items: center;
+    padding: var(--theme-spacing-xs) var(--theme-spacing-sm);
+}
+
+/* A button, so a top song is played by a click and reachable by keyboard. */
+.row {
+    display: flex;
+    gap: var(--theme-spacing-md);
+    align-items: center;
+    width: 100%;
+    padding: var(--theme-spacing-sm);
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    border-radius: var(--theme-radius-sm);
+}
+
+.row:hover {
+    background-color: var(--theme-colors-surface);
+}
+
+.rank {
+    flex-shrink: 0;
+    width: 1.5rem;
+    text-align: right;
+}
+
+.art {
+    flex-shrink: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    object-fit: cover;
+    border-radius: var(--theme-radius-sm);
+}
+
+.text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.count {
+    flex-shrink: 0;
+    margin-left: auto;
+}

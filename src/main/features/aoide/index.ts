@@ -10,6 +10,7 @@ import { CurationStore } from './curation-store';
 import { CurationDatabase, openCurationDatabase } from './database';
 import { ImageBlobStore } from './image-blobs';
 import { Mix } from './mix';
+import { PlayHistory } from './play-history';
 import { registerPlaylistImportHandlers } from './playlist-import';
 import { Playlists } from './playlists';
 import { registerSmartSearchHandlers } from './smart-search';
@@ -31,6 +32,7 @@ import log from '/@/main/logger';
  */
 export interface Curation {
     database: CurationDatabase;
+    history: PlayHistory;
     images: ImageBlobStore;
     mix: Mix;
     playlists: Playlists;
@@ -80,6 +82,7 @@ export const curation = (): Curation => {
 
     opened = {
         database,
+        history: new PlayHistory(database),
         images: new ImageBlobStore(database),
         mix: new Mix(database),
         playlists: new Playlists(database, store),
@@ -319,6 +322,12 @@ handle('aoide:queue-others', ({ store }) =>
 handle('aoide:mix-narrow', ({ mix }, candidateIds: string[], rules: SmartRules) =>
     mix.narrow(candidateIds, rules),
 );
+
+/**
+ * Listening over a window, summarised for the Replay screen. One query set per
+ * period change, never per row — the leaderboards come back whole.
+ */
+handle('aoide:history-recap', ({ history }, from: number, to: number) => history.recap(from, to));
 
 /** The phone keeps 500; matching it keeps a handover the same size on both. */
 const MAX_QUEUE_TRACKS = 500;

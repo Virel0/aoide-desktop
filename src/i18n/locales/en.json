@@ -96,6 +96,27 @@
             "resume_one": "{{device}} was playing {{count}} track",
             "resume_other": "{{device}} was playing {{count}} tracks"
         },
+        "replay": {
+            "artists": "Artists",
+            "busiestDay_one": "Busiest day: {{day}}, with {{count}} play",
+            "busiestDay_other": "Busiest day: {{day}}, with {{count}} plays",
+            "empty": "Nothing played in this period yet",
+            "emptyHint": "Plays from every device that syncs with this one count here, by the same rule everywhere: a song counts once it has played to the end, or for half its length, or for four minutes.",
+            "hours": "Hours",
+            "period_all": "All time",
+            "period_month": "This month",
+            "period_year": "This year",
+            "playCount_one": "{{count}} play",
+            "playCount_other": "{{count}} plays",
+            "plays": "Plays",
+            "songs": "Songs",
+            "title": "Replay",
+            "topAlbums": "Top albums",
+            "topArtists": "Top artists",
+            "topSongs": "Top songs",
+            "unattributed_one": "{{count}} play was of a track this device doesn't know, so it is counted but not named",
+            "unattributed_other": "{{count}} plays were of tracks this device doesn't know, so they are counted but not named"
+        },
         "search": {
             "albums": "Albums",
             "clearInterpretation": "Clear",
@@ -132,6 +153,7 @@
             "all": "All playlists",
             "import": "Import a playlist",
             "mix": "Mixes",
+            "replay": "Replay",
             "search": "Search",
             "title": "Aoide"
         },

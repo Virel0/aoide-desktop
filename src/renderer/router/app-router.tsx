@@ -20,6 +20,8 @@ const AoideMixRoute = lazy(() => import('/@/renderer/aoide/routes/aoide-mix-rout
 
 const AoideImportRoute = lazy(() => import('/@/renderer/aoide/routes/aoide-import-route'));
 
+const AoideReplayRoute = lazy(() => import('/@/renderer/aoide/routes/aoide-replay-route'));
+
 const AoideSearchRoute = lazy(() => import('/@/renderer/aoide/routes/aoide-search-route'));
 
 const AoidePlaylistListRoute = lazy(
@@ -308,6 +310,10 @@ export const AppRouter = () => {
                                         <Route
                                             element={<AoideImportRoute />}
                                             path={AppRoute.AOIDE_IMPORT}
+                                        />
+                                        <Route
+                                            element={<AoideReplayRoute />}
+                                            path={AppRoute.AOIDE_REPLAY}
                                         />
                                         <Route path={AppRoute.AOIDE_PLAYLISTS}>
                                             <Route element={<AoidePlaylistListRoute />} index />

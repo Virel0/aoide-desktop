@@ -689,3 +689,49 @@ describe('the built-in playlists are made at startup', () => {
         expect(main).toContain("'aoide:playlists-ensure-built-ins'");
     });
 });
+
+describe('Replay: listening as a story', () => {
+    const router = readFileSync(join(import.meta.dirname, '../../router/app-router.tsx'), 'utf8');
+    const sidebar = sourceOf('sidebar/aoide-sidebar-list.tsx');
+    const page = sourceOf('replay/aoide-replay.tsx');
+    const hook = sourceOf('replay/use-replay.ts');
+    const css = sourceOf('replay/aoide-replay.module.css');
+
+    it('has a route and a sidebar row', () => {
+        expect(router).toContain('AppRoute.AOIDE_REPLAY');
+        expect(router).toContain('<AoideReplayRoute />');
+        expect(sidebar).toContain('AppRoute.AOIDE_REPLAY');
+    });
+
+    // The counting is the main process's, by the one shared definition of a
+    // play. A page that aggregated events itself would be a second definition.
+    it('asks the main process for the recap and computes only the window start', () => {
+        expect(hook).toContain(
+            'window.api.aoide.history.recap(periodStart(period, new Date(now)), now)',
+        );
+        expect(page).toContain('useReplay(period, serverId)');
+        expect(page).not.toMatch(/play_events|countsAsPlay/);
+    });
+
+    it('takes the moment inside the query, never in render', () => {
+        expect(page).not.toContain('Date.now()');
+        expect(hook).toMatch(/queryFn: \(\) => \{\s*const now = Date\.now\(\);/);
+    });
+
+    it('resolves top songs by id, in rank order, and plays them from the clicked one', () => {
+        expect(hook).toContain('getSongById({ id, queryClient, serverId })');
+        expect(page).toContain('songs[index].song.id');
+        expect(page).toMatch(/Play\.NOW,\s*songs\[index\]\.song\.id/);
+        expect(page).not.toMatch(/\baddToQueueByFetch\s*\(/);
+    });
+
+    it('says when nothing was played, and counts what it cannot name', () => {
+        expect(page).toContain('data.totalPlays === 0');
+        expect(page).toContain('aoide.replay.empty');
+        expect(page).toContain('data.unattributedPlays > 0');
+    });
+
+    it('lines the numbers up with tabular digits', () => {
+        expect(css).toContain('font-variant-numeric: tabular-nums;');
+    });
+});

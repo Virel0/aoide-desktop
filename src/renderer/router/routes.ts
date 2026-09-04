@@ -4,6 +4,7 @@ export enum AppRoute {
     AOIDE_MIX = '/aoide/mix',
     AOIDE_PLAYLISTS = '/aoide/playlists',
     AOIDE_PLAYLISTS_DETAIL = '/aoide/playlists/:playlistId',
+    AOIDE_REPLAY = '/aoide/replay',
     AOIDE_SEARCH = '/aoide/search',
     EXPLORE = '/explore',
     FAKE_LIBRARY_ALBUM_DETAILS = '/library/albums/dummy/:albumId',

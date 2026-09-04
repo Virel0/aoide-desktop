@@ -63,6 +63,46 @@ export const emptyTrackStats = (jellyfinId: string): TrackStats => ({
     totalMsPlayed: 0,
 });
 
+/**
+ * Listening over `[from, to)`, summarised. See `PlayHistory.recap` for what
+ * each figure counts and why the unattributed ones are kept.
+ */
+export interface Recap {
+    /** The local day with the most plays, or null when there were none. */
+    busiestDay: null | { day: string; playCount: number };
+    distinctAlbums: number;
+    distinctArtists: number;
+    distinctTracks: number;
+    from: number;
+    to: number;
+    topAlbums: RecapAlbum[];
+    topArtists: RecapArtist[];
+    topTracks: RecapTrack[];
+    /** Every millisecond of every event in the window, skips included. */
+    totalMsPlayed: number;
+    totalPlays: number;
+    /** Plays of tracks this device has not cached — counted, not hidden. */
+    unattributedPlays: number;
+}
+
+/** One line of a recap's leaderboards. */
+export interface RecapAlbum {
+    album: string;
+    /** The album artist where the cache has one, else the track's artist. */
+    artist: string;
+    playCount: number;
+}
+
+export interface RecapArtist {
+    artist: string;
+    playCount: number;
+}
+
+export interface RecapTrack {
+    jellyfinId: string;
+    playCount: number;
+}
+
 export class PlayHistory {
     private readonly db: DatabaseSync;
 
@@ -93,6 +133,117 @@ export class PlayHistory {
      */
     playCount(jellyfinId: string): number {
         return this.statsFor(jellyfinId).playCount;
+    }
+
+    /**
+     * Listening over a window, as a story: how much, of what, and when.
+     *
+     * The window is half-open — `from` inclusive, `to` exclusive — on
+     * `startedAt`, so two adjacent windows share no event and a month's recap
+     * and the year's add up rather than double-counting the boundary.
+     *
+     * "Play" here is the shared definition and nothing else: every count of
+     * plays below is `QUALIFIES_AS_PLAY`, the same predicate the count beside a
+     * track uses. `totalMsPlayed` alone counts every event, as `TrackStats`
+     * does — time spent is time spent, skipped fragments included.
+     *
+     * Artist and album come from the local `tracks` cache. A play whose track
+     * is not cached still counts as a play and still takes a place in
+     * `topTracks` — it is a real listen, and Jellyfin may well still know the
+     * id — but it has no artist or album to be filed under, so it is counted in
+     * `unattributedPlays` instead of vanishing. Hiding them would make a busy
+     * month on another device look like silence here.
+     */
+    recap(from: number, to: number): Recap {
+        const totals = this.db
+            .prepare(
+                `SELECT SUM(CASE WHEN ${QUALIFIES_AS_PLAY} THEN 1 ELSE 0 END) AS totalPlays,
+                        COALESCE(SUM(e.msPlayed), 0) AS totalMsPlayed,
+                        COUNT(DISTINCT CASE WHEN ${QUALIFIES_AS_PLAY} THEN e.jellyfinId END) AS distinctTracks,
+                        COUNT(DISTINCT CASE WHEN ${QUALIFIES_AS_PLAY} THEN t.artist END) AS distinctArtists,
+                        COUNT(DISTINCT CASE WHEN ${QUALIFIES_AS_PLAY}
+                              THEN t.album || char(31) || ${ALBUM_ARTIST} END) AS distinctAlbums,
+                        SUM(CASE WHEN ${QUALIFIES_AS_PLAY} AND t.jellyfinId IS NULL THEN 1 ELSE 0 END) AS unattributedPlays
+                 ${EVENTS_WITH_TRACK}
+                 WHERE ${IN_WINDOW}`,
+            )
+            .get(from, to) as {
+            distinctAlbums: number;
+            distinctArtists: number;
+            distinctTracks: number;
+            totalMsPlayed: number;
+            totalPlays: null | number;
+            unattributedPlays: null | number;
+        };
+
+        const topTracks = this.db
+            .prepare(
+                `SELECT e.jellyfinId AS jellyfinId, COUNT(*) AS playCount
+                 ${EVENTS_WITH_TRACK}
+                 WHERE ${IN_WINDOW} AND ${QUALIFIES_AS_PLAY}
+                 GROUP BY e.jellyfinId
+                 ORDER BY playCount DESC, e.jellyfinId
+                 LIMIT ?`,
+            )
+            .all(from, to, RECAP_TOP_LIMIT) as Array<{ jellyfinId: string; playCount: number }>;
+
+        const topArtists = this.db
+            .prepare(
+                `SELECT t.artist AS artist, COUNT(*) AS playCount
+                 ${EVENTS_WITH_TRACK}
+                 WHERE ${IN_WINDOW} AND ${QUALIFIES_AS_PLAY} AND t.jellyfinId IS NOT NULL
+                 GROUP BY t.artist
+                 ORDER BY playCount DESC, t.artist
+                 LIMIT ?`,
+            )
+            .all(from, to, RECAP_TOP_LIMIT) as Array<{ artist: string; playCount: number }>;
+
+        const topAlbums = this.db
+            .prepare(
+                `SELECT t.album AS album, ${ALBUM_ARTIST} AS artist, COUNT(*) AS playCount
+                 ${EVENTS_WITH_TRACK}
+                 WHERE ${IN_WINDOW} AND ${QUALIFIES_AS_PLAY} AND t.jellyfinId IS NOT NULL
+                 GROUP BY t.album, ${ALBUM_ARTIST}
+                 ORDER BY playCount DESC, t.album, artist
+                 LIMIT ?`,
+            )
+            .all(from, to, RECAP_TOP_LIMIT) as Array<{
+            album: string;
+            artist: string;
+            playCount: number;
+        }>;
+
+        // The listener's own day, not UTC's: a late-night session belongs to
+        // the evening it started. Ties go to the earlier day, so the answer is
+        // the same on every refresh.
+        const busiestDay = this.db
+            .prepare(
+                `SELECT date(e.startedAt / 1000, 'unixepoch', 'localtime') AS day,
+                        COUNT(*) AS playCount
+                 ${EVENTS_WITH_TRACK}
+                 WHERE ${IN_WINDOW} AND ${QUALIFIES_AS_PLAY}
+                 GROUP BY day
+                 ORDER BY playCount DESC, day
+                 LIMIT 1`,
+            )
+            .get(from, to) as undefined | { day: string; playCount: number };
+
+        return {
+            busiestDay: busiestDay
+                ? { day: busiestDay.day, playCount: Number(busiestDay.playCount) }
+                : null,
+            distinctAlbums: Number(totals.distinctAlbums),
+            distinctArtists: Number(totals.distinctArtists),
+            distinctTracks: Number(totals.distinctTracks),
+            from,
+            to,
+            topAlbums: topAlbums.map((row) => ({ ...row, playCount: Number(row.playCount) })),
+            topArtists: topArtists.map((row) => ({ ...row, playCount: Number(row.playCount) })),
+            topTracks: topTracks.map((row) => ({ ...row, playCount: Number(row.playCount) })),
+            totalMsPlayed: Number(totals.totalMsPlayed),
+            totalPlays: Number(totals.totalPlays ?? 0),
+            unattributedPlays: Number(totals.unattributedPlays ?? 0),
+        };
     }
 
     /**
@@ -205,6 +356,25 @@ export class PlayHistory {
  * of the rule instead of disappearing.
  */
 const EVENTS_WITH_TRACK = 'FROM play_events e LEFT JOIN tracks t ON t.jellyfinId = e.jellyfinId';
+
+/**
+ * The album's artist for a recap: the album artist when the cache knows it,
+ * otherwise the track's. Grouping on the track artist alone splits a
+ * compilation into one album per contributor.
+ */
+const ALBUM_ARTIST = 'COALESCE(t.albumArtist, t.artist)';
+
+/**
+ * A recap's window, bound as `(from, to)` in that order. Half-open on
+ * `startedAt`: an event exactly at `to` belongs to the next window.
+ */
+const IN_WINDOW = 'e.startedAt >= ? AND e.startedAt < ?';
+
+/**
+ * How many entries each of a recap's leaderboards carries. Ten is what fits a
+ * screen without scrolling and what the phone's Replay shows.
+ */
+export const RECAP_TOP_LIMIT = 10;
 
 /**
  * How many ids go into one `IN (...)` list.

@@ -1,3 +1,4 @@
+import type { Recap } from '/@/main/features/aoide/play-history';
 import type { CapturedCsv, SpotifyFetchOutcome } from '/@/main/features/aoide/playlist-import';
 import type {
     CreatePlaylistOptions,
@@ -39,6 +40,13 @@ interface OutboundImage {
  * the crossing per row.
  */
 export const aoide = {
+    /** Listening history, aggregated in the main process where the events live. */
+    history: {
+        /** Plays over `[from, to)`, as the Replay screen shows them. */
+        recap: (from: number, to: number): Promise<Recap> =>
+            ipcRenderer.invoke('aoide:history-recap', from, to),
+    },
+
     images: {
         get: (sha256: string): Promise<undefined | { bytes: Uint8Array; mime: string }> =>
             ipcRenderer.invoke('aoide:images-get', sha256),

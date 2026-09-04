@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { CurationStore } from './curation-store';
 import { CurationDatabase, openCurationDatabase } from './database';
-import { MAX_PARAMETERS, PlayHistory } from './play-history';
+import { MAX_PARAMETERS, PlayHistory, RECAP_TOP_LIMIT } from './play-history';
 
 import { classify, MINIMUM_SKIP_SAMPLE } from '/@/shared/aoide/play-definition';
 
@@ -447,5 +447,170 @@ describe('stats', () => {
         });
 
         expect(history.playCount('stored')).toBe(1);
+    });
+});
+
+describe('a recap of a window', () => {
+    /** A cached track with a name worth grouping on. */
+    const cacheTrackAs = (
+        jellyfinId: string,
+        names: { album: string; albumArtist?: string; artist: string },
+    ): void => {
+        database.db
+            .prepare(
+                `INSERT INTO tracks (jellyfinId, contentKey, title, artist, album, albumArtist, durationMs, lastSeenAt)
+                 VALUES (?, ?, ?, ?, ?, ?, 200000, ?)`,
+            )
+            .run(
+                jellyfinId,
+                jellyfinId,
+                jellyfinId,
+                names.artist,
+                names.album,
+                names.albumArtist ?? null,
+                now,
+            );
+    };
+
+    /** The local calendar day of a timestamp, as `date(..., 'localtime')` spells it. */
+    const localDay = (timestamp: number): string => {
+        const date = new Date(timestamp);
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    };
+
+    // Noon UTC, so the local day is the same for every zone between UTC-12
+    // and UTC+11 — the test must not depend on where the machine is.
+    const noon = Date.UTC(2026, 2, 10, 12);
+    const day = 24 * 60 * 60 * 1000;
+
+    const from = noon - 30 * day;
+    const to = noon + 30 * day;
+
+    it('counts plays by the shared definition, and time by every event', () => {
+        cacheTrackAs('a', { album: 'Blue', artist: 'Ann' });
+        cacheTrackAs('b', { album: 'Blue', artist: 'Ann' });
+        cacheTrackAs('c', { album: 'Red', artist: 'Bob' });
+
+        playedThrough('a', 200_000, 200_000, noon);
+        playedThrough('a', 200_000, 200_000, noon + 1);
+        playedThrough('b', 200_000, 200_000, noon + 2);
+        // A skip: time spent, but not a play.
+        playedThrough('c', 5_000, 200_000, noon + 3);
+
+        const recap = history.recap(from, to);
+
+        expect(recap.totalPlays).toBe(3);
+        expect(recap.totalMsPlayed).toBe(605_000);
+        expect(recap.distinctTracks).toBe(2);
+        expect(recap.distinctArtists).toBe(1);
+        expect(recap.distinctAlbums).toBe(1);
+        expect(recap.topTracks).toEqual([
+            { jellyfinId: 'a', playCount: 2 },
+            { jellyfinId: 'b', playCount: 1 },
+        ]);
+        expect(recap.topArtists).toEqual([{ artist: 'Ann', playCount: 3 }]);
+        expect(recap.topAlbums).toEqual([{ album: 'Blue', artist: 'Ann', playCount: 3 }]);
+        expect(recap.unattributedPlays).toBe(0);
+        expect(recap.from).toBe(from);
+        expect(recap.to).toBe(to);
+    });
+
+    it('includes an event at from and excludes one at to', () => {
+        cacheTrack('a', 200_000);
+        playedThrough('a', 200_000, 200_000, from - 1);
+        playedThrough('a', 200_000, 200_000, from);
+        playedThrough('a', 200_000, 200_000, to - 1);
+        playedThrough('a', 200_000, 200_000, to);
+
+        const recap = history.recap(from, to);
+
+        expect(recap.totalPlays).toBe(2);
+        expect(recap.totalMsPlayed).toBe(400_000);
+        expect(recap.topTracks).toEqual([{ jellyfinId: 'a', playCount: 2 }]);
+    });
+
+    it('names the local day with the most plays, earliest on a tie', () => {
+        cacheTrack('a', 200_000);
+        playedThrough('a', 200_000, 200_000, noon + 2 * day);
+        playedThrough('a', 200_000, 200_000, noon + 2 * day + 1);
+        playedThrough('a', 200_000, 200_000, noon + 5 * day);
+        playedThrough('a', 200_000, 200_000, noon + 5 * day + 1);
+        playedThrough('a', 200_000, 200_000, noon);
+        // Skips do not make a day busy.
+        playedThrough('a', 1_000, 200_000, noon + 7 * day);
+        playedThrough('a', 1_000, 200_000, noon + 7 * day + 1);
+        playedThrough('a', 1_000, 200_000, noon + 7 * day + 2);
+
+        expect(history.recap(from, to).busiestDay).toEqual({
+            day: localDay(noon + 2 * day),
+            playCount: 2,
+        });
+    });
+
+    it('counts plays of tracks this device has not cached rather than hiding them', () => {
+        cacheTrackAs('known', { album: 'Blue', artist: 'Ann' });
+        playedThrough('known', 200_000, 200_000, noon);
+        // Four minutes of an uncached track is a play by the fallback half of
+        // the rule; there is no artist or album to file it under.
+        playedThrough('ghost', 240_000, null, noon + 1);
+        playedThrough('ghost', 240_000, null, noon + 2);
+
+        const recap = history.recap(from, to);
+
+        expect(recap.totalPlays).toBe(3);
+        expect(recap.unattributedPlays).toBe(2);
+        expect(recap.distinctTracks).toBe(2);
+        expect(recap.distinctArtists).toBe(1);
+        expect(recap.topTracks).toEqual([
+            { jellyfinId: 'ghost', playCount: 2 },
+            { jellyfinId: 'known', playCount: 1 },
+        ]);
+        expect(recap.topArtists).toEqual([{ artist: 'Ann', playCount: 1 }]);
+        expect(recap.topAlbums).toEqual([{ album: 'Blue', artist: 'Ann', playCount: 1 }]);
+    });
+
+    it('files a compilation under its album artist rather than splitting it', () => {
+        cacheTrackAs('a', { album: 'Now 1', albumArtist: 'Various', artist: 'Ann' });
+        cacheTrackAs('b', { album: 'Now 1', albumArtist: 'Various', artist: 'Bob' });
+        playedThrough('a', 200_000, 200_000, noon);
+        playedThrough('b', 200_000, 200_000, noon + 1);
+
+        const recap = history.recap(from, to);
+
+        expect(recap.distinctAlbums).toBe(1);
+        expect(recap.topAlbums).toEqual([{ album: 'Now 1', artist: 'Various', playCount: 2 }]);
+        expect(recap.distinctArtists).toBe(2);
+    });
+
+    it('caps each leaderboard at the shared limit', () => {
+        for (let n = 0; n < RECAP_TOP_LIMIT + 3; n += 1) {
+            cacheTrackAs(`t${n}`, { album: `Album ${n}`, artist: `Artist ${n}` });
+            playedThrough(`t${n}`, 200_000, 200_000, noon + n);
+        }
+
+        const recap = history.recap(from, to);
+
+        expect(recap.topTracks).toHaveLength(RECAP_TOP_LIMIT);
+        expect(recap.topArtists).toHaveLength(RECAP_TOP_LIMIT);
+        expect(recap.topAlbums).toHaveLength(RECAP_TOP_LIMIT);
+        expect(recap.distinctTracks).toBe(RECAP_TOP_LIMIT + 3);
+    });
+
+    it('is all zeros and no busiest day when nothing was played', () => {
+        expect(history.recap(from, to)).toEqual({
+            busiestDay: null,
+            distinctAlbums: 0,
+            distinctArtists: 0,
+            distinctTracks: 0,
+            from,
+            to,
+            topAlbums: [],
+            topArtists: [],
+            topTracks: [],
+            totalMsPlayed: 0,
+            totalPlays: 0,
+            unattributedPlays: 0,
+        });
     });
 });
