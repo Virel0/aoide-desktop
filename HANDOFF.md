@@ -233,6 +233,38 @@ All on `main`, pushed, installed on the phone (`f5acdaf`):
 - **Gapless:** FLAC downloads are converted to Apple Lossless on the phone, one at a
   time, proven sample-exact by test. Streaming still plays FLAC and keeps the ~57 ms gap.
 
+## What changed on 2026-09-04 (desktop)
+
+Two commits on `development`, not pushed. 690 tests, typecheck and both lints clean.
+
+- **Now Playing is a column beside the page** (`c61c5a31`). The phone's hierarchy on
+  a wide screen: artwork with a wash behind it, title, artist in the accent, Feishin's
+  own `CenterControls`, then Lyrics or Queue. It takes over the right-sidebar slot of
+  the default layout — same `<aside>`, same resize handle, so the width the queue was
+  dragged to is the width the column gets — behind `general.aoideNowPlayingColumn`
+  (default **on**; a toggle in the general settings tab, its own Aoide section). Off,
+  nothing about the bar or the full-screen player changes. Below 1100px it steps aside,
+  through `window.matchMedia` on the one constant in `now-playing-column.ts`. The
+  lyrics are fetched by Feishin's `lyricsQueries.songLyrics` and drawn here: active line
+  primary at full opacity, every other line at `INACTIVE_LINE_OPACITY` (0.45), scrolled
+  so the active line sits a third of the way down. Not built: an AirPlay/route picker
+  and SharePlay — the desktop has neither to pick from.
+- **Home opens on a resume grid** (`0d17266a`). Up to six tiles of the last things
+  playback started *from* — album, Jellyfin playlist, Aoide playlist, mix, station —
+  recorded by one line in each of those pages' play handlers (`use-recent-contexts.ts`
+  exports a `remember*` per kind). Per server, one entry per kind+id, 24 kept, in a
+  persisted Zustand store of its own (`aoide-recent-contexts`). Artwork is rebuilt from
+  the item id at draw time, never stored. Another device's queue is the first tile when
+  it played more recently, through `queue/pick-up.ts`, which the sync panel now calls
+  too. A mix tile reopens the mix page with the description filled in rather than
+  spending a model request unasked. Nothing to show renders nothing.
+
+**Things worth knowing:** `Handoff` now carries `receivedAt`, this device's clock when
+`ageSeconds` was measured — compare against that, not `Date.now()` at render. The React
+compiler's lint refuses `Date.now()` in render outright, which is how that came about.
+There is one radio-count setting (`useArtistRadioCount`) and the album header uses it
+for album radio too; the grid does the same.
+
 ## The work order, agreed
 
 In this order. Each is self-contained; nothing here is blocked on anything else.
