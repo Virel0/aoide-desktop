@@ -281,6 +281,47 @@ describe('mixes', () => {
     it('says which rules it had to drop', () => {
         expect(screen).toContain('mix.rejected.map');
     });
+
+    // The phone's two additions. A description can name a band, an album, a
+    // game; the library is searched for it — songs, whole albums, the
+    // artist's songs — and those go first.
+    it('searches the library for what the description names, and puts it first', () => {
+        expect(hook).toContain('searchNames(outcome.names');
+        expect(hook).toContain('api.controller.search(');
+        expect(hook).toContain('albumIds: [...albumIds]');
+        expect(hook).toContain('artistIds: [artistId]');
+        expect(hook).toContain('orderCandidates(');
+        expect(hook).toMatch(/orderCandidates\(\s*named\.ids/);
+        expect(hook).toContain('namesFirst(');
+    });
+
+    // The model's "rock" is this library's "Rock", "Hard Rock" and
+    // "Alternative Rock", and Jellyfin ORs the ids it is handed.
+    it('maps the model’s genres to the library’s by word, not by exact name', () => {
+        expect(hook).toContain('matchGenres(describedGenres(rules), genreNames)');
+        expect(hook).not.toMatch(/genreIdsByName\.get\(String\(rule\.value\)\)/);
+        expect(hook).toContain('genreIds,');
+    });
+
+    it('does not ask for the whole library beside a name', () => {
+        expect(hook).toContain('wantsRuleCandidates(rules, outcome.names)');
+    });
+
+    it('goes on with names alone when the rules were refused', () => {
+        expect(hook).toContain('!outcome.rules && outcome.names.length === 0');
+    });
+
+    // The diagnostic. An empty mix with no account of what was looked for
+    // cannot be rephrased.
+    it('shows what was understood under the input', () => {
+        expect(hook).toContain('describePlan({ genres, names: outcome.names, rules })');
+        expect(screen).toContain("t('aoide.mix.lookedFor', { plan: mix.plan })");
+    });
+
+    it('names the things the library had nothing for', () => {
+        expect(hook).toContain('missedNamesMessage(missed)');
+        expect(screen).toContain("t('aoide.mix.missed', { names: mix.missed.join(', ') })");
+    });
 });
 
 describe('the shared queue', () => {

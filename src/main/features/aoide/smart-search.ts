@@ -221,13 +221,15 @@ export interface OpenRouterModel {
  */
 export const describeMix = async (description: string, genres: string[]): Promise<MixOutcome> => {
     const reply = await ask(buildMixPrompt(description, genres));
-    if ('reason' in reply) return { rejected: [], rules: null, ...reply };
+    if ('reason' in reply) return { names: [], rejected: [], rules: null, ...reply };
 
     const parsed = parseRules(reply.content);
-    return { rejected: parsed.rejected, rules: parsed.rules };
+    return { names: parsed.names, rejected: parsed.rejected, rules: parsed.rules };
 };
 
 export interface MixOutcome {
+    /** Things the description named — see `ParsedRules.names`. Empty, never absent. */
+    names: string[];
     reason?: string;
     /** Rules the model produced that neither app could evaluate, and why. */
     rejected: string[];

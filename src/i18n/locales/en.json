@@ -77,7 +77,9 @@
         },
         "mix": {
             "discard": "Discard",
+            "lookedFor": "Looked for: {{plan}}",
             "make": "Make a mix",
+            "missed": "Nothing in your library mentions {{names}}.",
             "placeholder": "Describe a mood — \"something calm I have not heard in months\"",
             "play": "Play {{count}} tracks",
             "save": "Save as playlist",

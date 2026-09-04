@@ -95,7 +95,24 @@ export const AoideMix = () => {
                 </Button>
             </Group>
 
+            {/* What the model understood — names, the library genres they
+                resolved to, the rest of the rules, the length. The diagnostic
+                for a mix that came back empty or wrong. */}
+            {mix.plan && (
+                <Text isMuted size="sm">
+                    {t('aoide.mix.lookedFor', { plan: mix.plan })}
+                </Text>
+            )}
+
             {mix.trouble && <Text isMuted>{mix.trouble}</Text>}
+
+            {/* Names the library had nothing for, even when the rest of the
+                description found plenty: the person can respell or drop them. */}
+            {mix.songs.length > 0 && mix.missed.length > 0 && (
+                <Text isMuted size="sm">
+                    {t('aoide.mix.missed', { names: mix.missed.join(', ') })}
+                </Text>
+            )}
 
             {/* Rules the model got wrong, named rather than swallowed — a mix
                 missing half its definition otherwise looks merely unlucky. */}

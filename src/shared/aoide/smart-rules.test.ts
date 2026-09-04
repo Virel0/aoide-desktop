@@ -123,6 +123,44 @@ describe('reading a model’s rules', () => {
     });
 });
 
+describe('the things a description names', () => {
+    const reply = (body: unknown) => JSON.stringify(body);
+
+    it('come back spelled as the model wrote them', () => {
+        const parsed = parseRules(
+            reply({ match: 'all', names: ['Helldivers 2', 'Nine Inch Nails'], rules: [] }),
+        );
+        expect(parsed.names).toEqual(['Helldivers 2', 'Nine Inch Nails']);
+    });
+
+    // The phone's clients and older prompts send no `names`; the field being
+    // new must not make their replies invalid.
+    it('are an empty list when the model left the field out', () => {
+        expect(parseRules(reply({ match: 'all', rules: [] })).names).toEqual([]);
+    });
+
+    it('are an empty list when there was no JSON at all', () => {
+        expect(parseRules('no').names).toEqual([]);
+    });
+
+    it('survive the rules being refused', () => {
+        const parsed = parseRules(reply({ match: 'any', names: ['Helldivers 2'], rules: [] }));
+        expect(parsed.rules).toBeNull();
+        expect(parsed.names).toEqual(['Helldivers 2']);
+    });
+
+    it('drop what is not a name: blanks, single characters, repeats, non-strings', () => {
+        const parsed = parseRules(
+            reply({ match: 'all', names: [' Muse ', '', 'x', 7, null, 'Muse'], rules: [] }),
+        );
+        expect(parsed.names).toEqual(['Muse']);
+    });
+
+    it('are an empty list when the field is not a list', () => {
+        expect(parseRules(reply({ match: 'all', names: 'Muse', rules: [] })).names).toEqual([]);
+    });
+});
+
 describe('the mix prompt', () => {
     it('carries the library’s own genres', () => {
         expect(buildMixPrompt('something calm', ['Jazz', 'Ambient'])).toContain('Jazz, Ambient');
@@ -136,6 +174,28 @@ describe('the mix prompt', () => {
 
     it('says the rules select, not the model', () => {
         expect(buildMixPrompt('x', [])).toContain('never choose songs');
+    });
+
+    it('asks for the things a description names, spelled as written', () => {
+        const prompt = buildMixPrompt('Helldivers 2 session music', []);
+        expect(prompt).toContain('"names":[string]');
+        expect(prompt).toContain('artist, album, band, game, film or');
+        expect(prompt).toContain('exactly as written');
+    });
+
+    // Naming a game is a mood as much as a title. Without this the model
+    // returns the name and nothing else, the library has no soundtrack, and
+    // the mix is empty for a description that had plenty to say.
+    it('asks for the mood a named thing implies, as genres from the library', () => {
+        const prompt = buildMixPrompt('x', ['Rock']);
+        expect(prompt).toContain('ALSO describe the mood that thing implies');
+        expect(prompt).toContain('war game or an action film implies driving genres');
+        expect(prompt).toContain('(rock, metal, electronic, soundtrack)');
+        expect(prompt).toContain('study session, a farming or');
+        expect(prompt).toContain('building game implies calm ones');
+        expect(prompt).toContain('(lo-fi, ambient, jazz, classical, folk)');
+        expect(prompt).toContain('wants music that fits playing it, not only its');
+        expect(prompt).toContain('Prefer two or three genres to one');
     });
 });
 

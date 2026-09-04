@@ -139,10 +139,38 @@ export const ruleProblem = (rule: SmartRule): null | string => {
 };
 
 export interface ParsedRules {
+    /**
+     * Artists, albums, bands, games, films or shows the description named,
+     * spelled as the model read them. The half of a description a rule cannot
+     * express: "Helldivers 2 session music" names a game whose soundtrack may be
+     * in the library, and no genre rule finds it. Empty when nothing was named,
+     * and empty — never absent — when the model left the field out.
+     */
+    names: string[];
     /** Rules that were dropped, and why. Shown rather than swallowed. */
     rejected: string[];
     rules: null | SmartRules;
 }
+
+/** A name shorter than this is punctuation or a stray letter, not a thing to search for. */
+const MIN_NAME_LENGTH = 2;
+
+/**
+ * The model's `names`, cleaned: strings only, trimmed, nothing shorter than two
+ * characters, no duplicates. Anything else in the field is ignored rather than
+ * refused — a stray number in a list of names is not a reason to lose the mix.
+ */
+const readNames = (value: unknown): string[] => {
+    if (!Array.isArray(value)) return [];
+
+    const names: string[] = [];
+    for (const candidate of value) {
+        if (typeof candidate !== 'string') continue;
+        const name = candidate.trim();
+        if (name.length >= MIN_NAME_LENGTH && !names.includes(name)) names.push(name);
+    }
+    return names;
+};
 
 /**
  * Read a model's reply into rules, keeping only what both apps can evaluate.
@@ -154,7 +182,11 @@ export interface ParsedRules {
  */
 export const parseRules = (reply: string): ParsedRules => {
     const parsed = extractJson(reply);
-    if (!parsed) return { rejected: ['The model did not return rules.'], rules: null };
+    if (!parsed) return { names: [], rejected: ['The model did not return rules.'], rules: null };
+
+    // Read before the rules are judged: a reply that names a band and gets its
+    // one rule wrong still names the band.
+    const names = readNames(parsed.names);
 
     const rejected: string[] = [];
     const rules: SmartRule[] = [];
@@ -181,7 +213,7 @@ export const parseRules = (reply: string): ParsedRules => {
 
     const match = parsed.match === 'any' ? 'any' : 'all';
     if (match === 'any' && rules.length === 0) {
-        return { rejected: [...rejected, 'No usable rules.'], rules: null };
+        return { names, rejected: [...rejected, 'No usable rules.'], rules: null };
     }
 
     const limit =
@@ -189,7 +221,7 @@ export const parseRules = (reply: string): ParsedRules => {
             ? (parsed.limit as number)
             : undefined;
 
-    return { rejected, rules: { limit, match, rules } };
+    return { names, rejected, rules: { limit, match, rules } };
 };
 
 const normaliseField = (value: unknown): null | RuleField => {
@@ -221,6 +253,12 @@ const extractJson = (reply: string): null | Record<string, unknown> => {
  * The library's genres go in for the same reason they do in search: without the
  * real vocabulary a model invents "Chill" and "Workout", the rules match
  * nothing, and an empty mix reads as a broken feature rather than as a miss.
+ *
+ * The `names` paragraph is the phone's, near enough word for word
+ * (`MixComposer.swift`): a description that names a thing gets that thing
+ * searched for *and* the mood it implies expressed as genres, because someone
+ * who types a game's name wants music to play it to, and its soundtrack alone
+ * — if the library even has it — is a thin answer.
  */
 export const buildMixPrompt = (description: string, libraryGenres: readonly string[]): string =>
     [
@@ -228,7 +266,17 @@ export const buildMixPrompt = (description: string, libraryGenres: readonly stri
         'You never choose songs. The rules select them.',
         '',
         'Reply with JSON only:',
-        '{"match":"all"|"any","limit":number,"rules":[{"field":…,"op":…,"value":…}]}',
+        '{"match":"all"|"any","limit":number,"rules":[{"field":…,"op":…,"value":…}],"names":[string]}',
+        '',
+        'When the description names a particular artist, album, band, game, film or',
+        'show, put that name in "names" exactly as written; the library will be',
+        'searched for it. Then ALSO describe the mood that thing implies, using',
+        'genres from the list: a war game or an action film implies driving genres',
+        '(rock, metal, electronic, soundtrack); a study session, a farming or',
+        'building game implies calm ones (lo-fi, ambient, jazz, classical, folk).',
+        'Someone naming a game wants music that fits playing it, not only its',
+        'soundtrack. Prefer two or three genres to one. "names" is [] when the',
+        'description names nothing.',
         '',
         'Fields and the operators each accepts:',
         '  text  — title, artist, album, album_artist, genre',
