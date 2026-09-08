@@ -156,8 +156,10 @@ modules:
       - install -Dm755 aoide.sh /app/bin/aoide
       - install -Dm644 com.gabereglat.aoide.desktop.desktop /app/share/applications/com.gabereglat.aoide.desktop.desktop
       - install -Dm644 com.gabereglat.aoide.desktop.metainfo.xml /app/share/metainfo/com.gabereglat.aoide.desktop.metainfo.xml
+      # Flatpak refuses to export an icon larger than 512x512, so the 1024 the
+      # other packages install is left out rather than failing the build.
       - |
-        for size in 16 24 32 48 64 72 96 128 256 512 1024; do
+        for size in 16 24 32 48 64 72 96 128 256 512; do
           install -Dm644 "icons/${size}x${size}.png" \
             "/app/share/icons/hicolor/${size}x${size}/apps/com.gabereglat.aoide.desktop.png"
         done
