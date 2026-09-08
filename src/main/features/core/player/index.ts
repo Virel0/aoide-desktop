@@ -92,6 +92,11 @@ const MPV_BINARY_PATH = store.get('mpv_path') as string | undefined;
  * desktop entry.
  */
 const MPV_BINARY_CANDIDATES = [
+    // Inside a Flatpak this is the only mpv reachable at all: the sandbox cannot
+    // see the host's, so packaging/flatpak builds one in. It is listed first
+    // because a Flatpak's PATH also holds /app/bin, and being explicit means a
+    // launcher started with a bare environment finds it too.
+    '/app/bin/mpv',
     '/usr/bin/mpv',
     '/usr/local/bin/mpv',
     '/opt/homebrew/bin/mpv',

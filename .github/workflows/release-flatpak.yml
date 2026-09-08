@@ -1,0 +1,89 @@
+name: Flatpak
+
+# Builds the Flatpak, which is the only way this manifest gets verified: it
+# cannot be built on the machine it is usually written from. Runs whenever the
+# packaging changes, so a broken manifest is found then rather than at a release,
+# and attaches a single-file bundle to a tagged release.
+#
+# The triggers are split deliberately: a path filter is not reliably applied to a
+# tag push, so a release listens for the release itself rather than for its tag.
+on:
+    push:
+        branches: [development]
+        paths:
+            - 'packaging/flatpak/**'
+            - '.github/workflows/release-flatpak.yml'
+    pull_request:
+        paths:
+            - 'packaging/flatpak/**'
+    release:
+        types: [published]
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+jobs:
+    flatpak:
+        runs-on: ubuntu-latest
+        # mpv, libplacebo and libass are built from source inside the sandbox.
+        timeout-minutes: 90
+
+        steps:
+            - name: Check out the repository
+              uses: actions/checkout@v6
+
+            - name: Install Flatpak
+              run: |
+                  set -euo pipefail
+                  sudo apt-get update
+                  sudo apt-get install -y flatpak flatpak-builder
+                  flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+            - name: Install the runtimes
+              run: |
+                  set -euo pipefail
+                  flatpak install --user --noninteractive flathub \
+                      org.freedesktop.Platform//25.08 \
+                      org.freedesktop.Sdk//25.08 \
+                      org.electronjs.Electron2.BaseApp//25.08 \
+                      org.freedesktop.Platform.ffmpeg-full//25.08
+
+            - name: Install Node and PNPM
+              uses: pnpm/action-setup@v4
+
+            - name: Build the app
+              run: |
+                  set -euo pipefail
+                  pnpm install --frozen-lockfile
+                  pnpm run build:electron
+                  pnpm exec electron-builder --linux dir --publish never
+
+            - name: Build the Flatpak
+              run: |
+                  set -euo pipefail
+                  cd packaging/flatpak
+                  flatpak-builder --user --repo=/tmp/aoide-repo --force-clean \
+                      --state-dir=/tmp/aoide-flatpak-state \
+                      /tmp/aoide-flatpak-build com.gabereglat.aoide.desktop.yml
+
+            - name: Bundle it
+              run: |
+                  set -euo pipefail
+                  flatpak build-bundle /tmp/aoide-repo aoide.flatpak \
+                      com.gabereglat.aoide.desktop \
+                      --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo
+                  ls -lh aoide.flatpak
+
+            - name: Keep it for inspection
+              uses: actions/upload-artifact@v4
+              with:
+                  name: aoide-flatpak
+                  path: aoide.flatpak
+
+            - name: Attach it to the release
+              if: github.event_name == 'release'
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: aoide.flatpak
+                  tag_name: ${{ github.event.release.tag_name }}

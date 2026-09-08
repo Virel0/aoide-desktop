@@ -1,0 +1,165 @@
+# Aoide as a Flatpak.
+#
+# Two things make this different from the Arch package. A Flatpak cannot see the
+# host's mpv, so mpv is built here and installed inside the sandbox at
+# /app/bin/mpv — audio only, because nothing in Aoide ever asks it to draw a
+# frame. And Electron needs zypak to run under Flatpak's own sandbox, which the
+# Electron base app provides and packaging/flatpak/aoide.sh invokes.
+#
+# The app itself is NOT built here. flatpak-builder builds offline, and teaching
+# it to run pnpm inside the sandbox buys nothing: ./build.sh runs the same
+# electron-builder step the Arch package runs, and this installs what it
+# produced. See packaging/flatpak/README.md.
+id: com.gabereglat.aoide.desktop
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+base: org.electronjs.Electron2.BaseApp
+base-version: '25.08'
+command: aoide
+separate-locales: false
+
+# Codecs the base runtime leaves out. Aoide is pointed at libraries of FLAC and
+# ALAC, so this is not optional decoration.
+add-extensions:
+  org.freedesktop.Platform.ffmpeg-full:
+    directory: lib/ffmpeg
+    version: '25.08'
+    add-ld-path: .
+    autodelete: false
+    no-autodownload: false
+
+cleanup-commands:
+  - mkdir -p /app/lib/ffmpeg
+
+finish-args:
+  # A window, drawn by whichever display server is there.
+  - --share=ipc
+  - --socket=x11
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --device=dri
+  # Sound, and the Jellyfin server.
+  - --socket=pulseaudio
+  - --filesystem=xdg-run/pipewire-0:ro
+  - --share=network
+  # The desktop's own integrations: the media keys and the panel widget speak
+  # MPRIS, the tray icon speaks StatusNotifier, and Rich Presence needs the
+  # socket Discord opens in the run directory.
+  - --own-name=org.mpris.MediaPlayer2.aoide
+  - --own-name=org.mpris.MediaPlayer2.aoide.*
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=org.freedesktop.Notifications
+  - --filesystem=xdg-run/discord-ipc-0:create
+  # Electron writes its singleton lock and its shader cache to TMPDIR; the
+  # default one is tiny on some systems and the app fails to start with nothing
+  # said. See the Electron page in the Flatpak docs.
+  - --env=TMPDIR=/var/tmp
+
+modules:
+  # mpv's own dependency, and a hard one since 0.38 even when no video is drawn.
+  # Built without every GPU backend: this mpv decodes audio and answers IPC.
+  - name: libplacebo
+    buildsystem: meson
+    config-opts:
+      - -Dvulkan=disabled
+      - -Dopengl=disabled
+      - -Dd3d11=disabled
+      - -Dshaderc=disabled
+      - -Ddemos=false
+      - -Dtests=false
+    cleanup:
+      - /include
+      - /lib/pkgconfig
+    sources:
+      - type: git
+        url: https://github.com/haasn/libplacebo.git
+        tag: v7.360.1
+        commit: cee9b076f2c63104ccfd497fa79c39a867293ec4
+
+  # Subtitle rendering, which mpv wants present whether or not it is asked to
+  # use it. Its own dependencies — freetype, harfbuzz, fribidi — are in the
+  # runtime, which is why the upstream mpv Flatpak does not build them either.
+  - name: libass
+    buildsystem: autotools
+    config-opts:
+      - --disable-static
+      - --enable-harfbuzz
+      - --enable-fontconfig
+    cleanup:
+      - /include
+      - /lib/pkgconfig
+    sources:
+      - type: git
+        url: https://github.com/libass/libass.git
+        tag: 0.17.5
+        commit: 4a05d8127f525943ebf45fdc6497c9e665947f0d
+
+  # Deliberately few options. Everything named here is something Aoide relies on
+  # or something that would pull in a dependency for nothing; the rest is left to
+  # mpv's own detection, which disables what the runtime cannot satisfy. Naming
+  # an option mpv has since renamed fails the build outright, so the list stays
+  # short on purpose.
+  - name: mpv
+    buildsystem: meson
+    config-opts:
+      - -Dcplayer=true
+      - -Dlibmpv=false
+      - -Dbuild-date=false
+      - -Dalsa=enabled
+      - -Dpulse=enabled
+      - -Dpipewire=enabled
+      - -Dlua=disabled
+      - -Djavascript=disabled
+      - -Dlibarchive=disabled
+      - -Dlibbluray=disabled
+      - -Dcdda=disabled
+      - -Ddvdnav=disabled
+      - -Ddvbin=disabled
+      - -Dopenal=disabled
+      - -Djack=disabled
+      - -Drubberband=disabled
+      - -Dlibavdevice=disabled
+    cleanup:
+      - /include
+      - /lib/pkgconfig
+      - /share/applications
+      - /share/icons
+      - /share/bash-completion
+      - /share/zsh
+      - /share/metainfo
+    sources:
+      - type: git
+        url: https://github.com/mpv-player/mpv.git
+        tag: v0.41.0
+        commit: 41f6a645068483470267271e1d09966ca3b9f413
+
+  - name: aoide
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/aoide
+      - cp -a linux-unpacked/. /app/aoide/
+      # Flatpak has its own sandbox and zypak drives it; Chromium's setuid helper
+      # is unused here and cannot be setuid inside the image anyway.
+      - rm -f /app/aoide/chrome-sandbox
+      - install -Dm755 aoide.sh /app/bin/aoide
+      - install -Dm644 com.gabereglat.aoide.desktop.desktop /app/share/applications/com.gabereglat.aoide.desktop.desktop
+      - install -Dm644 com.gabereglat.aoide.desktop.metainfo.xml /app/share/metainfo/com.gabereglat.aoide.desktop.metainfo.xml
+      - |
+        for size in 16 24 32 48 64 72 96 128 256 512 1024; do
+          install -Dm644 "icons/${size}x${size}.png" \
+            "/app/share/icons/hicolor/${size}x${size}/apps/com.gabereglat.aoide.desktop.png"
+        done
+    sources:
+      - type: dir
+        path: ../../dist/linux-unpacked
+        dest: linux-unpacked
+      - type: dir
+        path: ../../assets/icons
+        dest: icons
+      - type: file
+        path: aoide.sh
+      - type: file
+        path: com.gabereglat.aoide.desktop.desktop
+      - type: file
+        path: ../../com.gabereglat.aoide.desktop.metainfo.xml

@@ -1134,3 +1134,22 @@ describe('silence trimming: both players consult the trim plan, the setting gate
         expect(store).toContain('if (answer.absent) {');
     });
 });
+
+describe('the Flatpak can find the mpv it ships', () => {
+    // A Flatpak sandbox cannot see the host's mpv, so packaging/flatpak builds
+    // one into /app/bin. If this candidate ever goes, the MPV backend inside the
+    // Flatpak stops working with nothing on screen to say why — which is exactly
+    // how the macOS path broke once before.
+    const player = readFileSync(
+        join(import.meta.dirname, '../../../main/features/core/player/index.ts'),
+        'utf8',
+    );
+
+    it('lists /app/bin/mpv among the binary candidates', () => {
+        expect(player).toContain("'/app/bin/mpv'");
+    });
+
+    it('still consults PATH first, so a user own build wins', () => {
+        expect(player).toContain('...fromPath, ...MPV_BINARY_CANDIDATES');
+    });
+});
