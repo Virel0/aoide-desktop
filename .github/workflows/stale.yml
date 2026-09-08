@@ -1,8 +1,8 @@
 name: 'Close stale issues and PRs'
 on:
     workflow_dispatch:
-    schedule:
-        - cron: '30 1 * * *'
+    # Left manual: a bot closing a stranger's issue overnight, on a project this
+    # size, loses more than the tidying is worth.
 permissions:
     contents: read
 jobs:

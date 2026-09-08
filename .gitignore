@@ -5,6 +5,11 @@ out
 .eslintcache
 *.log*
 release
+# ...but not the pacman release package, which lives under packaging/. The bare
+# pattern above is upstream's, for its own build output, and it swallowed this
+# directory silently — the release workflow copies it and would have failed on
+# the first tag.
+!packaging/arch/release/
 
 # makepkg scratch, if anyone runs it without build.sh
 packaging/arch/pkg/

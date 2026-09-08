@@ -1,0 +1,58 @@
+# Maintainer: Virel0
+#
+# The *release* package: built by CI from a tagged source tarball and served
+# from GitHub Releases as a pacman repository, so `pacman -Syu` upgrades Aoide
+# like everything else. See packaging/arch/release/README.md for the two lines
+# to add to pacman.conf.
+#
+# pkgver is set by CI from the tag (v1.2.3 → 1.2.3) before makepkg runs.
+
+pkgname=aoide
+pkgver=0
+pkgrel=1
+pkgdesc="Aoide for Linux — a Jellyfin music client with local playlists, play history, and sync with the Aoide iOS app"
+arch=('x86_64')
+url="https://github.com/Virel0/aoide-desktop"
+license=('GPL-3.0-or-later')
+depends=('gtk3' 'nss' 'alsa-lib' 'libxss' 'libnotify' 'mpv')
+makedepends=('nodejs' 'pnpm')
+options=('!strip' '!debug')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
+        'com.gabereglat.aoide.desktop.desktop')
+sha256sums=('SKIP'
+            'SKIP')
+
+_appid='com.gabereglat.aoide.desktop'
+
+build() {
+    cd "$srcdir/aoide-desktop-$pkgver"
+    pnpm install --frozen-lockfile
+    pnpm run build:electron
+    pnpm exec electron-builder --linux dir --publish never
+}
+
+package() {
+    local _repo="$srcdir/aoide-desktop-$pkgver"
+    local _unpacked="$_repo/dist/linux-unpacked"
+    [[ $CARCH == 'x86_64' ]] || _unpacked="$_repo/dist/linux-$CARCH-unpacked"
+
+    install -dm755 "$pkgdir/opt/$pkgname"
+    cp -a "$_unpacked/." "$pkgdir/opt/$pkgname/"
+    chmod 4755 "$pkgdir/opt/$pkgname/chrome-sandbox"
+
+    local _candidate _bin=''
+    for _candidate in "$pkgname" 'aoide-desktop' 'Aoide'; do
+        [[ -x $_unpacked/$_candidate ]] && { _bin=$_candidate; break; }
+    done
+    [[ -n $_bin ]] || { echo "error: no executable in $_unpacked" >&2; return 1; }
+
+    install -dm755 "$pkgdir/usr/bin"
+    ln -s "/opt/$pkgname/$_bin" "$pkgdir/usr/bin/$pkgname"
+    install -Dm644 "$srcdir/$_appid.desktop" "$pkgdir/usr/share/applications/$_appid.desktop"
+    install -Dm644 "$_repo/$_appid.metainfo.xml" "$pkgdir/usr/share/metainfo/$_appid.metainfo.xml"
+    local _size
+    for _size in 16 24 32 48 64 72 96 128 256 512 1024; do
+        install -Dm644 "$_repo/assets/icons/${_size}x${_size}.png" \
+            "$pkgdir/usr/share/icons/hicolor/${_size}x${_size}/apps/$_appid.png"
+    done
+}

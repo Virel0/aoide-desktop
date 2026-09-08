@@ -1,7 +1,7 @@
 name: Publish release to WinGet
+# Upstream submits Feishin to the Windows package manager on every release.
+# This fork does not ship to winget, so it never fires on its own.
 on:
-  release:
-    types: [released]
   workflow_dispatch:
     inputs:
       tag_name:

@@ -9,9 +9,8 @@ on:
                 description: 'Semantic version number (e.g., 1.0.0) - alpha suffix will be added automatically'
                 required: false
                 type: string
-    schedule:
-        # Run at 3:00 AM PST daily (11:00 UTC; PST = UTC-8)
-        - cron: '0 11 * * *'
+    # Upstream publishes an alpha every night. This fork releases when a tag is
+    # pushed, so the schedule is gone and this stays available by hand.
 
 jobs:
     check-new-commits:

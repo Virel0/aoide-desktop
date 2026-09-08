@@ -9,9 +9,7 @@ on:
                 description: 'Docker image tag (e.g. 1.12.0 or latest)'
                 required: true
                 type: string
-    push:
-        tags:
-            - 'v*.*.*'
+    # No tag hook: this fork's tags build the Arch package and the Flatpak.
 
 env:
     REGISTRY: ghcr.io
