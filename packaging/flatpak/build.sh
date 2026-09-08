@@ -14,7 +14,7 @@ set -euo pipefail
 
 _here="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 _repo="$(cd -- "$_here/../.." && pwd)"
-_app_id='com.gabereglat.aoide.desktop'
+_app_id='io.github.Virel0.Aoide'
 _manifest="$_here/$_app_id.yml"
 # Kept out of the repository: electron-builder walks the project root looking
 # for node modules and descends into anything left inside it.
@@ -76,4 +76,4 @@ if [[ $_bundle == true ]]; then
     echo "==> Wrote $(cd "$_repo/.." && pwd)/aoide.flatpak"
 fi
 
-echo '==> Installed. Run it with:  flatpak run com.gabereglat.aoide.desktop'
+echo '==> Installed. Run it with:  flatpak run io.github.Virel0.Aoide'

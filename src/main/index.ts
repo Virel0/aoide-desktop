@@ -833,7 +833,7 @@ async function createWindow(first = true): Promise<void> {
     });
 
     if (isWindows()) {
-        app.setAppUserModelId('com.gabereglat.aoide.desktop');
+        app.setAppUserModelId('io.github.Virel0.Aoide');
     }
 
     menuBuilder = new MenuBuilder(mainWindow);

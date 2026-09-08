@@ -26,11 +26,11 @@ conflicts=("$_pkgname")
 options=('!strip' '!debug')
 
 source=("$_pkgname::git+https://github.com/Virel0/aoide-desktop.git#branch=development"
-        'com.gabereglat.aoide.desktop.desktop')
+        'io.github.Virel0.Aoide.desktop')
 sha256sums=('SKIP'
             'de913766f38a6ab23b709fa51118a3e2ad71e5872645d55f03de91c8d3617c51')
 
-_appid='com.gabereglat.aoide.desktop'
+_appid='io.github.Virel0.Aoide'
 
 # Upstream's version, then how far this fork is past it, so every commit is an
 # upgrade to pacman.

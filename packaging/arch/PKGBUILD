@@ -33,7 +33,7 @@ source=()
 sha256sums=()
 
 _repo="$(git -C "$startdir" rev-parse --show-toplevel 2>/dev/null || printf '%s/../..' "$startdir")"
-_appid='com.gabereglat.aoide.desktop'
+_appid='io.github.Virel0.Aoide'
 
 # Upstream's version, then how far past it this fork is, so rebuilding after a
 # commit produces a higher version and pacman treats it as an upgrade rather than

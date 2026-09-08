@@ -23,7 +23,7 @@ yay -S aoide-git
    cd aoide-git
    makepkg --printsrcinfo > .SRCINFO   # regenerates it from the PKGBUILD
    makepkg -si                          # prove it builds before publishing
-   git add PKGBUILD .SRCINFO com.gabereglat.aoide.desktop.desktop
+   git add PKGBUILD .SRCINFO io.github.Virel0.Aoide.desktop
    git commit -m "Initial import"
    git push
    ```

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component type="desktop-application">
-  <id>com.gabereglat.aoide.desktop</id>
+  <id>io.github.Virel0.Aoide</id>
   <name>Aoide</name>
   <summary>A Jellyfin music player with playlists and history that sync between your devices</summary>
   <metadata_license>CC0-1.0</metadata_license>
@@ -24,7 +24,7 @@
   <developer id="org.jeffvli">
     <name>jeffvli</name>
   </developer>
-  <launchable type="desktop-id">com.gabereglat.aoide.desktop.desktop</launchable>
+  <launchable type="desktop-id">io.github.Virel0.Aoide.desktop</launchable>
   <url type="homepage">https://github.com/jeffvli/feishin</url>
   <screenshots>
     <screenshot type="default">

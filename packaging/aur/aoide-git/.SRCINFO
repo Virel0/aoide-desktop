@@ -19,7 +19,7 @@ pkgbase = aoide-git
 	options = !strip
 	options = !debug
 	source = aoide::git+https://github.com/Virel0/aoide-desktop.git#branch=development
-	source = com.gabereglat.aoide.desktop.desktop
+	source = io.github.Virel0.Aoide.desktop
 	sha256sums = SKIP
 	sha256sums = de913766f38a6ab23b709fa51118a3e2ad71e5872645d55f03de91c8d3617c51
 

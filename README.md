@@ -23,7 +23,7 @@
 >
 > The AppImage, Flathub, and Docker instructions below are Feishin's own, and they
 > install *Feishin*, not this.
-> This fork ships under its own identity (`Aoide`, `com.gabereglat.aoide.desktop`) so
+> This fork ships under its own identity (`Aoide`, `io.github.Virel0.Aoide`) so
 > the two can sit side by side without fighting over settings, the MPRIS bus, or the
 > `aoide://` URL scheme.
 

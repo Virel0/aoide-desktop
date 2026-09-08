@@ -76,13 +76,13 @@ jobs:
                   cd packaging/flatpak
                   flatpak-builder --user --repo=/tmp/aoide-repo --force-clean \
                       --state-dir=/tmp/aoide-flatpak-state \
-                      /tmp/aoide-flatpak-build com.gabereglat.aoide.desktop.yml
+                      /tmp/aoide-flatpak-build io.github.Virel0.Aoide.yml
 
             - name: Bundle it
               run: |
                   set -euo pipefail
                   flatpak build-bundle /tmp/aoide-repo aoide.flatpak \
-                      com.gabereglat.aoide.desktop \
+                      io.github.Virel0.Aoide \
                       --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo
                   ls -lh aoide.flatpak
 

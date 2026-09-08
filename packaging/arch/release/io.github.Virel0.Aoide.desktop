@@ -11,7 +11,7 @@ GenericName=Music player
 Comment=Jellyfin music, with local playlists and history that sync with the phone
 Exec=/usr/bin/aoide --class=aoide %U
 TryExec=/usr/bin/aoide
-Icon=com.gabereglat.aoide.desktop
+Icon=io.github.Virel0.Aoide
 Terminal=false
 Categories=AudioVideo;Audio;Player;Music;
 Keywords=Jellyfin;Aoide;Music;

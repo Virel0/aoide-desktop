@@ -1,4 +1,4 @@
-appId: com.gabereglat.aoide.desktop
+appId: io.github.Virel0.Aoide
 productName: Aoide
 artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 electronVersion: 41.7.0

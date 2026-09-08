@@ -6,7 +6,7 @@ One command on any Linux with Flatpak:
 cd packaging/flatpak && ./build.sh
 ```
 
-Then `flatpak run com.gabereglat.aoide.desktop`, or find Aoide in the launcher.
+Then `flatpak run io.github.Virel0.Aoide`, or find Aoide in the launcher.
 `./build.sh --bundle` also writes a single `aoide.flatpak` file next to the
 repository, which installs anywhere with `flatpak install aoide.flatpak`.
 
@@ -30,11 +30,20 @@ back from the server on the first sync, but the settings and the OpenRouter key
 do not. To carry everything over before the first run:
 
 ```sh
-mkdir -p ~/.var/app/com.gabereglat.aoide.desktop/config
-cp -r ~/.config/Aoide ~/.var/app/com.gabereglat.aoide.desktop/config/
+mkdir -p ~/.var/app/io.github.Virel0.Aoide/config
+cp -r ~/.config/Aoide ~/.var/app/io.github.Virel0.Aoide/config/
 ```
 
 Both can be installed at once; they will not see each other's data.
+
+The application identifier is `io.github.Virel0.Aoide`, which is the convention
+for a project that lives on GitHub rather than on a domain of its own. It
+changed from an earlier one in 1.15.3; a Flatpak installed from 1.15.2 is a
+different application as far as Flatpak is concerned, so remove that one first:
+
+```sh
+flatpak uninstall com.gabereglat.aoide.desktop
+```
 
 ## Updating
 

@@ -10,7 +10,7 @@
 # it to run pnpm inside the sandbox buys nothing: ./build.sh runs the same
 # electron-builder step the Arch package runs, and this installs what it
 # produced. See packaging/flatpak/README.md.
-id: com.gabereglat.aoide.desktop
+id: io.github.Virel0.Aoide
 runtime: org.freedesktop.Platform
 runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
@@ -154,14 +154,14 @@ modules:
       # is unused here and cannot be setuid inside the image anyway.
       - rm -f /app/aoide/chrome-sandbox
       - install -Dm755 aoide.sh /app/bin/aoide
-      - install -Dm644 com.gabereglat.aoide.desktop.desktop /app/share/applications/com.gabereglat.aoide.desktop.desktop
-      - install -Dm644 com.gabereglat.aoide.desktop.metainfo.xml /app/share/metainfo/com.gabereglat.aoide.desktop.metainfo.xml
+      - install -Dm644 io.github.Virel0.Aoide.desktop /app/share/applications/io.github.Virel0.Aoide.desktop
+      - install -Dm644 io.github.Virel0.Aoide.metainfo.xml /app/share/metainfo/io.github.Virel0.Aoide.metainfo.xml
       # Flatpak refuses to export an icon larger than 512x512, so the 1024 the
       # other packages install is left out rather than failing the build.
       - |
         for size in 16 24 32 48 64 72 96 128 256 512; do
           install -Dm644 "icons/${size}x${size}.png" \
-            "/app/share/icons/hicolor/${size}x${size}/apps/com.gabereglat.aoide.desktop.png"
+            "/app/share/icons/hicolor/${size}x${size}/apps/io.github.Virel0.Aoide.png"
         done
     sources:
       - type: dir
@@ -173,6 +173,6 @@ modules:
       - type: file
         path: aoide.sh
       - type: file
-        path: com.gabereglat.aoide.desktop.desktop
+        path: io.github.Virel0.Aoide.desktop
       - type: file
-        path: ../../com.gabereglat.aoide.desktop.metainfo.xml
+        path: ../../io.github.Virel0.Aoide.metainfo.xml

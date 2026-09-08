@@ -18,11 +18,11 @@ depends=('gtk3' 'nss' 'alsa-lib' 'libxss' 'libnotify' 'mpv')
 makedepends=('nodejs' 'pnpm')
 options=('!strip' '!debug')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
-        'com.gabereglat.aoide.desktop.desktop')
+        'io.github.Virel0.Aoide.desktop')
 sha256sums=('SKIP'
             'SKIP')
 
-_appid='com.gabereglat.aoide.desktop'
+_appid='io.github.Virel0.Aoide'
 
 build() {
     cd "$srcdir/aoide-desktop-$pkgver"
