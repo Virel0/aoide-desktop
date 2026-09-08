@@ -67,6 +67,11 @@ modules:
   - name: libplacebo
     buildsystem: meson
     config-opts:
+      # Meson defaults to lib64 on x86_64, and nothing in the image looks there:
+      # libplacebo installed fine and mpv then could not find it, which is what
+      # the first green-lit build failed on. The autotools modules default to
+      # lib and need no such help.
+      - --libdir=lib
       - -Dvulkan=disabled
       - -Dopengl=disabled
       - -Dd3d11=disabled
@@ -108,6 +113,7 @@ modules:
   - name: mpv
     buildsystem: meson
     config-opts:
+      - --libdir=lib
       - -Dcplayer=true
       - -Dlibmpv=false
       - -Dbuild-date=false
