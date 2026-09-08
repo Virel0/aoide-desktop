@@ -29,3 +29,11 @@ git tag v1.15.2 && git push origin v1.15.2
 
 The workflow in `.github/workflows/release-arch.yml` does the rest. The app also
 watches this repository's releases and offers the update from inside Aoide.
+
+## Finishing a release
+
+Pushing the tag builds the pacman package and creates the release. The Flatpak
+bundle is a second step, because GitHub will not start one workflow from a
+release another workflow's token created — the loop that rule prevents is a real
+one. On the repository's Actions page, run **Flatpak** and give it the tag; it
+builds `aoide.flatpak` and attaches it to that release.
