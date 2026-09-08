@@ -44,7 +44,7 @@ flatpak install --user --or-update --noninteractive flathub \
     org.freedesktop.Platform//25.08 \
     org.freedesktop.Sdk//25.08 \
     org.electronjs.Electron2.BaseApp//25.08 \
-    org.freedesktop.Platform.ffmpeg-full//25.08
+    org.freedesktop.Platform.codecs-extra//25.08-extra
 
 if [[ $_skip_app == false ]]; then
     echo '==> Building the app'

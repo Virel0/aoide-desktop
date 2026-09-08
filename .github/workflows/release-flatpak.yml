@@ -47,7 +47,7 @@ jobs:
                       org.freedesktop.Platform//25.08 \
                       org.freedesktop.Sdk//25.08 \
                       org.electronjs.Electron2.BaseApp//25.08 \
-                      org.freedesktop.Platform.ffmpeg-full//25.08
+                      org.freedesktop.Platform.codecs-extra//25.08-extra
 
             - name: Install Node and PNPM
               uses: pnpm/action-setup@v4

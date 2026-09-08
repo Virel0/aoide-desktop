@@ -18,7 +18,7 @@ format support, so it comes along. It is built audio-only: nothing in Aoide asks
 mpv to draw a frame, so every GPU backend is left out and the build is a fraction
 of the full player's.
 
-Codecs come from `org.freedesktop.Platform.ffmpeg-full`, which Flatpak installs
+Codecs come from `org.freedesktop.Platform.codecs-extra`, which Flatpak installs
 alongside. Without it the runtime's own ffmpeg would refuse some of what a
 personal library holds.
 

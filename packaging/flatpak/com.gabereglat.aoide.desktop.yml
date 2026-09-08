@@ -21,16 +21,21 @@ separate-locales: false
 
 # Codecs the base runtime leaves out. Aoide is pointed at libraries of FLAC and
 # ALAC, so this is not optional decoration.
+#
+# `codecs-extra`, not `ffmpeg-full`: Freedesktop SDK 25.08 replaced the ffmpeg-full
+# and openh264 extensions with this one, and its branch carries an `-extra` suffix
+# rather than matching the runtime version. Asking for the old name fails at
+# install time with "Nothing matches", which is how this was found.
 add-extensions:
-  org.freedesktop.Platform.ffmpeg-full:
-    directory: lib/ffmpeg
-    version: '25.08'
+  org.freedesktop.Platform.codecs-extra:
+    directory: lib/codecs
+    version: '25.08-extra'
     add-ld-path: .
     autodelete: false
     no-autodownload: false
 
 cleanup-commands:
-  - mkdir -p /app/lib/ffmpeg
+  - mkdir -p /app/lib/codecs
 
 finish-args:
   # A window, drawn by whichever display server is there.
