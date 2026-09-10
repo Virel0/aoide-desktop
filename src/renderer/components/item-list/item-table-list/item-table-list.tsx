@@ -1383,6 +1383,12 @@ const BaseItemTableList = ({
         return groups?.length ? groups.length : 0;
     }, [groupHeaderRowCountFromModel, groups, shouldUseAccessor]);
 
+    // What a caller's item index has to be shifted by to reach its row.
+    const groupItemCounts = useMemo(
+        () => (groups?.length ? groups.map((group) => group.itemCount) : undefined),
+        [groups],
+    );
+
     const pinnedRowCount = enableHeader ? 1 : 0;
 
     // Group headers are inserted at specific indexes, so they add to the total row count
@@ -1671,6 +1677,7 @@ const BaseItemTableList = ({
         getItemIndex,
         getRowHeightAtIndex,
         getStateItem,
+        groupItemCounts,
         hasRequiredStateItemProperties,
         internalState,
         itemCount: baseItemCount,
@@ -1690,6 +1697,7 @@ const BaseItemTableList = ({
     useTableImperativeHandle({
         autoScrollToActiveRow,
         enableHeader,
+        groupItemCounts,
         handleRef,
         internalState,
         ref,

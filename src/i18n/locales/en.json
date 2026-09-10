@@ -98,9 +98,14 @@
             "queue": "Queue"
         },
         "queue": {
+            "nextUp": "Next Up",
+            "nowPlaying": "Now Playing",
             "pickUp": "Pick up",
+            "played": "Played",
             "resume_one": "{{device}} was playing {{count}} track",
-            "resume_other": "{{device}} was playing {{count}} tracks"
+            "resume_other": "{{device}} was playing {{count}} tracks",
+            "then": "Then",
+            "upNext": "Up Next"
         },
         "replay": {
             "artists": "Artists",

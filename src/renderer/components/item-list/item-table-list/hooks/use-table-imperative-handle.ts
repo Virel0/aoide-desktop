@@ -1,11 +1,19 @@
 import { useEffect, useImperativeHandle, useMemo } from 'react';
 
+import { sectionHeaderRowsBefore } from '/@/renderer/aoide/features/queue/manual-lane';
 import { ItemListStateActions } from '/@/renderer/components/item-list/helpers/item-list-state';
 import { ItemListHandle } from '/@/renderer/components/item-list/types';
 
 interface UseTableImperativeHandleProps {
     autoScrollToActiveRow: boolean;
     enableHeader: boolean;
+    /**
+     * How many items each group holds, when the table is grouped. Callers ask
+     * to scroll to an *item*, and a grouped table has a heading row in front of
+     * each group, so the row that item sits on is further down by exactly the
+     * number of headings above it.
+     */
+    groupItemCounts?: number[];
     handleRef: React.RefObject<ItemListHandle | null>;
     internalState: ItemListStateActions;
     ref?: React.Ref<ItemListHandle>;
@@ -22,6 +30,7 @@ interface UseTableImperativeHandleProps {
 export const useTableImperativeHandle = ({
     autoScrollToActiveRow,
     enableHeader,
+    groupItemCounts,
     handleRef,
     internalState,
     ref,
@@ -32,7 +41,11 @@ export const useTableImperativeHandle = ({
         () => ({
             internalState,
             scrollToIndex: (index: number, options?: { align?: 'bottom' | 'center' | 'top' }) => {
-                scrollToTableIndex(enableHeader ? index + 1 : index, {
+                const row = groupItemCounts
+                    ? index + sectionHeaderRowsBefore(index, groupItemCounts)
+                    : index;
+
+                scrollToTableIndex(enableHeader ? row + 1 : row, {
                     ...options,
                     followActiveRow: autoScrollToActiveRow,
                 });
@@ -44,6 +57,7 @@ export const useTableImperativeHandle = ({
         [
             autoScrollToActiveRow,
             enableHeader,
+            groupItemCounts,
             internalState,
             scrollToTableIndex,
             scrollToTableOffset,

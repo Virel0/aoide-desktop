@@ -1,8 +1,10 @@
 import clsx from 'clsx';
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import styles from './play-queue.module.css';
 
+import { QueueSection, queueSections } from '/@/renderer/aoide/features/queue/manual-lane';
 import { useItemListColumnReorder } from '/@/renderer/components/item-list/helpers/use-item-list-column-reorder';
 import { useItemListColumnResize } from '/@/renderer/components/item-list/helpers/use-item-list-column-resize';
 import {
@@ -29,12 +31,41 @@ import {
 } from '/@/renderer/store';
 import { Flex } from '/@/shared/components/flex/flex';
 import { LoadingOverlay } from '/@/shared/components/loading-overlay/loading-overlay';
+import { Text } from '/@/shared/components/text/text';
 import { useDebouncedValue } from '/@/shared/hooks/use-debounced-value';
 import { useFocusWithin } from '/@/shared/hooks/use-focus-within';
 import { useMergedRef } from '/@/shared/hooks/use-merged-ref';
 import { Folder, LibraryItem, QueueSong, Song } from '/@/shared/types/domain-types';
 import { DragTarget } from '/@/shared/types/drag-and-drop';
 import { ItemListKey, Play } from '/@/shared/types/types';
+
+/**
+ * Where the current track sits in the queue as the view shows it. Playback
+ * follows the shuffled order; the list never does.
+ */
+const currentQueueIndex = (): number => {
+    const state = usePlayerStore.getState();
+    const index = state.player.index;
+
+    return isShuffleEnabled(state) ? mapShuffledToQueueIndex(index, state.queue.shuffled) : index;
+};
+
+/**
+ * "Next Up" over what the listener queued themselves, "Then" over the album or
+ * playlist picking up again — and "Up Next" over the lot when there is no lane
+ * to tell apart. The same headings the phone shows, for the same reason.
+ */
+const QueueSectionHeader = ({ labelKey }: { labelKey: string }) => {
+    const { t } = useTranslation();
+
+    return (
+        <div className={styles.groupRow}>
+            <Text isMuted isNoSelect size="xs" weight={600}>
+                {t(labelKey)}
+            </Text>
+        </div>
+    );
+};
 
 type QueueProps = {
     enableScrollShadow?: boolean;
@@ -55,7 +86,7 @@ export const PlayQueue = forwardRef<ItemListHandle, QueueProps>(
         const [debouncedSearchTerm] = useDebouncedValue(searchTerm, 200);
 
         const [data, setData] = useState<QueueSong[]>([]);
-        const [groups, setGroups] = useState<TableGroupHeader[]>([]);
+        const [sections, setSections] = useState<QueueSection[]>([]);
 
         useEffect(() => {
             const setQueue = () => {
@@ -63,7 +94,13 @@ export const PlayQueue = forwardRef<ItemListHandle, QueueProps>(
 
                 setData(queue.items);
 
-                setGroups([]);
+                setSections(
+                    queueSections(
+                        queue.items,
+                        currentQueueIndex(),
+                        (song) => song._manual === true,
+                    ),
+                );
             };
 
             const unsub = subscribePlayerQueue(() => {
@@ -71,6 +108,10 @@ export const PlayQueue = forwardRef<ItemListHandle, QueueProps>(
             });
 
             const unsubCurrentTrack = subscribeCurrentTrack((e) => {
+                // The lane is defined against the playhead, so it moves when the
+                // playhead does even though the queue itself has not changed.
+                setQueue();
+
                 if (followCurrentSong && e.index !== -1) {
                     tableRef.current?.scrollToIndex(e.index, {
                         align: 'center',
@@ -140,6 +181,19 @@ export const PlayQueue = forwardRef<ItemListHandle, QueueProps>(
 
         const isEmpty = filteredData.length === 0;
 
+        const groups = useMemo<TableGroupHeader[] | undefined>(() => {
+            // A search is a different list: its rows are not the queue's runs,
+            // and headings drawn over them would be measuring the wrong thing.
+            if (debouncedSearchTerm || sections.length === 0) {
+                return undefined;
+            }
+
+            return sections.map((section) => ({
+                itemCount: section.count,
+                render: () => <QueueSectionHeader labelKey={section.labelKey} />,
+            }));
+        }, [debouncedSearchTerm, sections]);
+
         const { handleColumnReordered } = useItemListColumnReorder({
             itemListKey: listKey,
         });
@@ -194,7 +248,7 @@ export const PlayQueue = forwardRef<ItemListHandle, QueueProps>(
                     enableSelectionDialog={false}
                     enableVerticalBorders={table.enableVerticalBorders}
                     getRowId="_uniqueId"
-                    groups={groups.length > 0 ? groups : undefined}
+                    groups={groups}
                     initialTop={{
                         to: 0,
                         type: 'offset',

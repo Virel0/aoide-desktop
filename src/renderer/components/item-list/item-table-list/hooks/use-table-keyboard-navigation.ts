@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 
+import { sectionHeaderRowsBefore } from '/@/renderer/aoide/features/queue/manual-lane';
 import {
     ItemListStateActions,
     ItemListStateItemWithRequiredProperties,
@@ -15,6 +16,8 @@ interface UseTableKeyboardNavigationProps {
     getItemIndex?: (rowId: string) => number | undefined;
     getRowHeightAtIndex: (index: number) => number;
     getStateItem: (item: any) => ItemListStateItemWithRequiredProperties | null;
+    /** Items per group, when the table is grouped: each group costs a heading row. */
+    groupItemCounts?: number[];
     hasRequiredStateItemProperties: (
         item: unknown,
     ) => item is ItemListStateItemWithRequiredProperties;
@@ -39,6 +42,7 @@ export const useTableKeyboardNavigation = ({
     getItemIndex,
     getRowHeightAtIndex,
     getStateItem,
+    groupItemCounts,
     hasRequiredStateItemProperties,
     internalState,
     itemCount,
@@ -85,7 +89,12 @@ export const useTableKeyboardNavigation = ({
             }
 
             // Check if we need to scroll by determining if the item is at the edge of the viewport
-            const gridIndex = enableHeader ? newIndex + 1 : newIndex;
+            // Group headings are rows of their own, so the item's row sits below
+            // its index by however many headings are above it.
+            const rowIndex = groupItemCounts
+                ? newIndex + sectionHeaderRowsBefore(newIndex, groupItemCounts)
+                : newIndex;
+            const gridIndex = enableHeader ? rowIndex + 1 : rowIndex;
 
             const mainContainer = rowRef.current?.childNodes[0] as HTMLDivElement | undefined;
             const pinnedRightContainer = pinnedRightColumnRef.current?.childNodes[0] as
@@ -142,6 +151,7 @@ export const useTableKeyboardNavigation = ({
             extractRowId,
             getRowHeightAtIndex,
             getStateItem,
+            groupItemCounts,
             hasRequiredStateItemProperties,
             internalState,
             itemCount,

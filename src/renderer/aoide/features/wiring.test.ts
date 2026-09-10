@@ -1477,3 +1477,60 @@ describe('the queue store keeps the manual lane', () => {
         expect(save).not.toContain('_manual');
     });
 });
+
+describe('the queue view shows the lane', () => {
+    const source = sourceOf('../../features/now-playing/components/play-queue.tsx');
+
+    it('asks the shared module for its sections rather than counting rows itself', () => {
+        expect(source).toContain('queueSections(');
+        expect(source).toContain('(song) => song._manual === true');
+    });
+
+    it('draws one heading per section', () => {
+        expect(source).toContain('itemCount: section.count');
+        expect(source).toContain('<QueueSectionHeader labelKey={section.labelKey} />');
+    });
+
+    // Sections describe the queue's runs. Over a filtered list they would be
+    // headings measured against rows that are not there.
+    it('drops the headings while a search is filtering the list', () => {
+        expect(source).toMatch(
+            /if \(debouncedSearchTerm \|\| sections\.length === 0\) \{\s*\n\s*return undefined;/,
+        );
+    });
+
+    it('recomputes them when the playhead moves, not only when the queue changes', () => {
+        expect(source).toMatch(/subscribeCurrentTrack\(\(e\) => \{[\s\S]{0,400}?setQueue\(\);/);
+    });
+});
+
+describe('scrolling a grouped table', () => {
+    const source = readFileSync(
+        join(
+            import.meta.dirname,
+            '../../components/item-list/item-table-list/hooks/use-table-imperative-handle.ts',
+        ),
+        'utf8',
+    );
+
+    // A caller scrolls to an *item*; a grouped table has a heading row in front
+    // of each group. Following the current song landed a few rows out without
+    // this, which is the desktop's version of the offset bug the phone shipped.
+    it('shifts an item index past the headings above it', () => {
+        expect(source).toContain('sectionHeaderRowsBefore(index, groupItemCounts)');
+    });
+
+    // Arrow keys move the selection by item and then scroll to it, so they need
+    // the same shift or the row they land on is not the row they highlighted.
+    it('shifts the same way when the arrow keys move the selection', () => {
+        const keyboard = readFileSync(
+            join(
+                import.meta.dirname,
+                '../../components/item-list/item-table-list/hooks/use-table-keyboard-navigation.ts',
+            ),
+            'utf8',
+        );
+        expect(keyboard).toContain('sectionHeaderRowsBefore(newIndex, groupItemCounts)');
+        expect(keyboard).toContain('const gridIndex = enableHeader ? rowIndex + 1 : rowIndex;');
+    });
+});
