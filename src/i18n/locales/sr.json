@@ -120,11 +120,7 @@
         "deselectAll": "Deselektuj sve",
         "moveToBottom": "Idi na dno",
         "toggleSmartPlaylistEditor": "Pokreni $t(entity.smartPlaylist) editor",
-        "removeFromFavorites": "Ukloni iz $t(entity.favorite, {\"count\": 2})",
-        "openIn": {
-            "lastfm": "Otvori u Last.fm",
-            "musicbrainz": "Otvori u MusicBrainz"
-        }
+        "removeFromFavorites": "Ukloni iz $t(entity.favorite, {\"count\": 2})"
     },
     "common": {
         "backward": "Nazad",

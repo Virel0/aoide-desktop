@@ -521,7 +521,6 @@ export const GeneralSettingsSchema = z.object({
     combinedLyricsAndVisualizer: z.boolean(),
     confirmQueueChanges: z.boolean(),
     enableGridMultiSelect: z.boolean(),
-    externalLinks: z.boolean(),
     followCurrentSong: z.boolean(),
     followSystemTheme: z.boolean(),
     genreTarget: GenreTargetSchema,
@@ -536,12 +535,7 @@ export const GeneralSettingsSchema = z.object({
         table: z.number(),
     }),
     language: z.string(),
-    lastFM: z.boolean(),
-    lastfmApiKey: z.string(),
-    listenBrainz: z.boolean(),
-    musicBrainz: z.boolean(),
     nativeAspectRatio: z.boolean(),
-    nativeSpotify: z.boolean(),
     passwordStore: z.string().optional(),
     pathReplace: z.string(),
     pathReplaceWith: z.string(),
@@ -551,7 +545,6 @@ export const GeneralSettingsSchema = z.object({
     playerItems: z.array(SortableItemSchema(PlayerItemSchema)),
     playlistTarget: PlaylistTargetSchema,
     primaryShade: z.number().min(0).max(9),
-    qobuz: z.boolean(),
     resume: z.boolean(),
     showFavorites: z.boolean(),
     showLyricsInSidebar: z.boolean(),
@@ -573,7 +566,6 @@ export const GeneralSettingsSchema = z.object({
     sideQueueLayout: SideQueueLayoutSchema,
     sideQueueType: SideQueueTypeSchema,
     skipButtons: SkipButtonsSchema,
-    spotify: z.boolean(),
     // Accepts either a built-in AppTheme id or a custom theme id (the
     // filename, without extension, of a JSON file in the themes folder).
     // Custom theme ids aren't statically known, so this can't be a
@@ -1155,7 +1147,6 @@ const initialState: SettingsState = {
         combinedLyricsAndVisualizer: false,
         confirmQueueChanges: true,
         enableGridMultiSelect: false,
-        externalLinks: true,
         followCurrentSong: true,
         followSystemTheme: false,
         genreTarget: GenreTarget.TRACK,
@@ -1170,12 +1161,7 @@ const initialState: SettingsState = {
             table: 80,
         },
         language: 'en',
-        lastFM: true,
-        lastfmApiKey: '',
-        listenBrainz: true,
-        musicBrainz: true,
         nativeAspectRatio: false,
-        nativeSpotify: false,
         passwordStore: undefined,
         pathReplace: '',
         pathReplaceWith: '',
@@ -1193,7 +1179,6 @@ const initialState: SettingsState = {
         playerItems,
         playlistTarget: PlaylistTarget.TRACK,
         primaryShade: 6,
-        qobuz: true,
         resume: true,
         showFavorites: true,
         showLyricsInSidebar: true,
@@ -1219,7 +1204,6 @@ const initialState: SettingsState = {
             skipBackwardSeconds: 5,
             skipForwardSeconds: 10,
         },
-        spotify: true,
         // Dark on a fresh install, matching the phone. `themeDark`/`themeLight`
         // are the pair used when "follow system theme" is on, so both sides of
         // that switch have to move too or the app changes identity at sunset.
@@ -2736,6 +2720,28 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     }
                 }
 
+                if (version < 47) {
+                    // The external-link row of icons under an album — Last.fm,
+                    // ListenBrainz, MusicBrainz, Qobuz, Spotify — and the seven
+                    // switches that decided which of them showed. Nobody here
+                    // opens a track on Spotify from a page that is already
+                    // playing it. The Last.fm API key went with them: it only
+                    // ever fetched album art for Discord, which the server's
+                    // own image covers.
+                    for (const key of [
+                        'externalLinks',
+                        'lastFM',
+                        'lastfmApiKey',
+                        'listenBrainz',
+                        'musicBrainz',
+                        'nativeSpotify',
+                        'qobuz',
+                        'spotify',
+                    ] as const) {
+                        delete (state.general as Record<string, unknown>)[key];
+                    }
+                }
+
                 if (version < 45) {
                     // Lyrics are two rows now, the phone's: whether to look
                     // them up and how far ahead of the music they run. Which
@@ -2768,7 +2774,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                 return persistedState;
             },
             name: 'store_settings',
-            version: 46,
+            version: 47,
         },
     ),
 );
@@ -2973,20 +2979,6 @@ export const useAlbumBackground = () =>
         shallow,
     );
 
-export const useExternalLinks = () =>
-    useSettingsStore(
-        (state) => ({
-            externalLinks: state.general.externalLinks,
-            lastFM: state.general.lastFM,
-            listenBrainz: state.general.listenBrainz,
-            musicBrainz: state.general.musicBrainz,
-            nativeSpotify: state.general.nativeSpotify,
-            qobuz: state.general.qobuz,
-            spotify: state.general.spotify,
-        }),
-        shallow,
-    );
-
 export const useHomeFeature = () => useSettingsStore((state) => state.general.homeFeature, shallow);
 
 export const useHomeFeatureStyle = () =>
@@ -3012,9 +3004,6 @@ export const usePathReplace = () =>
         }),
         shallow,
     );
-
-export const useLastfmApiKey = () =>
-    useSettingsStore((state) => state.general.lastfmApiKey, shallow);
 
 export const useSidebarPanelOrder = () =>
     useSettingsStore((state) => state.general.sidebarPanelOrder, shallow);

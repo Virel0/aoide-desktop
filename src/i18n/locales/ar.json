@@ -17,13 +17,6 @@
         "removeFromQueue": "حذف من قائمة التشغيل",
         "toggleSmartPlaylistEditor": "إظهار / إخفاء وضع التعديل لـ $t(entity.smartPlaylist)",
         "viewPlaylists": "عرض $t(entity.playlist, {\"count\": 2})",
-        "openIn": {
-            "lastfm": "فتح في Last.fm",
-            "musicbrainz": "فتح في MusicBrainz",
-            "listenbrainz": "فتح في ListenBrainz",
-            "qobuz": "فتح في Qobuz",
-            "spotify": "فتح في Spotify"
-        },
         "addOrRemoveFromSelection": "إضافة أو إزالة من الإختيارات",
         "selectRangeOfItems": "اختر مجموعة من العناصر",
         "goToCurrent": "الانتقال إلى العنصر الحالي",
@@ -159,7 +152,6 @@
         "doNotShowAgain": "لا تظهر هذا مجدداً",
         "view": "عرض",
         "example": "مثال",
-        "externalLinks": "روابط الخارجية",
         "openFolder": "فتح المجلد",
         "faster": "أسرع",
         "filter_single": "فردي",

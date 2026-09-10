@@ -32,14 +32,7 @@
         "toggleSmartPlaylistEditor": "เปิด/ปิดตัวแก้ไข $t(entity.smartPlaylist)",
         "viewPlaylists": "ดู $t(entity.playlist, {\"count\": 2})",
         "viewMore": "ดูเพิ่มเติม",
-        "openApplicationDirectory": "เปิดโฟลเดอร์โปรแกรม",
-        "openIn": {
-            "lastfm": "เปิดใน Last.fm",
-            "listenbrainz": "เปิดใน ListenBrainz",
-            "musicbrainz": "เปิดใน MusicBrainz",
-            "qobuz": "เปิดใน Qobuz",
-            "spotify": "เปิดใน Spotify"
-        }
+        "openApplicationDirectory": "เปิดโฟลเดอร์โปรแกรม"
     },
     "common": {
         "countSelected": "เลือกแล้ว {{count}} รายการ",
@@ -85,7 +78,6 @@
         "enable": "เปิดใช้งาน",
         "expand": "ขยาย",
         "example": "ตัวอย่าง",
-        "externalLinks": "ลิงก์ภายนอก",
         "openFolder": "เปิดโฟลเดอร์",
         "faster": "เร็วขึ้น",
         "favorite": "รายการโปรด",

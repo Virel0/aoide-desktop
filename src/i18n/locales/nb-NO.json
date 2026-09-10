@@ -1,12 +1,5 @@
 {
     "action": {
-        "openIn": {
-            "lastfm": "Åpne i Last.fm",
-            "musicbrainz": "Åpne i MusicBrainz",
-            "spotify": "Åpne i Spotify",
-            "listenbrainz": "Åpne i ListenBrainz",
-            "qobuz": "Åpne i Qobuz"
-        },
         "moveToBottom": "Flytt til bunnen",
         "deletePlaylist": "Slett $t(entity.playlist, {\"count\": 1})",
         "deselectAll": "Fjern alle markerte",
@@ -142,7 +135,6 @@
         "doNotShowAgain": "Ikke vis dette igjen",
         "view": "Vis",
         "example": "Eksempel",
-        "externalLinks": "Eksterne lenker",
         "faster": "Raskere",
         "filter_single": "Enkelt",
         "filter_multiple": "Flerfoldige",

@@ -27,10 +27,6 @@
         "shuffleAll": "Slumpa alla",
         "shuffleSelected": "Slumpa valda",
         "viewMore": "Visa mer",
-        "openIn": {
-            "lastfm": "Öppna i Last.fm",
-            "musicbrainz": "Öppna i MusicBrainz"
-        },
         "addOrRemoveFromSelection": "Lägg till eller ta bort från markerade",
         "selectRangeOfItems": "Välj en mängd objekt",
         "selectAll": "Markera alla",
@@ -125,7 +121,6 @@
         "codec": "Kodek",
         "doNotShowAgain": "Visa inte detta igen",
         "view": "Visa",
-        "externalLinks": "Externa länkar",
         "faster": "Snabbare",
         "mbid": "MusicBrainz ID",
         "noFilters": "Inga filter konfigurerade",

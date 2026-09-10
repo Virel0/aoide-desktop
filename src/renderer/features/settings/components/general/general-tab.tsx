@@ -9,7 +9,6 @@ import { SmartSearchSettings } from '/@/renderer/aoide/features/settings/smart-s
 import { TrimSilenceSettings } from '/@/renderer/aoide/features/settings/trim-silence-settings';
 import { ApplicationSettings } from '/@/renderer/features/settings/components/general/application-settings';
 import { ControlSettings } from '/@/renderer/features/settings/components/general/control-settings';
-import { ExternalLinksSettings } from '/@/renderer/features/settings/components/general/external-links-settings';
 import { LyricSettings } from '/@/renderer/features/settings/components/general/lyric-settings';
 import { SidebarSettings } from '/@/renderer/features/settings/components/general/sidebar-settings';
 import { ThemeSettings } from '/@/renderer/features/settings/components/general/theme-settings';
@@ -21,7 +20,6 @@ export const GeneralTab = memo(() => {
         return [
             { component: ThemeSettings, key: 'theme' },
             { component: ApplicationSettings, key: 'application' },
-            { component: ExternalLinksSettings, key: 'externalLinks' },
             { component: ControlSettings, key: 'control' },
             { component: SidebarSettings, key: 'sidebar' },
             { component: LyricSettings, key: 'lyrics' },

@@ -48,10 +48,6 @@
         "moveToBottom": "انتقال به پایین",
         "toggleSmartPlaylistEditor": "تغییر ویرایشگر $t(entity.smartPlaylist)",
         "removeFromFavorites": "حذف از $t(entity.favorite, {\"count\": 2})",
-        "openIn": {
-            "lastfm": "باز کردن در Last.fm",
-            "musicbrainz": "باز کردن در MusicBranz"
-        },
         "moveToNext": "جابجا کردن به بعدی"
     },
     "setting": {

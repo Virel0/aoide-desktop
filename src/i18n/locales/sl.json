@@ -16,11 +16,7 @@
         "removeFromPlaylist": "Odstrani iz $t(entity.playlist, {\"count\": 1})",
         "removeFromQueue": "Odstrani iz čakalne vrste",
         "toggleSmartPlaylistEditor": "Preklopi urejevalnik $t(entity.smartPlaylist)",
-        "viewPlaylists": "Poglej $t(entity.playlist, {\"count\": 2})",
-        "openIn": {
-            "lastfm": "Odpri v Last.fm",
-            "musicbrainz": "Odpri v MusicBrainz"
-        }
+        "viewPlaylists": "Poglej $t(entity.playlist, {\"count\": 2})"
     },
     "common": {
         "action_one": "Dejanje",
@@ -532,8 +528,6 @@
         "discordServeImage_description": "Deli naslovne slike za {{discord}} bogato prisotnost iz samega strežnika, na voljo samo za Jellyfin in Navidrome",
         "discordUpdateInterval": "Interval posodabljanja {{discord}} bogate prezence",
         "discordUpdateInterval_description": "Čas v sekundah med posameznimi posodobitvami (najmanj 15 sekund)",
-        "externalLinks": "Prikaži zunanje povezave",
-        "externalLinks_description": "Omogoči prikaz zunanjih povezav (Last.fm, MusicBrainz) na straneh albumov,izvajalcev",
         "exitToTray": "Minimiziraj",
         "exitToTray_description": "Ob izhodu se aplikacija minimizira v opravilno vrstico",
         "font": "Pisava",
@@ -552,10 +546,6 @@
         "imageAspectRatio": "Uporabi razmerje stranic izvorne naslovnice",
         "imageAspectRatio_description": "Če je omogočeno, bo naslovnica prikazana z izvornim razmerjem stranic. za slike, ki niso 1:1, bo preostali prostor prazen",
         "language_description": "Nastavi jezik aplikacije ($t(common.restartRequired))",
-        "lastfm": "Prikaži last.fm povezave",
-        "lastfm_description": "Prikaži povezave do Last.fm na straneh izvajalcev/albumov",
-        "lastfmApiKey": "API ključ {{lastfm}}",
-        "lastfmApiKey_description": "API ključ za {{lastfm}}. Potreben za naslovnico albuma",
         "lyricFetch": "Pridobi besedila iz interneta",
         "lyricFetch_description": "Pridobivanje besedil iz različnih internetnih virov",
         "lyricOffset": "Zamik besedila (ms)",

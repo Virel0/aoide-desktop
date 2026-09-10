@@ -11,7 +11,6 @@ import {
     DiscordLinkType,
     useAppStore,
     useDiscordSettings,
-    useLastfmApiKey,
     usePlayerSong,
     usePlayerStore,
     useSettingsStore,
@@ -42,7 +41,6 @@ const truncate = (field: string) =>
 
 export const useDiscordRpc = () => {
     const discordSettings = useDiscordSettings();
-    const lastfmApiKey = useLastfmApiKey();
     const privateMode = useAppStore((state) => state.privateMode);
     const [lastUniqueId, setlastUniqueId] = useState('');
 
@@ -226,23 +224,6 @@ export const useDiscordRpc = () => {
                 }
             }
 
-            if (
-                activity.largeImageKey === undefined &&
-                lastfmApiKey &&
-                song?.album &&
-                song?.albumArtists.length
-            ) {
-                const albumInfo = await fetch(
-                    `https://ws.audioscrobbler.com/2.0/?method=album.getinfo&api_key=${lastfmApiKey}&artist=${encodeURIComponent(song.albumArtists[0].name)}&album=${encodeURIComponent(song.album)}&format=json`,
-                );
-
-                const albumInfoJson = await albumInfo.json();
-
-                if (albumInfoJson.album?.image?.[3]['#text']) {
-                    activity.largeImageKey = albumInfoJson.album.image[3]['#text'];
-                }
-            }
-
             // Fall back to default icon if not set
             if (!activity.largeImageKey) {
                 activity.largeImageKey = 'icon';
@@ -281,7 +262,6 @@ export const useDiscordRpc = () => {
             discordSettings.showServerImage,
             discordSettings.showStateIcon,
             discordSettings.showPaused,
-            lastfmApiKey,
             discordSettings.clientId,
             discordSettings.displayType,
             discordSettings.linkType,

@@ -10,7 +10,6 @@ import {
     DiscordDisplayType,
     DiscordLinkType,
     useDiscordSettings,
-    useGeneralSettings,
     useSettingsStoreActions,
 } from '/@/renderer/store';
 import { Select } from '/@/shared/components/select/select';
@@ -20,7 +19,6 @@ import { TextInput } from '/@/shared/components/text-input/text-input';
 export const DiscordSettings = memo(() => {
     const { t } = useTranslation();
     const settings = useDiscordSettings();
-    const generalSettings = useGeneralSettings();
     const { setSettings } = useSettingsStoreActions();
 
     const discordOptions: SettingOption[] = [
@@ -236,28 +234,6 @@ export const DiscordSettings = memo(() => {
             isHidden: !isElectron(),
             title: t('setting.discordServeImage', {
                 discord: 'Discord',
-            }),
-        },
-        {
-            control: (
-                <TextInput
-                    defaultValue={generalSettings.lastfmApiKey}
-                    onBlur={(e) => {
-                        setSettings({
-                            general: {
-                                lastfmApiKey: e.currentTarget.value,
-                            },
-                        });
-                    }}
-                />
-            ),
-            description: t('setting.lastfmApiKey', {
-                context: 'description',
-                lastfm: 'Last.fm',
-            }),
-            isHidden: !isElectron(),
-            title: t('setting.lastfmApiKey', {
-                lastfm: 'Last.fm',
             }),
         },
     ];
