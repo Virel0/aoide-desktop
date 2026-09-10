@@ -342,22 +342,6 @@ const ENV_SETTING_SPECS: EnvSettingSpec[] = [
     { key: 'FS_PLAYBACK_MEDIA_SESSION', path: ['playback', 'mediaSession'], type: 'bool' },
     { key: 'FS_PLAYBACK_PRESERVE_PITCH', path: ['playback', 'preservePitch'], type: 'bool' },
     {
-        key: 'FS_PLAYBACK_SCROBBLE_ENABLED',
-        path: ['playback', 'scrobble', 'enabled'],
-        type: 'bool',
-    },
-    { key: 'FS_PLAYBACK_SCROBBLE_NOTIFY', path: ['playback', 'scrobble', 'notify'], type: 'bool' },
-    {
-        key: 'FS_PLAYBACK_SCROBBLE_AT_DURATION',
-        path: ['playback', 'scrobble', 'scrobbleAtDuration'],
-        type: 'num',
-    },
-    {
-        key: 'FS_PLAYBACK_SCROBBLE_AT_PERCENTAGE',
-        path: ['playback', 'scrobble', 'scrobbleAtPercentage'],
-        type: 'num',
-    },
-    {
         key: 'FS_PLAYBACK_TRANSCODE_ENABLED',
         path: ['playback', 'transcode', 'enabled'],
         type: 'bool',

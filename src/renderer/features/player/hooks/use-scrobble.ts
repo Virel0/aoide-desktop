@@ -7,13 +7,12 @@ import {
     getServerById,
     publishScrobbleDebug,
     useAppStore,
-    usePlaybackSettings,
     usePlayerSong,
     usePlayerStore,
-    useSettingsStore,
     useTimestampStoreBase,
 } from '/@/renderer/store';
 import { logger } from '/@/renderer/utils/logger';
+import { playThreshold } from '/@/shared/aoide/play-definition';
 import { hasFeature } from '/@/shared/api/utils';
 import { LibraryItem, QueueSong, ServerType } from '/@/shared/types/domain-types';
 import { ServerFeature } from '/@/shared/types/features-types';
@@ -86,27 +85,21 @@ const SCROBBLE_RESTART_PREVIOUS_MIN_SEC = 10;
 // Max seconds between timestamp samples to count as continuous play (above poll interval, below a teleport).
 const MAX_LISTEN_DELTA_SEC = 5;
 
-const checkScrobbleConditions = (args: {
-    scrobbleAtDurationMs: number;
-    scrobbleAtPercentage: number;
-    songCompletedDurationMs: number;
-    songDurationMs: number;
-}) => {
-    const { scrobbleAtDurationMs, scrobbleAtPercentage, songCompletedDurationMs, songDurationMs } =
-        args;
-    const percentageOfSongCompleted = songDurationMs
-        ? (songCompletedDurationMs / songDurationMs) * 100
-        : 0;
-
-    const shouldScrobbleBasedOnPercentage = percentageOfSongCompleted >= scrobbleAtPercentage;
-    const shouldScrobbleBasedOnDuration = songCompletedDurationMs >= scrobbleAtDurationMs;
-
-    return shouldScrobbleBasedOnPercentage || shouldScrobbleBasedOnDuration;
-};
+/**
+ * Whether the listening so far amounts to a play.
+ *
+ * The one definition, shared with the phone and with the SQL that recomputes
+ * play counts — half the track or four minutes, whichever comes first. This
+ * used to be two numbers of its own, a percentage and a duration, either of
+ * which could be moved to something the rest of the app disagreed with. A
+ * library where the count printed beside a track and the smart playlist that
+ * selects on it were computed from different thresholds does not read as a bug
+ * worth reporting; it reads as the app being vaguely wrong about you.
+ */
+const isAPlay = (listenedMs: number, songDurationMs: null | number | undefined) =>
+    listenedMs >= playThreshold(songDurationMs);
 
 export const useScrobble = () => {
-    const scrobbleSettings = usePlaybackSettings().scrobble;
-    const isScrobbleEnabled = scrobbleSettings?.enabled;
     const isPrivateModeEnabled = useAppStore((state) => state.privateMode);
     const sendScrobble = useSendScrobble();
     const currentSong = usePlayerSong();
@@ -125,8 +118,6 @@ export const useScrobble = () => {
     const isCurrentSongScrobbledRef = useRef(false);
     const listenedMsRef = useRef(0);
     const lastListenSampleTimeRef = useRef<null | number>(null);
-    const scrobbleAtDurationMsRef = useRef(0);
-    const scrobbleAtPercentageRef = useRef(75);
 
     const previousSongRef = useRef<QueueSong | undefined>(undefined);
     const previousTimestampRef = useRef<number>(0);
@@ -135,16 +126,10 @@ export const useScrobble = () => {
     const lastProgressEventRef = useRef<number>(0);
     const lastSeekEventRef = useRef<number>(0);
     const songChangeTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-    const notifyTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
     useEffect(() => {
         imageUrlRef.current = imageUrl;
     }, [imageUrl]);
-
-    useEffect(() => {
-        scrobbleAtDurationMsRef.current = (scrobbleSettings?.scrobbleAtDuration ?? 0) * 1000;
-        scrobbleAtPercentageRef.current = scrobbleSettings?.scrobbleAtPercentage ?? 75;
-    }, [scrobbleSettings?.scrobbleAtDuration, scrobbleSettings?.scrobbleAtPercentage]);
 
     const flushScrobbleDebug = useCallback(() => {
         const song = usePlayerStore.getState().getCurrentSong();
@@ -152,15 +137,7 @@ export const useScrobble = () => {
         const positionSec = useTimestampStoreBase.getState().timestamp;
         const trackDurationMs = song?.duration ?? 0;
 
-        const eligibilityMet = Boolean(
-            song?.id &&
-            checkScrobbleConditions({
-                scrobbleAtDurationMs: scrobbleAtDurationMsRef.current,
-                scrobbleAtPercentage: scrobbleAtPercentageRef.current,
-                songCompletedDurationMs: listenedMsRef.current,
-                songDurationMs: trackDurationMs,
-            }),
-        );
+        const eligibilityMet = Boolean(song?.id && isAPlay(listenedMsRef.current, trackDurationMs));
 
         publishScrobbleDebug({
             eligibilityMet,
@@ -171,8 +148,7 @@ export const useScrobble = () => {
             songId: song?.id,
             songName: song?.name,
             submitted: isCurrentSongScrobbledRef.current,
-            targetDurationSec: scrobbleAtDurationMsRef.current / 1000,
-            targetPercentage: scrobbleAtPercentageRef.current,
+            targetMs: playThreshold(trackDurationMs),
             trackDurationMs,
         });
     }, []);
@@ -224,7 +200,7 @@ export const useScrobble = () => {
 
     const handleScrobbleFromProgress = useCallback(
         (properties: { timestamp: number }, prev: { timestamp: number }) => {
-            if (!isScrobbleEnabled || isPrivateModeEnabled) return;
+            if (isPrivateModeEnabled) return;
 
             const currentSong = usePlayerStore.getState().getCurrentSong();
             const mediaType = currentSong?._itemType.includes('song') ? 'song' : 'podcast';
@@ -316,12 +292,7 @@ export const useScrobble = () => {
 
             // Check if we should submit scrobble based on listened time
             if (!isCurrentSongScrobbledRef.current) {
-                const shouldSubmitScrobble = checkScrobbleConditions({
-                    scrobbleAtDurationMs: scrobbleAtDurationMsRef.current,
-                    scrobbleAtPercentage: scrobbleAtPercentageRef.current,
-                    songCompletedDurationMs: listenedMsRef.current,
-                    songDurationMs: currentSong.duration,
-                });
+                const shouldSubmitScrobble = isAPlay(listenedMsRef.current, currentSong.duration);
 
                 if (shouldSubmitScrobble) {
                     sendScrobble.mutate(
@@ -351,20 +322,11 @@ export const useScrobble = () => {
                 }
             }
         },
-        [
-            isScrobbleEnabled,
-            isPrivateModeEnabled,
-            sendScrobble,
-            playbackRate,
-            sendProgressAfterSubmission,
-        ],
+        [isPrivateModeEnabled, sendScrobble, playbackRate, sendProgressAfterSubmission],
     );
 
     const handleScrobbleFromSongChange = useCallback(
-        (
-            properties: { index: number; song: QueueSong | undefined },
-            prev: { index: number; song: QueueSong | undefined },
-        ) => {
+        (properties: { index: number; song: QueueSong | undefined }) => {
             const currentSong = properties.song;
             const previousSong = previousSongRef.current;
             const previousPositionSec = stopPositionRef.current;
@@ -372,35 +334,7 @@ export const useScrobble = () => {
             const previousMediaType = previousSong?._itemType.includes('song') ? 'song' : 'podcast';
             const useTicksForPrevious = previousSong?._serverType === ServerType.JELLYFIN;
 
-            // Handle notifications
-            if (scrobbleSettings?.notify && currentSong?.id) {
-                clearTimeout(notifyTimeoutRef.current);
-                notifyTimeoutRef.current = setTimeout(() => {
-                    if (
-                        currentSong._uniqueId !== previousSong?._uniqueId ||
-                        properties.index !== prev.index
-                    ) {
-                        const artists =
-                            currentSong.artists?.length > 0
-                                ? currentSong.artists.map((artist) => artist.name).join(' · ')
-                                : currentSong.artistName;
-
-                        try {
-                            new Notification(`${currentSong.name}`, {
-                                body: `${artists}\n${currentSong.album}`,
-                                icon: imageUrlRef.current || undefined,
-                                silent: true,
-                            });
-                        } catch (error) {
-                            logger.error('an error occurred while sending a desktop notification', {
-                                error: error as Error,
-                            });
-                        }
-                    }
-                }, 1000);
-            }
-
-            if (!isScrobbleEnabled || isPrivateModeEnabled) {
+            if (isPrivateModeEnabled) {
                 previousSongRef.current = currentSong;
                 previousTimestampRef.current = 0;
                 stopPositionRef.current = 0;
@@ -481,20 +415,13 @@ export const useScrobble = () => {
             stopPositionRef.current = 0;
             flushScrobbleDebug();
         },
-        [
-            scrobbleSettings?.notify,
-            isScrobbleEnabled,
-            isPrivateModeEnabled,
-            flushScrobbleDebug,
-            sendScrobble,
-            playbackRate,
-        ],
+        [isPrivateModeEnabled, flushScrobbleDebug, sendScrobble, playbackRate],
     );
 
     const handleScrobbleFromSeek = useCallback(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         (properties: { timestamp: number }, _prev: { timestamp: number }) => {
-            if (!isScrobbleEnabled || isPrivateModeEnabled) {
+            if (isPrivateModeEnabled) {
                 return;
             }
 
@@ -570,12 +497,12 @@ export const useScrobble = () => {
             );
             flushScrobbleDebug();
         },
-        [isScrobbleEnabled, isPrivateModeEnabled, sendScrobble, playbackRate, flushScrobbleDebug],
+        [isPrivateModeEnabled, sendScrobble, playbackRate, flushScrobbleDebug],
     );
 
     const handleScrobbleFromStatus = useCallback(
         (properties: { status: PlayerStatus }, prev: { status: PlayerStatus }) => {
-            if (!isScrobbleEnabled || isPrivateModeEnabled) {
+            if (isPrivateModeEnabled) {
                 return;
             }
 
@@ -708,11 +635,11 @@ export const useScrobble = () => {
 
             flushScrobbleDebug();
         },
-        [isScrobbleEnabled, isPrivateModeEnabled, flushScrobbleDebug, sendScrobble, playbackRate],
+        [isPrivateModeEnabled, flushScrobbleDebug, sendScrobble, playbackRate],
     );
 
     const handleScrobbleFromRepeat = useCallback(() => {
-        if (!isScrobbleEnabled || isPrivateModeEnabled) {
+        if (isPrivateModeEnabled) {
             return;
         }
 
@@ -754,7 +681,7 @@ export const useScrobble = () => {
             },
         );
         flushScrobbleDebug();
-    }, [isScrobbleEnabled, isPrivateModeEnabled, sendScrobble, playbackRate, flushScrobbleDebug]);
+    }, [isPrivateModeEnabled, sendScrobble, playbackRate, flushScrobbleDebug]);
 
     // Update previous timestamp on progress for use in status change handler
     const handleProgressUpdate = useCallback(
@@ -780,7 +707,7 @@ export const useScrobble = () => {
     useEffect(() => {
         registerScrobbleManualHandlers({
             forceSubmitScrobble: () => {
-                if (!isScrobbleEnabled || isPrivateModeEnabled) {
+                if (isPrivateModeEnabled) {
                     return;
                 }
 
@@ -819,7 +746,7 @@ export const useScrobble = () => {
                 flushScrobbleDebug();
             },
             resetListenedState: () => {
-                if (!isScrobbleEnabled || isPrivateModeEnabled) {
+                if (isPrivateModeEnabled) {
                     return;
                 }
 
@@ -840,7 +767,6 @@ export const useScrobble = () => {
     }, [
         flushScrobbleDebug,
         isPrivateModeEnabled,
-        isScrobbleEnabled,
         playbackRate,
         sendProgressAfterSubmission,
         sendScrobble,
@@ -870,10 +796,9 @@ const ScrobbleHookInner = () => {
 };
 
 export const ScrobbleHook = () => {
-    const isScrobbleEnabled = useSettingsStore((state) => state.playback.scrobble.enabled);
     const privateMode = useAppStore((state) => state.privateMode);
 
-    if (!isScrobbleEnabled || privateMode) {
+    if (privateMode) {
         return null;
     }
 

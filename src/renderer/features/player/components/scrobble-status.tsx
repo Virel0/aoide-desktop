@@ -5,12 +5,7 @@ import {
     invokeScrobbleForceSubmit,
     invokeScrobbleResetListenedState,
 } from '/@/renderer/features/player/hooks/use-scrobble';
-import {
-    useAppStore,
-    usePlayerTimestamp,
-    useScrobbleDebugSnapshot,
-    useSettingsStore,
-} from '/@/renderer/store';
+import { useAppStore, usePlayerTimestamp, useScrobbleDebugSnapshot } from '/@/renderer/store';
 import { Button } from '/@/shared/components/button/button';
 import { Group } from '/@/shared/components/group/group';
 import { HoverCard } from '/@/shared/components/hover-card/hover-card';
@@ -28,44 +23,22 @@ const scrobbleProgressProps = {
 
 const clampPct = (n: number) => Math.min(100, Math.max(0, n));
 
-const capForDisplay = (value: number, limit: number) =>
-    limit > 0 ? Math.min(value, limit) : value;
-
 const progressTowardLimit = (current: number, limit: number) =>
     limit > 0 ? clampPct((current / limit) * 100) : 0;
 
-const ScrobbleConditionProgress = ({ value }: { value: number }) => (
-    <Progress {...scrobbleProgressProps} value={value} w="100%" />
-);
-
 export const ScrobbleStatus = () => {
     const { t } = useTranslation();
-    const scrobbleEnabled = useSettingsStore((state) => state.playback.scrobble.enabled);
     const privateMode = useAppStore((state) => state.privateMode);
     const snapshot = useScrobbleDebugSnapshot();
     const formattedTime = formatDuration(usePlayerTimestamp() * 1000 || 0);
 
-    const hookInactive = !scrobbleEnabled || privateMode;
-
-    const listenedSecRaw = snapshot.listenedMs / 1000;
-    const listenedSecDisplay = snapshot.submitted
-        ? snapshot.targetDurationSec
-        : capForDisplay(listenedSecRaw, snapshot.targetDurationSec);
-
-    const listenPercentOfTrackRaw =
-        snapshot.trackDurationMs > 0 ? (snapshot.listenedMs / snapshot.trackDurationMs) * 100 : 0;
-    const listenPercentDisplay = snapshot.submitted
-        ? snapshot.targetPercentage
-        : capForDisplay(listenPercentOfTrackRaw, snapshot.targetPercentage);
-
-    const durationConditionPct = progressTowardLimit(
-        listenedSecDisplay,
-        snapshot.targetDurationSec,
-    );
-    const percentConditionPct = progressTowardLimit(
-        listenPercentDisplay,
-        snapshot.targetPercentage,
-    );
+    // One bar now rather than two, because there is one threshold rather than
+    // a percentage and a duration racing each other.
+    const targetSec = snapshot.targetMs / 1000;
+    const listenedSec = snapshot.submitted
+        ? targetSec
+        : Math.min(snapshot.listenedMs / 1000, targetSec);
+    const listenedPct = progressTowardLimit(listenedSec, targetSec);
 
     return (
         <HoverCard openDelay={500} position="top" width={280}>
@@ -101,21 +74,15 @@ export const ScrobbleStatus = () => {
             </HoverCard.Target>
             <HoverCard.Dropdown onClick={(e) => e.stopPropagation()}>
                 <Stack gap="md" p="sm">
-                    {hookInactive ? (
+                    {privateMode ? (
                         <Text size="sm">{t('form.privateMode.enabled')}</Text>
                     ) : (
                         <>
                             <Stack gap="xs">
                                 <Text size="xs">
-                                    {`${listenedSecDisplay.toFixed(1)}s / ${snapshot.targetDurationSec}s`}
+                                    {`${listenedSec.toFixed(1)}s / ${targetSec.toFixed(1)}s`}
                                 </Text>
-                                <ScrobbleConditionProgress value={durationConditionPct} />
-                            </Stack>
-                            <Stack gap="xs">
-                                <Text size="xs">
-                                    {`${listenPercentDisplay.toFixed(1)}% / ${snapshot.targetPercentage}%`}
-                                </Text>
-                                <ScrobbleConditionProgress value={percentConditionPct} />
+                                <Progress {...scrobbleProgressProps} value={listenedPct} w="100%" />
                             </Stack>
                             <Group gap="xs" grow wrap="nowrap">
                                 <Button

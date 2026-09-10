@@ -12,7 +12,6 @@ import { ControlSettings } from '/@/renderer/features/settings/components/genera
 import { ExternalLinksSettings } from '/@/renderer/features/settings/components/general/external-links-settings';
 import { LyricSettings } from '/@/renderer/features/settings/components/general/lyric-settings';
 import { QueryBuilderSettings } from '/@/renderer/features/settings/components/general/query-builder-settings';
-import { ScrobbleSettings } from '/@/renderer/features/settings/components/general/scrobble-settings';
 import { SidebarSettings } from '/@/renderer/features/settings/components/general/sidebar-settings';
 import { ThemeSettings } from '/@/renderer/features/settings/components/general/theme-settings';
 import { useCurrentServer } from '/@/renderer/store';
@@ -32,7 +31,6 @@ export const GeneralTab = memo(() => {
             { component: ExternalLinksSettings, key: 'externalLinks' },
             { component: ControlSettings, key: 'control' },
             { component: SidebarSettings, key: 'sidebar' },
-            { component: ScrobbleSettings, key: 'scrobble' },
             { component: LyricSettings, key: 'lyrics' },
             // Aoide's own, kept in a file of its own so an upstream merge does not
             // have to reconcile it.

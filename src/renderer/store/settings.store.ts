@@ -635,13 +635,6 @@ const LyricsSettingsSchema = z.object({
     translationTargetLanguage: z.string().nullable(),
 });
 
-const ScrobbleSettingsSchema = z.object({
-    enabled: z.boolean(),
-    notify: z.boolean(),
-    scrobbleAtDuration: z.number(),
-    scrobbleAtPercentage: z.number(),
-});
-
 const PlayerFilterFieldSchema = z.enum([
     'name',
     'albumArtist',
@@ -696,7 +689,6 @@ const PlaybackSettingsSchema = z.object({
     equalizer: EqSettingsSchema,
     filters: z.array(PlayerFilterSchema),
     mediaSession: z.boolean(),
-    scrobble: ScrobbleSettingsSchema,
     transcode: TranscodingConfigSchema,
 });
 
@@ -1994,12 +1986,6 @@ const initialState: SettingsState = {
         },
         filters: [],
         mediaSession: false,
-        scrobble: {
-            enabled: true,
-            notify: false,
-            scrobbleAtDuration: 240,
-            scrobbleAtPercentage: 75,
-        },
         transcode: {
             enabled: false,
         },
@@ -2832,10 +2818,24 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     delete playback.webAudio;
                 }
 
+                if (version < 44) {
+                    // Scrobbling had a definition of "a play" of its own — a
+                    // percentage and a duration, either of them movable — while
+                    // Aoide has one shared with the phone and with the SQL that
+                    // recomputes play counts. Two definitions is a library where
+                    // the count printed beside a track and the smart playlist
+                    // that selects on it disagree, which nobody ever reports as
+                    // a bug. Aoide's is the only one now, so the four fields go:
+                    // the two thresholds it no longer sets, the switch (play
+                    // counts are the point, and private mode already stops
+                    // them), and the desktop notification on every song change.
+                    delete (state.playback as { scrobble?: unknown }).scrobble;
+                }
+
                 return persistedState;
             },
             name: 'store_settings',
-            version: 43,
+            version: 44,
         },
     ),
 );

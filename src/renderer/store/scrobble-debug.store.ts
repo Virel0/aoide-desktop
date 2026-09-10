@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createWithEqualityFn } from 'zustand/traditional';
 
+import { SCROBBLE_CEILING_MS } from '/@/shared/aoide/play-definition';
 import { PlayerStatus } from '/@/shared/types/types';
 
 const SCROBBLE_DEBUG_POLL_INTERVAL_MS = 1000;
@@ -14,8 +15,8 @@ export type ScrobbleDebugSnapshot = {
     songId?: string;
     songName?: string;
     submitted: boolean;
-    targetDurationSec: number;
-    targetPercentage: number;
+    /** What this track has to be listened to for, per the shared definition. */
+    targetMs: number;
     trackDurationMs: number;
 };
 
@@ -28,8 +29,7 @@ const initialSnapshot: ScrobbleDebugSnapshot = {
     songId: undefined,
     songName: undefined,
     submitted: false,
-    targetDurationSec: 240,
-    targetPercentage: 75,
+    targetMs: SCROBBLE_CEILING_MS,
     trackDurationMs: 0,
 };
 
