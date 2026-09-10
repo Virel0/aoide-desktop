@@ -77,6 +77,20 @@ export const aoide = {
             ipcRenderer.invoke('aoide:flags-set-not-interested', track, value),
     },
 
+    /**
+     * Loudness normalisation for the mpv backend, told the same way and for
+     * the same reason as the trims below: mpv takes the gain as a per-file
+     * option on `loadfile`, so it has to know before the load.
+     */
+    gain: {
+        /** Every known gain is dropped; the next load is unmodified. */
+        forget: (): void => ipcRenderer.send('aoide:gain-forget'),
+
+        /** Gains in dB by Jellyfin id. `null` forgets one — "nothing to correct". */
+        remember: (gains: Record<string, null | number>): void =>
+            ipcRenderer.send('aoide:gain-remember', gains),
+    },
+
     /** Listening history: recorded and aggregated in the main process where the events live. */
     history: {
         /**

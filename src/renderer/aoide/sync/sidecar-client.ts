@@ -1,3 +1,4 @@
+import type { AudioAnalysis, AudioAnalysisReply } from '/@/shared/aoide/loudness';
 import type { ImportedTrack } from '/@/shared/aoide/playlist-import';
 import type { SoundBounds, SoundBoundsReply } from '/@/shared/aoide/trim-plan';
 
@@ -139,6 +140,52 @@ const readBounds = (value: unknown): null | SoundBounds | undefined => {
     return { soundEndMs: row.soundEndMs, soundStartMs: row.soundStartMs };
 };
 
+/** `GET /aoide/audio-analysis` takes at most this many ids in one call. */
+export const AUDIO_ANALYSIS_IDS_PER_REQUEST = 200;
+
+/**
+ * The sidecar's loudness and tempo measurements, plus whether it could answer
+ * at all.
+ *
+ * `absent` is a 404, read exactly as `SoundBoundsAnswer`'s is: the endpoint is
+ * newer than this sidecar, so the answer is "normalise nothing" and never an
+ * error. Today that is the normal case — the endpoint does not exist on any
+ * sidecar yet.
+ */
+export interface AudioAnalysisAnswer extends AudioAnalysisReply {
+    absent: boolean;
+}
+
+const NO_ANALYSIS: AudioAnalysisAnswer = { absent: false, analysis: {}, pending: [] };
+
+/** A field the spec allows to be null on its own; anything unreadable is null too. */
+const numberOrNull = (value: unknown): null | number => (isFiniteNumber(value) ? value : null);
+
+/**
+ * One track's measurements off the wire, or undefined for a row that is not
+ * one. Null is kept: it is the server's "measured, nothing to report".
+ *
+ * Every field is independently nullable per the spec, so a row is read field by
+ * field rather than rejected whole — a track with a usable loudness and no
+ * usable tempo is the common case and must not lose its loudness. A row with
+ * neither is the same statement as `null` and is stored as one, so the cache
+ * has a single shape for "nothing here".
+ */
+const readAnalysis = (value: unknown): AudioAnalysis | null | undefined => {
+    if (value === null) return null;
+    if (!value || typeof value !== 'object') return undefined;
+
+    const row = value as Record<string, unknown>;
+    const analysis: AudioAnalysis = {
+        bpm: numberOrNull(row.bpm),
+        bpmConfidence: numberOrNull(row.bpmConfidence),
+        loudnessLufs: numberOrNull(row.loudnessLufs),
+        truePeakDbfs: numberOrNull(row.truePeakDbfs),
+    };
+
+    return analysis.bpm === null && analysis.loudnessLufs === null ? null : analysis;
+};
+
 /** The wire form of an imported track, spelled the way the sidecar reads it. */
 export const matchRequestBody = (tracks: ImportedTrack[]) =>
     tracks.map((track) => ({
@@ -163,6 +210,54 @@ export class SidecarClient {
         this.deviceId = options.deviceId;
         this.token = options.token;
         this.fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
+    }
+
+    /**
+     * `GET /aoide/audio-analysis?ids=…`: how loud each track is and how fast,
+     * as the sidecar measured it. See `docs/audio-analysis.md`.
+     *
+     * The same decode as `/aoide/sound-bounds` and deliberately the same shape,
+     * so this is the same call with a different noun: chunked at the server's
+     * ceiling, a 404 ending it at once with `absent`, any other failure
+     * thrown. A caller that gets `absent` normalises nothing, which is what
+     * every track did before this existed — the endpoint is not built yet, so
+     * that is the state this ships in.
+     */
+    async audioAnalysis(ids: readonly string[]): Promise<AudioAnalysisAnswer> {
+        if (ids.length === 0) return NO_ANALYSIS;
+
+        const analysis: Record<string, AudioAnalysis | null> = {};
+        const pending: string[] = [];
+
+        for (let at = 0; at < ids.length; at += AUDIO_ANALYSIS_IDS_PER_REQUEST) {
+            const chunk = ids.slice(at, at + AUDIO_ANALYSIS_IDS_PER_REQUEST);
+            const response = await this.send(
+                `/aoide/audio-analysis?ids=${encodeURIComponent(chunk.join(','))}`,
+                { method: 'GET' },
+            );
+
+            if (response.status === 404) return { absent: true, analysis: {}, pending: [] };
+            if (!response.ok) {
+                throw syncErrorFromReply('aoide/audio-analysis', await this.readReply(response));
+            }
+
+            const body = await this.readJson<{ analysis?: unknown; pending?: unknown }>(
+                response,
+                'aoide/audio-analysis',
+            );
+
+            if (body.analysis && typeof body.analysis === 'object') {
+                for (const [id, value] of Object.entries(body.analysis)) {
+                    const row = readAnalysis(value);
+                    if (row !== undefined) analysis[id] = row;
+                }
+            }
+            for (const id of listFrom<unknown>(body.pending)) {
+                if (typeof id === 'string') pending.push(id);
+            }
+        }
+
+        return { absent: false, analysis, pending };
     }
 
     /**

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { RESUME_GRID_LIMIT } from './home/recent-contexts';
 import { INACTIVE_LINE_OPACITY } from './now-playing/now-playing-column';
+import { DEFAULT_AOIDE_LOUDNESS_NORMALISATION } from './playback/loudness-normalisation';
 import { syncOutcome } from './sync/sync-report';
 import { FOCUS_SYNC_MIN_INTERVAL_MS } from './sync/sync-schedule';
 
@@ -1078,9 +1079,11 @@ describe('silence trimming: both players consult the trim plan, the setting gate
 
     // mpv: every load in Feishin's player goes through the trim-aware load,
     // and none goes around it.
-    it('every mpv load goes through loadWithTrim', () => {
-        expect(mpvMain).toContain("import { loadWithTrim } from '/@/main/features/aoide/mpv-trim'");
-        expect(mpvMain.match(/loadWithTrim\(getMpvInstance\(\), /g)).toHaveLength(4);
+    it('every mpv load goes through loadWithAoideOptions', () => {
+        expect(mpvMain).toContain(
+            "import { loadWithAoideOptions } from '/@/main/features/aoide/mpv-trim'",
+        );
+        expect(mpvMain.match(/loadWithAoideOptions\(getMpvInstance\(\), /g)).toHaveLength(4);
         expect(mpvMain).not.toMatch(/getMpvInstance\(\)\?\.load\(/);
     });
 
@@ -1151,6 +1154,157 @@ describe('the Flatpak can find the mpv it ships', () => {
 
     it('still consults PATH first, so a user own build wins', () => {
         expect(player).toContain('...fromPath, ...MPV_BINARY_CANDIDATES');
+    });
+});
+
+describe('loudness normalisation: both backends consult the gain module, the setting gates it', () => {
+    const webPlayer = readFileSync(
+        join(import.meta.dirname, '../../features/player/audio-player/web-player.tsx'),
+        'utf8',
+    );
+    const mpvGain = readFileSync(
+        join(import.meta.dirname, '../../../main/features/aoide/mpv-gain.ts'),
+        'utf8',
+    );
+    const mpvTrim = readFileSync(
+        join(import.meta.dirname, '../../../main/features/aoide/mpv-trim.ts'),
+        'utf8',
+    );
+    const store = sourceOf('playback/audio-analysis-store.ts');
+    const hook = sourceOf('playback/use-loudness-gain.ts');
+    const effect = sourceOf('playback/aoide-loudness-effect.tsx');
+    const settings = readFileSync(
+        join(import.meta.dirname, '../../store/settings.store.ts'),
+        'utf8',
+    );
+    const generalTab = readFileSync(
+        join(import.meta.dirname, '../../features/settings/components/general/general-tab.tsx'),
+        'utf8',
+    );
+    const app = readFileSync(join(import.meta.dirname, '../../app.tsx'), 'utf8');
+    const preload = readFileSync(join(import.meta.dirname, '../../../preload/aoide.ts'), 'utf8');
+    const main = readFileSync(
+        join(import.meta.dirname, '../../../main/features/aoide/index.ts'),
+        'utf8',
+    );
+
+    // The web player: a second factor into the gain node ReplayGain already
+    // uses, so the two multiply. Multiplied rather than assigned — assigning
+    // would silently throw ReplayGain away for every tagged file.
+    it('the web player multiplies the loudness factor into each slot’s gain node', () => {
+        expect(webPlayer).toContain('useLoudnessGain(player1)');
+        expect(webPlayer).toContain('useLoudnessGain(player2)');
+        expect(webPlayer).toContain('calculateReplayGain(player1) * loudness1');
+        expect(webPlayer).toContain('calculateReplayGain(player2) * loudness2');
+    });
+
+    // The element volume is what the person's slider, the play/pause fades and
+    // the crossfade all drive. Scaling it here would be two things writing one
+    // number, and the fade would win.
+    it('never touches the element volume to do it', () => {
+        expect(hook).not.toMatch(/setVolume|\.volume\s*=/);
+    });
+
+    it('the web player’s hook decides with the shared module and nothing of its own', () => {
+        expect(hook).toContain('normalisationGainDb({');
+        expect(hook).toContain('linearGain(');
+        expect(hook).toContain('hasReplayGain(song?.gain)');
+        // No arithmetic on decibels outside loudness.ts.
+        expect(hook).not.toMatch(/10\s*\*\*/);
+    });
+
+    // mpv: a per-file option on the same loadfile that carries the trim, so a
+    // file can be trimmed and levelled at once.
+    it('mpv gets the gain as a per-file af filter, beside the trim, never as a global', () => {
+        expect(mpvGain).toContain('mpvGainOptions(db)');
+        expect(mpvTrim).toContain('{ ...trimOptionsForUrl(url), ...gainOptionsForUrl(url) }');
+        expect(mpvTrim).toContain('const options = aoideFileOptions(url);');
+        // `volume` as a property is the person's own volume slider.
+        expect(mpvGain).not.toMatch(/setProperty\(\s*['"](volume|af)['"]/);
+    });
+
+    it('main learns the gains from the renderer, and forgets them on request', () => {
+        expect(preload).toContain("ipcRenderer.send('aoide:gain-remember', gains)");
+        expect(preload).toContain("ipcRenderer.send('aoide:gain-forget')");
+        expect(mpvGain).toContain("ipcMain.on('aoide:gain-remember'");
+        expect(mpvGain).toContain("ipcMain.on('aoide:gain-forget'");
+        expect(main).toContain('registerGainHandlers();');
+    });
+
+    it('the effect that tells main is mounted, only in a build with a main', () => {
+        expect(app).toContain('<AoideLoudnessEffect />');
+        expect(effect).toContain('isAoideAvailable() ? <Leveller /> : null');
+        expect(effect).toContain('window.api.aoide.gain.remember(update)');
+        expect(effect).toContain('window.api.aoide.gain.forget()');
+        expect(effect).toContain('normalisationGainDb({');
+    });
+
+    it('the setting defaults to on', () => {
+        expect(DEFAULT_AOIDE_LOUDNESS_NORMALISATION).toBe(true);
+    });
+
+    it('the setting exists, is defaulted, and is in the general tab', () => {
+        expect(settings).toContain('aoideLoudnessNormalisation: AoideLoudnessNormalisationSchema');
+        expect(settings).toContain(
+            'aoideLoudnessNormalisation: DEFAULT_AOIDE_LOUDNESS_NORMALISATION',
+        );
+        expect(generalTab).toContain(
+            "{ component: LoudnessNormalisationSettings, key: 'aoideLoudnessNormalisation' }",
+        );
+        expect(sourceOf('settings/loudness-normalisation-settings.tsx')).toContain(
+            'aoideLoudnessNormalisation: e.currentTarget.checked',
+        );
+    });
+
+    // The setting gates every consumer at once: the store answers undefined
+    // when it is off, the hook passes it to the decision, and the effect tells
+    // main to forget.
+    it('the setting gates the gain every player reads', () => {
+        expect(store).toContain('const enabled = useAoideLoudnessNormalisationEnabled();');
+        expect(store).toContain('const wanted = enabled ? trackId : undefined;');
+        expect(hook).toContain('const enabled = useAoideLoudnessNormalisationEnabled();');
+        expect(hook).toContain('enabled,');
+        expect(effect).toContain('if (!enabled) {');
+        expect(effect).toContain('if (!enabled || !client || key.length === 0) return;');
+    });
+
+    // Never a toast. The endpoint does not exist on any sidecar yet, so a 404
+    // is the normal state and means "normalise nothing".
+    it('a sidecar that cannot answer is logged, never toasted', () => {
+        expect(store).toContain('logger.warn(');
+        expect(store).not.toMatch(/\btoast\b\s*[.(]/);
+        expect(store).not.toMatch(/import .*toast/);
+        expect(store).toContain('if (answer.absent) {');
+    });
+});
+
+describe('the reference loudness is defined once', () => {
+    /** Every `.ts`/`.tsx` under `src` that is not itself a test. */
+    const sourceFiles = (dir: string): string[] =>
+        readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+            const path = join(dir, entry.name);
+            if (entry.isDirectory()) return sourceFiles(path);
+            if (!/\.tsx?$/.test(entry.name) || /\.test\.tsx?$/.test(entry.name)) return [];
+            return [path];
+        });
+
+    // Two copies of the target level are two halves of the app normalising to
+    // different loudnesses, and nothing on screen would ever say so — it just
+    // sounds like the feature not working. `jellyfin-normalize.ts` held the
+    // second copy before this feature existed and now imports the constant.
+    it('appears as a literal only in loudness.ts', () => {
+        const src = join(import.meta.dirname, '../../..');
+        const naming = sourceFiles(src)
+            .filter((path) => /(?<![\d.\w])-18(?![\d.])/.test(readFileSync(path, 'utf8')))
+            .map((path) => path.slice(src.length + 1))
+            .sort();
+
+        expect(naming).toEqual([
+            // A compressor threshold in dBFS. Unrelated, and named here so a
+            // real second definition of the target cannot hide behind it.
+            'renderer/features/settings/components/playback/eq-settings.tsx',
+            'shared/aoide/loudness.ts',
+        ]);
     });
 });
 

@@ -525,6 +525,121 @@ describe('soundBounds', () => {
     });
 });
 
+describe('audioAnalysis', () => {
+    const ROW = { bpm: 128, bpmConfidence: 0.82, loudnessLufs: -9.7, truePeakDbfs: -0.3 };
+
+    it('asks by id and keeps measurements, "nothing to report" and "pending" apart', async () => {
+        const { calls, impl } = stubFetch([
+            () => json(200, { analysis: { a: ROW, b: null }, pending: ['c'] }),
+        ]);
+
+        const answer = await client(impl).audioAnalysis(['a', 'b', 'c']);
+
+        expect(calls[0].method).toBe('GET');
+        expect(calls[0].url).toBe(
+            'https://example.invalid/aoide/audio-analysis?ids=' + encodeURIComponent('a,b,c'),
+        );
+        expect(calls[0].headers.Authorization).toBe('MediaBrowser Token="secret-token"');
+        expect(answer).toEqual({
+            absent: false,
+            analysis: { a: ROW, b: null },
+            pending: ['c'],
+        });
+    });
+
+    it('sends at most two hundred ids per request', async () => {
+        const ids = Array.from({ length: 401 }, (_, i) => `t${i}`);
+        const { calls, impl } = stubFetch([() => json(200, { analysis: {}, pending: [] })]);
+
+        await client(impl).audioAnalysis(ids);
+
+        expect(calls).toHaveLength(3);
+        const sent = calls.map(
+            (call) => decodeURIComponent(call.url.split('ids=')[1]).split(',').length,
+        );
+        expect(sent).toEqual([200, 200, 1]);
+    });
+
+    it('gathers the answers across chunks', async () => {
+        const ids = Array.from({ length: 201 }, (_, i) => `t${i}`);
+        const { impl } = stubFetch([
+            () => json(200, { analysis: { t0: null }, pending: ['t1'] }),
+            () => json(200, { analysis: { t200: ROW } }),
+        ]);
+
+        const answer = await client(impl).audioAnalysis(ids);
+
+        expect(answer.analysis).toEqual({ t0: null, t200: ROW });
+        expect(answer.pending).toEqual(['t1']);
+    });
+
+    // The endpoint does not exist on any sidecar yet. That is not an error, and
+    // it must never become a toast: it means "normalise nothing".
+    it('reads a 404 as "no measurements for anyone", at once, without throwing', async () => {
+        const ids = Array.from({ length: 300 }, (_, i) => `t${i}`);
+        const { calls, impl } = stubFetch([() => new Response('Not Found', { status: 404 })]);
+
+        const answer = await client(impl).audioAnalysis(ids);
+
+        expect(answer).toEqual({ absent: true, analysis: {}, pending: [] });
+        expect(calls).toHaveLength(1);
+    });
+
+    it('throws for any other failure, so the caller plays unmodified', async () => {
+        const { impl } = stubFetch([() => new Response('down', { status: 503 })]);
+        const error = await expectSyncError(client(impl).audioAnalysis(['a']));
+        expect(error.kind).toBe('serverFault');
+    });
+
+    // Every field is nullable on its own, so a row is read field by field. A
+    // track with a loudness and no usable tempo must not lose its loudness.
+    it('keeps the fields it can read and nulls the ones it cannot', async () => {
+        const { impl } = stubFetch([
+            () =>
+                json(200, {
+                    analysis: {
+                        loudOnly: { bpm: null, bpmConfidence: null, loudnessLufs: -12.5 },
+                        tempoOnly: { bpm: 96, bpmConfidence: 0.6 },
+                        text: { bpm: 'fast', loudnessLufs: 'loud' },
+                    },
+                    pending: [7, 'p'],
+                }),
+        ]);
+
+        const answer = await client(impl).audioAnalysis(['loudOnly', 'tempoOnly', 'text', 'p']);
+
+        expect(answer.analysis).toEqual({
+            loudOnly: { bpm: null, bpmConfidence: null, loudnessLufs: -12.5, truePeakDbfs: null },
+            tempoOnly: { bpm: 96, bpmConfidence: 0.6, loudnessLufs: null, truePeakDbfs: null },
+            // Nothing readable in the row says the same thing as null.
+            text: null,
+        });
+        expect(answer.pending).toEqual(['p']);
+    });
+
+    it('leaves out a row that is not a row at all, rather than trusting it', async () => {
+        const { impl } = stubFetch([
+            () => json(200, { analysis: { bad: 'measured', good: { loudnessLufs: -8 } } }),
+        ]);
+
+        const answer = await client(impl).audioAnalysis(['bad', 'good']);
+
+        expect(answer.analysis).toEqual({
+            good: { bpm: null, bpmConfidence: null, loudnessLufs: -8, truePeakDbfs: null },
+        });
+    });
+
+    it('asks nothing for no ids', async () => {
+        const { calls, impl } = stubFetch([() => json(200, {})]);
+        expect(await client(impl).audioAnalysis([])).toEqual({
+            absent: false,
+            analysis: {},
+            pending: [],
+        });
+        expect(calls).toHaveLength(0);
+    });
+});
+
 describe('match', () => {
     it('posts the imported rows as the sidecar reads them and returns its answers, nulls kept', async () => {
         const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {

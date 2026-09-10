@@ -4,6 +4,7 @@ import type ReactPlayer from 'react-player';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useLoudnessGain } from '/@/renderer/aoide/features/playback/use-loudness-gain';
 import { useTrimPlayers } from '/@/renderer/aoide/features/playback/use-trim-players';
 import { eventEmitter } from '/@/renderer/events/event-emitter';
 import {
@@ -48,6 +49,10 @@ export function WebPlayer() {
     const volume = usePlayerVolume();
     const { audioFadeOnStatusChange, preservePitch, transcode } = usePlaybackSettings();
     const trim = useTrimPlayers({ num, player1, player2, playerRef });
+    // Aoide's loudness normalisation, as a factor into each slot's existing
+    // gain node — the same node ReplayGain uses, so the two multiply.
+    const loudness1 = useLoudnessGain(player1);
+    const loudness2 = useLoudnessGain(player2);
 
     const [localPlayerStatus, setLocalPlayerStatus] = useState<PlayerStatus>(status);
     const [isTransitioning, setIsTransitioning] = useState<boolean | string>(false);
@@ -481,7 +486,7 @@ export function WebPlayer() {
     useEffect(() => {
         if (!webAudio || !player1 || !player1Source) return;
 
-        const newGain = calculateReplayGain(player1);
+        const newGain = calculateReplayGain(player1) * loudness1;
 
         // Apply per player slot whenever its song/source is ready so pre-started
         // inactive players have correct gain before gapless/crossfade transitions.
@@ -493,12 +498,12 @@ export function WebPlayer() {
         } catch (error) {
             console.error('Error setting gain', error);
         }
-    }, [calculateReplayGain, player1, player1Source, webAudio]);
+    }, [calculateReplayGain, loudness1, player1, player1Source, webAudio]);
 
     useEffect(() => {
         if (!webAudio || !player2 || !player2Source) return;
 
-        const newGain = calculateReplayGain(player2);
+        const newGain = calculateReplayGain(player2) * loudness2;
 
         try {
             webAudio.gains[1].gain.setValueAtTime(
@@ -508,7 +513,7 @@ export function WebPlayer() {
         } catch (error) {
             console.error('Error setting gain', error);
         }
-    }, [calculateReplayGain, player2, player2Source, webAudio]);
+    }, [calculateReplayGain, loudness2, player2, player2Source, webAudio]);
 
     const player1Url = useSongUrl(player1, num === 1, transcode);
     const player2Url = useSongUrl(player2, num === 2, transcode);

@@ -3,10 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('electron', () => ({ ipcMain: { handle: vi.fn(), on: vi.fn() } }));
 vi.mock('/@/main/logger', () => ({ default: { error: vi.fn(), info: vi.fn(), warn: vi.fn() } }));
 
+import { forgetGains, rememberGains } from './mpv-gain';
 import {
+    aoideFileOptions,
     forgetTrimPlans,
     loadfileArgs,
-    loadWithTrim,
+    loadWithAoideOptions,
     MpvLike,
     parseMpvVersion,
     rememberTrimPlans,
@@ -24,7 +26,10 @@ const mpv = (version: unknown = 'mpv 0.40.0'): MpvLike => ({
     load: vi.fn(async () => undefined),
 });
 
-beforeEach(() => forgetTrimPlans());
+beforeEach(() => {
+    forgetTrimPlans();
+    forgetGains();
+});
 
 describe('the plans this process holds', () => {
     it('finds a plan by the id in either of Feishin’s stream URLs', () => {
@@ -89,10 +94,10 @@ describe('the loadfile argument order', () => {
     });
 });
 
-describe('loadWithTrim', () => {
+describe('loadWithAoideOptions', () => {
     it('is Feishin’s own load when nothing is known about the track', async () => {
         const player = mpv();
-        await loadWithTrim(player, DOWNLOAD, 'replace');
+        await loadWithAoideOptions(player, DOWNLOAD, 'replace');
         expect(player.load).toHaveBeenCalledWith(DOWNLOAD, 'replace');
         expect(player.command).not.toHaveBeenCalled();
     });
@@ -100,7 +105,7 @@ describe('loadWithTrim', () => {
     it('sends loadfile with the file’s own start and end when they are known', async () => {
         rememberTrimPlans({ [ID]: { endSec: 312.2, startSec: 1.94 } });
         const player = mpv('mpv 0.40.0');
-        await loadWithTrim(player, DOWNLOAD, 'append');
+        await loadWithAoideOptions(player, DOWNLOAD, 'append');
         expect(player.command).toHaveBeenCalledWith('loadfile', [
             DOWNLOAD,
             'append',
@@ -113,8 +118,8 @@ describe('loadWithTrim', () => {
     it('asks the version once per player', async () => {
         rememberTrimPlans({ [ID]: { endSec: 312.2, startSec: 1.94 } });
         const player = mpv('mpv 0.37.0');
-        await loadWithTrim(player, DOWNLOAD, 'replace');
-        await loadWithTrim(player, DOWNLOAD, 'append');
+        await loadWithAoideOptions(player, DOWNLOAD, 'replace');
+        await loadWithAoideOptions(player, DOWNLOAD, 'append');
         expect(player.getProperty).toHaveBeenCalledTimes(1);
         expect(player.command).toHaveBeenLastCalledWith('loadfile', [
             DOWNLOAD,
@@ -124,6 +129,49 @@ describe('loadWithTrim', () => {
     });
 
     it('does nothing for no player, as the optional chain did', async () => {
-        await expect(loadWithTrim(null, DOWNLOAD, 'replace')).resolves.toBeUndefined();
+        await expect(loadWithAoideOptions(null, DOWNLOAD, 'replace')).resolves.toBeUndefined();
+    });
+});
+
+describe('a file can be trimmed and levelled at once', () => {
+    // The two features have separate settings and separate maps, and mpv takes
+    // one set of per-file options per load. If they did not merge here, turning
+    // one on would silently turn the other off for that track.
+    it('carries the trim and the gain in the same loadfile options', async () => {
+        rememberTrimPlans({ [ID]: { endSec: 312.2, startSec: 1.94 } });
+        rememberGains({ [ID]: -8.3 });
+
+        expect(aoideFileOptions(DOWNLOAD)).toEqual({
+            af: 'volume=-8.3dB',
+            end: '312.2',
+            start: '1.94',
+        });
+
+        const player = mpv('mpv 0.40.0');
+        await loadWithAoideOptions(player, DOWNLOAD, 'append');
+        expect(player.command).toHaveBeenCalledWith('loadfile', [
+            DOWNLOAD,
+            'append',
+            -1,
+            { af: 'volume=-8.3dB', end: '312.2', start: '1.94' },
+        ]);
+    });
+
+    it('sends the gain alone for a track with nothing to trim', async () => {
+        rememberGains({ [ID]: -8.3 });
+        expect(aoideFileOptions(DOWNLOAD)).toEqual({ af: 'volume=-8.3dB' });
+
+        const player = mpv();
+        await loadWithAoideOptions(player, DOWNLOAD, 'replace');
+        expect(player.load).not.toHaveBeenCalled();
+    });
+
+    it('sends the trim alone for a track with nothing to correct', () => {
+        rememberTrimPlans({ [ID]: { endSec: 312.2, startSec: 1.94 } });
+        expect(aoideFileOptions(DOWNLOAD)).toEqual({ end: '312.2', start: '1.94' });
+    });
+
+    it('sends nothing at all for a track with neither', () => {
+        expect(aoideFileOptions(DOWNLOAD)).toBeUndefined();
     });
 });

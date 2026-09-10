@@ -2,6 +2,7 @@ import { memo, useMemo } from 'react';
 import { Fragment } from 'react/jsx-runtime';
 
 import { HiddenFromMixesSettings } from '/@/renderer/aoide/features/settings/hidden-from-mixes-settings';
+import { LoudnessNormalisationSettings } from '/@/renderer/aoide/features/settings/loudness-normalisation-settings';
 import { NowPlayingColumnSettings } from '/@/renderer/aoide/features/settings/now-playing-column-settings';
 import { PlaylistSurfaceSettings } from '/@/renderer/aoide/features/settings/playlist-surface-settings';
 import { SmartSearchSettings } from '/@/renderer/aoide/features/settings/smart-search-settings';
@@ -40,6 +41,7 @@ export const GeneralTab = memo(() => {
             { component: NowPlayingColumnSettings, key: 'aoideNowPlayingColumn' },
             { component: HiddenFromMixesSettings, key: 'aoideHiddenFromMixes' },
             { component: TrimSilenceSettings, key: 'aoideTrimSilence' },
+            { component: LoudnessNormalisationSettings, key: 'aoideLoudnessNormalisation' },
         ];
 
         if (supportsSmartPlaylists) {

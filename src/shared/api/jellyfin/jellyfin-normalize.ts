@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { TARGET_LUFS } from '/@/shared/aoide/loudness';
 import { jfType } from '/@/shared/api/jellyfin/jellyfin-types';
 import { coerceYear, parsePartialIsoDateFromApi } from '/@/shared/api/partial-iso-date';
 import {
@@ -170,7 +171,10 @@ const normalizeSong = (
                           item.NormalizationGain !== undefined
                               ? item.NormalizationGain
                               : item.LUFS !== undefined
-                                ? -18 - item.LUFS
+                                ? // The same reference level Aoide normalises to, named
+                                  // once so Jellyfin's own scan and the sidecar's cannot
+                                  // land on different loudnesses.
+                                  TARGET_LUFS - item.LUFS
                                 : undefined,
                   }
                 : null,

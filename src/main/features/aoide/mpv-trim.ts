@@ -2,12 +2,17 @@ import type { TrimPlan } from '/@/shared/aoide/trim-plan';
 
 import { ipcMain } from 'electron';
 
+import { gainOptionsForUrl } from './mpv-gain';
+
 import log from '/@/main/logger';
 import { mpvFileOptions } from '/@/shared/aoide/trim-plan';
 
 /**
  * Silence trimming for the mpv backend: per-file `start=` and `end=` on
- * `loadfile`.
+ * `loadfile`, and — because there is exactly one `loadfile` per track — the
+ * place where every per-file option Aoide sets is assembled. Loudness
+ * normalisation's `af=volume=…dB` comes from `mpv-gain.ts` and joins them
+ * here, so a file can be both trimmed and levelled.
  *
  * mpv's playlist carries options per entry and applies them when that entry
  * begins, which is exactly the shape Feishin's two-item queue needs: the next
@@ -118,7 +123,19 @@ const versionOf = (mpv: MpvLike): Promise<[number, number] | null> => {
 };
 
 /**
- * Load a file into mpv, with its trim if one is known.
+ * Every per-file option this track has earned: its trim, its gain, or both.
+ *
+ * Undefined when there is nothing to set, which is what sends the load down
+ * Feishin's own path. The two maps are read independently, so a track with a
+ * trim and no gain, or a gain and no trim, gets what it has.
+ */
+export const aoideFileOptions = (url: string): Record<string, string> | undefined => {
+    const options = { ...trimOptionsForUrl(url), ...gainOptionsForUrl(url) };
+    return Object.keys(options).length > 0 ? options : undefined;
+};
+
+/**
+ * Load a file into mpv, with its trim and its gain if either is known.
  *
  * Without a plan this is exactly Feishin's own `load(url, mode)`, wait-for-
  * `file-loaded` and all. With one, the command goes out directly — the
@@ -126,14 +143,14 @@ const versionOf = (mpv: MpvLike): Promise<[number, number] | null> => {
  * order they arrive, so a `replace` followed by an `append` still lands in
  * that order. A null player is a no-op, as `getMpvInstance()?.load` was.
  */
-export const loadWithTrim = async (
+export const loadWithAoideOptions = async (
     mpv: MpvLike | null | undefined,
     url: string,
     mode: 'append' | 'replace',
 ): Promise<void> => {
     if (!mpv) return;
 
-    const options = trimOptionsForUrl(url);
+    const options = aoideFileOptions(url);
     if (!options) {
         await mpv.load(url, mode);
         return;
