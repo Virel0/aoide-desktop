@@ -2821,22 +2821,13 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     );
                 }
 
-                if (version < 42) {
-                    // `disabledContextMenu` never had a reader or a writer.
-                    delete (state.general as { disabledContextMenu?: unknown }).disabledContextMenu;
-                }
-
-                if (version < 41) {
-                    // Sharing is gone; the default expiry it stored has nobody
-                    // left to ask it.
-                    delete (state.general as { shareExpiration?: unknown }).shareExpiration;
-                }
-
-                if (version < 40) {
-                    // "Show ratings" is gone. Every rating surface was already
-                    // gated on the server type behind it, and this build signs
-                    // in to Jellyfin, which has no star ratings at all.
-                    delete (state.general as { showRatings?: boolean }).showRatings;
+                if (version < 38) {
+                    // The tag editor's own settings — every tag's autocomplete
+                    // source, its custom values and whether it takes more than
+                    // one — have nothing left to configure. Deleted here rather
+                    // than left to rot, so an exported settings file does not
+                    // hand them to the next install.
+                    delete (state as SettingsSlice & { tagEditor?: unknown }).tagEditor;
                 }
 
                 if (version < 39) {
@@ -2847,13 +2838,22 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     delete (state.playback as { preservePitch?: boolean }).preservePitch;
                 }
 
-                if (version < 38) {
-                    // The tag editor's own settings — every tag's autocomplete
-                    // source, its custom values and whether it takes more than
-                    // one — have nothing left to configure. Deleted here rather
-                    // than left to rot, so an exported settings file does not
-                    // hand them to the next install.
-                    delete (state as SettingsSlice & { tagEditor?: unknown }).tagEditor;
+                if (version < 40) {
+                    // "Show ratings" is gone. Every rating surface was already
+                    // gated on the server type behind it, and this build signs
+                    // in to Jellyfin, which has no star ratings at all.
+                    delete (state.general as { showRatings?: boolean }).showRatings;
+                }
+
+                if (version < 41) {
+                    // Sharing is gone; the default expiry it stored has nobody
+                    // left to ask it.
+                    delete (state.general as { shareExpiration?: unknown }).shareExpiration;
+                }
+
+                if (version < 42) {
+                    // `disabledContextMenu` never had a reader or a writer.
+                    delete (state.general as { disabledContextMenu?: unknown }).disabledContextMenu;
                 }
 
                 return persistedState;
