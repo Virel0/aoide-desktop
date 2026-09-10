@@ -91,7 +91,6 @@
         "hotkey_rate4": "امتیاز ۴ ستاره",
         "showSkipButton_description": "نمایش یا مخفی کردن دکمهٔ رد کردن روی نوار پخش‌کننده",
         "playButtonBehavior": "رفتار دکمهٔ پخش",
-        "playbackStyle_optionNormal": "عادی",
         "hotkey_toggleRepeat": "تغییر تکرار",
         "fontType": "نوع قلم",
         "hotkey_playbackNext": "قطعهٔ بعد",
@@ -145,18 +144,15 @@
         "trayEnabled": "نمایش سینی",
         "trayEnabled_description": "نمایش/پنهان کردن آیکون/فهرست در سینی. اگر غیرفعال باشد، کوچک کردن/خروج به سینی را نیز غیرفعال می‌کند",
         "useSystemTheme_description": "از روشنی یا تاریکی که سیستم تعریف کرده است، پیروی می‌کند",
-        "crossfadeDuration": "زمان محو کردن گذار قطعه به قطعه‌ی بعدی",
         "themeLight_description": "تم روشن را برای استفاده‌ی نرم‌افزار می‌گزیند",
         "volumeWidth": "عرض نوار لغزنده‌ی حجم صدا",
-        "crossfadeStyle_description": "شیوه‌ی crossfade که می‌خواهید پخش‌کننده از آن استفاده کند را انتخاب کنید",
         "startMinimized_description": "نرم‌افزار را در سینی اجرا کن",
         "volumeWidth_description": "عرضی که نوار لغزنده‌ی حجم صدا داشته باشد",
         "themeDark": "تم (تاریک)",
         "useSystemTheme": "استفاده از تم سیستم",
         "volumeWheelStep": "گام چرخ حجم صدا",
         "webAudio": "استفاده از صدای وب",
-        "windowBarStyle": "سبک نوار پنجره",
-        "crossfadeDuration_description": "زمان افکت crossfade را مشخص می‌کند"
+        "windowBarStyle": "سبک نوار پنجره"
     },
     "common": {
         "backward": "به عقب",

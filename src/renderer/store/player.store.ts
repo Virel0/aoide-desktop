@@ -24,14 +24,7 @@ import {
 import { migratePlayerStorePersist, playerStoreStorage } from '/@/renderer/store/utils';
 import { shuffleInPlace } from '/@/renderer/utils/shuffle';
 import { PlayerData, QueueData, QueueSong, Song } from '/@/shared/types/domain-types';
-import {
-    CrossfadeStyle,
-    Play,
-    PlayerRepeat,
-    PlayerShuffle,
-    PlayerStatus,
-    PlayerStyle,
-} from '/@/shared/types/types';
+import { Play, PlayerRepeat, PlayerShuffle, PlayerStatus } from '/@/shared/types/types';
 
 export interface PlayerState extends Actions, State {}
 
@@ -75,13 +68,10 @@ interface Actions {
     moveSelectedToBottom: (items: QueueSong[]) => void;
     moveSelectedToNext: (items: QueueSong[]) => void;
     moveSelectedToTop: (items: QueueSong[]) => void;
-    setCrossfadeDuration: (duration: number) => void;
-    setCrossfadeStyle: (style: CrossfadeStyle) => void;
     setPauseOnNextSongEnd: (value: boolean) => void;
     setQueue: (data: Song[], index?: number, position?: number) => void;
     setRepeat: (repeat: PlayerRepeat) => void;
     setShuffle: (shuffle: PlayerShuffle) => void;
-    setTransitionType: (transitionType: PlayerStyle) => void;
     setVolume: (volume: number) => void;
     shuffle: () => void;
     shuffleAll: () => void;
@@ -110,8 +100,6 @@ type QueueDraft = {
 interface State {
     hydrated: boolean;
     player: {
-        crossfadeDuration: number;
-        crossfadeStyle: CrossfadeStyle;
         index: number;
         muted: boolean;
         pauseOnNextSongEnd: boolean;
@@ -120,7 +108,6 @@ interface State {
         seekToTimestamp: string;
         shuffle: PlayerShuffle;
         status: PlayerStatus;
-        transitionType: PlayerStyle;
         volume: number;
     };
     queue: QueueData;
@@ -422,8 +409,6 @@ function unplayedLane(state: QueueDraft): string[] {
 const initialState: State = {
     hydrated: false,
     player: {
-        crossfadeDuration: 5,
-        crossfadeStyle: CrossfadeStyle.EQUAL_POWER,
         index: -1,
         muted: false,
         pauseOnNextSongEnd: false,
@@ -432,7 +417,6 @@ const initialState: State = {
         seekToTimestamp: uniqueSeekToTimestamp(0),
         shuffle: PlayerShuffle.NONE,
         status: PlayerStatus.PAUSED,
-        transitionType: PlayerStyle.GAPLESS,
         volume: 30,
     },
     queue: {
@@ -1507,17 +1491,6 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                     });
                 },
                 ...initialState,
-                setCrossfadeDuration: (duration: number) => {
-                    set((state) => {
-                        const normalizedDuration = Math.max(0, Math.min(10, duration));
-                        state.player.crossfadeDuration = normalizedDuration;
-                    });
-                },
-                setCrossfadeStyle: (style: CrossfadeStyle) => {
-                    set((state) => {
-                        state.player.crossfadeStyle = style;
-                    });
-                },
                 setPauseOnNextSongEnd: (value: boolean) => {
                     set((state) => {
                         state.player.pauseOnNextSongEnd = value;
@@ -1566,11 +1539,6 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                             state.queue.shuffled = [];
                         }
                         cleanupOrphanedSongs(state);
-                    });
-                },
-                setTransitionType: (transitionType: PlayerStyle) => {
-                    set((state) => {
-                        state.player.transitionType = transitionType;
                     });
                 },
                 setVolume: (volume: number) => {
@@ -1741,7 +1709,26 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
 
                 if (oldVersion === 3) {
                     await migratePlayerStorePersist('player-store');
-                    return persistedState as Partial<PlayerState>;
+                }
+
+                if (oldVersion < 5) {
+                    // Feishin's own crossfade went. Equal power is the only
+                    // curve worth having, Crossfade already forces it, and the
+                    // three keys are deleted rather than left in the persisted
+                    // player so a settings export does not hand them on.
+                    const player = (persistedState as Partial<PlayerState>)?.player as
+                        | (Partial<PlayerState>['player'] & {
+                              crossfadeDuration?: number;
+                              crossfadeStyle?: string;
+                              transitionType?: string;
+                          })
+                        | undefined;
+
+                    if (player) {
+                        delete player.crossfadeDuration;
+                        delete player.crossfadeStyle;
+                        delete player.transitionType;
+                    }
                 }
 
                 return persistedState as Partial<PlayerState>;
@@ -1779,7 +1766,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                 return { player, queue: state.queue };
             },
             storage: playerStoreStorage,
-            version: 4,
+            version: 5,
         },
     ),
 );
@@ -1814,13 +1801,10 @@ export const usePlayerActions = () => {
             moveSelectedToBottom: state.moveSelectedToBottom,
             moveSelectedToNext: state.moveSelectedToNext,
             moveSelectedToTop: state.moveSelectedToTop,
-            setCrossfadeDuration: state.setCrossfadeDuration,
-            setCrossfadeStyle: state.setCrossfadeStyle,
             setPauseOnNextSongEnd: state.setPauseOnNextSongEnd,
             setQueue: state.setQueue,
             setRepeat: state.setRepeat,
             setShuffle: state.setShuffle,
-            setTransitionType: state.setTransitionType,
             setVolume: state.setVolume,
             shuffle: state.shuffle,
             shuffleAll: state.shuffleAll,
@@ -2044,14 +2028,11 @@ export const subscribeQueueCleared = (onChange: () => void) => {
 export const usePlayerProperties = () => {
     return usePlayerStoreBase(
         useShallow((state) => ({
-            crossfadeDuration: state.player.crossfadeDuration,
-            crossfadeStyle: state.player.crossfadeStyle,
             isMuted: state.player.muted,
             playerNum: state.player.playerNum,
             repeat: state.player.repeat,
             shuffle: state.player.shuffle,
             status: state.player.status,
-            transitionType: state.player.transitionType,
             volume: state.player.volume,
         })),
     );

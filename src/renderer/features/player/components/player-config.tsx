@@ -9,7 +9,7 @@ import {
     ListConfigBooleanControl,
     ListConfigTable,
 } from '/@/renderer/features/shared/components/list-config-menu';
-import { usePlayerActions, usePlayerProperties, usePlayerStatus } from '/@/renderer/store';
+import { usePlayerStatus } from '/@/renderer/store';
 import {
     useCombinedLyricsAndVisualizer,
     usePlaybackSettings,
@@ -21,11 +21,9 @@ import {
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Paper } from '/@/shared/components/paper/paper';
 import { Popover } from '/@/shared/components/popover/popover';
-import { SegmentedControl } from '/@/shared/components/segmented-control/segmented-control';
 import { Select } from '/@/shared/components/select/select';
-import { Slider } from '/@/shared/components/slider/slider';
 import { Stack } from '/@/shared/components/stack/stack';
-import { CrossfadeStyle, PlayerStatus, PlayerStyle } from '/@/shared/types/types';
+import { PlayerStatus } from '/@/shared/types/types';
 
 export const PlayerConfig = () => {
     const { t } = useTranslation();
@@ -33,8 +31,6 @@ export const PlayerConfig = () => {
     const showQueueInSidebar = useShowQueueInSidebar();
     const showVisualizerInSidebar = useShowVisualizerInSidebar();
     const combinedLyricsAndVisualizer = useCombinedLyricsAndVisualizer();
-    const { transitionType } = usePlayerProperties();
-
     const { setSettings } = useSettingsStoreActions();
 
     const audioOptions = useMemo(
@@ -46,29 +42,6 @@ export const PlayerConfig = () => {
             },
         ],
         [t],
-    );
-
-    const transitionOptions = useMemo(
-        () => [
-            {
-                component: <TransitionTypeConfig />,
-                id: 'transitionType',
-                label: t('setting.playbackStyle'),
-            },
-            {
-                component: <CrossfadeStyleConfig />,
-                id: 'crossfadeStyle',
-                isHidden: transitionType !== PlayerStyle.CROSSFADE,
-                label: t('setting.crossfadeStyle'),
-            },
-            {
-                component: <CrossfadeDurationConfig />,
-                id: 'crossfadeDuration',
-                isHidden: transitionType !== PlayerStyle.CROSSFADE,
-                label: t('setting.crossfadeDuration'),
-            },
-        ],
-        [t, transitionType],
     );
 
     const sidebarOptions = useMemo(
@@ -171,9 +144,6 @@ export const PlayerConfig = () => {
                         <ListConfigTable options={audioOptions} />
                     </Paper>
                     <Paper p="md" radius="md">
-                        <ListConfigTable options={transitionOptions} />
-                    </Paper>
-                    <Paper p="md" radius="md">
                         <ListConfigTable options={sidebarOptions} />
                     </Paper>
                 </Stack>
@@ -202,91 +172,6 @@ const AudioDeviceConfig = () => {
             value={playbackSettings.audioDeviceId ?? getDefaultAudioDevice(audioDevices)}
             variant="filled"
             width="100%"
-        />
-    );
-};
-
-const TransitionTypeConfig = () => {
-    const { t } = useTranslation();
-    const status = usePlayerStatus();
-    const { transitionType } = usePlayerProperties();
-    const { setTransitionType } = usePlayerActions();
-
-    return (
-        <SegmentedControl
-            data={[
-                {
-                    label: t('setting.playbackStyle', {
-                        context: 'optionNormal',
-                    }),
-                    value: PlayerStyle.GAPLESS,
-                },
-                {
-                    label: t('setting.playbackStyle', {
-                        context: 'optionCrossFade',
-                    }),
-                    value: PlayerStyle.CROSSFADE,
-                },
-            ]}
-            disabled={status === PlayerStatus.PLAYING}
-            onChange={(value) => setTransitionType(value as PlayerStyle)}
-            size="sm"
-            value={transitionType}
-            w="100%"
-        />
-    );
-};
-
-const CrossfadeStyleConfig = () => {
-    const status = usePlayerStatus();
-    const { crossfadeStyle, transitionType } = usePlayerProperties();
-    const { setCrossfadeStyle } = usePlayerActions();
-
-    return (
-        <Select
-            comboboxProps={{ withinPortal: false }}
-            data={[
-                { label: 'Linear', value: CrossfadeStyle.LINEAR },
-                { label: 'Equal Power', value: CrossfadeStyle.EQUAL_POWER },
-                { label: 'S-Curve', value: CrossfadeStyle.S_CURVE },
-                { label: 'Exponential', value: CrossfadeStyle.EXPONENTIAL },
-            ]}
-            defaultValue={crossfadeStyle}
-            disabled={transitionType !== PlayerStyle.CROSSFADE || status === PlayerStatus.PLAYING}
-            onChange={(e) => {
-                if (e) {
-                    setCrossfadeStyle(e as CrossfadeStyle);
-                }
-            }}
-            variant="filled"
-            width="100%"
-        />
-    );
-};
-
-const CrossfadeDurationConfig = () => {
-    const status = usePlayerStatus();
-    const { crossfadeDuration, transitionType } = usePlayerProperties();
-    const { setCrossfadeDuration } = usePlayerActions();
-
-    return (
-        <Slider
-            defaultValue={crossfadeDuration}
-            disabled={transitionType !== PlayerStyle.CROSSFADE || status === PlayerStatus.PLAYING}
-            marks={[
-                { label: '3', value: 3 },
-                { label: '6', value: 6 },
-                { label: '9', value: 9 },
-                { label: '12', value: 12 },
-                { label: '15', value: 15 },
-            ]}
-            max={15}
-            min={3}
-            onChangeEnd={setCrossfadeDuration}
-            styles={{
-                root: {},
-            }}
-            w="100%"
         />
     );
 };

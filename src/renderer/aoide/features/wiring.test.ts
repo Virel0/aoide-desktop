@@ -1149,7 +1149,13 @@ describe('the exact join: a buffer deck takes the boundary, or the elements keep
     // crossfade's, and Repeat One is an element looping on itself.
     it('takes gapless and cut, and leaves a blend to the crossfade', () => {
         expect(hook).toContain("state.mix.kind === 'gapless' || state.mix.kind === 'cut'");
-        expect(hook).toContain('state.transitionType === PlayerStyle.GAPLESS');
+        // And with no plan at all the boundary is the player's own pre-start,
+        // which has no overlap in it either — so the deck may have it. Feishin's
+        // crossfade setting used to be able to say otherwise here; it is gone,
+        // and nothing may quietly put a `false` back in its place.
+        expect(hook).toMatch(
+            /\? state\.mix\.kind === 'gapless' \|\| state\.mix\.kind === 'cut'\s*\n\s*: true;/,
+        );
         expect(hook).toContain('state.repeat !== PlayerRepeat.ONE');
         expect(hook).toContain("const blending = args.mix?.kind === 'blend'");
     });
@@ -1435,14 +1441,14 @@ describe('Crossfade decides the handover, and only when it is on', () => {
         'utf8',
     );
 
-    // The whole promise of a default-off feature: someone who set Feishin's own
-    // crossfade to nine seconds and never heard of Crossfade is owed those nine
-    // seconds. The planner has no answer meaning "leave it as it was", so the
-    // hook answers null instead and the player falls through to its own switch.
+    // The whole promise of a default-off feature: someone who never turns
+    // Crossfade on hears the player they always had. The planner has no answer
+    // meaning "leave it as it was", so the hook answers null instead and both
+    // progress handlers fall through to the pre-start.
     it('a mixer that is off is a player that behaves as it always has', () => {
         expect(hook).toContain('if (!automix || !outgoing || !incoming) return null;');
         expect(webPlayer.match(/if \(mix\) \{/g)).toHaveLength(2);
-        expect(webPlayer.match(/switch \(transitionType\) \{/g)).toHaveLength(2);
+        expect(webPlayer.match(/gaplessHandler\(\{/g)).toHaveLength(3);
     });
 
     it('the two defaults are the phone’s', () => {
@@ -1456,7 +1462,11 @@ describe('Crossfade decides the handover, and only when it is on', () => {
         expect(hook).toContain('planTransition({');
         expect(webPlayer).toContain('const mix = useMixTransition(currentSong, nextSong);');
         expect(webPlayer).toContain('crossfadeDuration: mix.overlapSeconds,');
-        expect(webPlayer).toContain('crossfadeStyle: CrossfadeStyle.EQUAL_POWER,');
+        // Equal power is the only curve the fader has: the planner's lengths
+        // were chosen against a fade that holds a constant level across the
+        // handover, and nothing can ask it for another.
+        expect(webPlayer).toContain('equalPowerEaseOut(progress)');
+        expect(webPlayer).toContain('equalPowerEaseIn(progress)');
     });
 
     // An album run is Feishin's own gapless pre-start, and a cut is the player

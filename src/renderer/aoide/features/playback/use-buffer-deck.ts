@@ -17,7 +17,7 @@ import {
 import { usePlayerEvents } from '/@/renderer/features/player/audio-player/hooks/use-player-events';
 import { convertToLogVolume } from '/@/renderer/features/player/audio-player/utils/player-utils';
 import { usePlayerActions, usePlayerStoreBase } from '/@/renderer/store';
-import { PlayerRepeat, PlayerStatus, PlayerStyle } from '/@/shared/types/types';
+import { PlayerRepeat, PlayerStatus } from '/@/shared/types/types';
 
 export interface BufferDeckArgs {
     /** Whether a pause is faded. The deck rides its own fader down to match. */
@@ -42,8 +42,6 @@ export interface BufferDeckArgs {
     player2Url: string | undefined;
     playerRef: RefObject<null | WebPlayerEngineHandle>;
     repeat: PlayerRepeat;
-    /** Feishin's own handover setting, consulted only when `mix` is null. */
-    transitionType: PlayerStyle;
     trim: { end1: null | number; end2: null | number; start1: number; start2: number };
     volume: number;
     webAudio: undefined | WebAudio;
@@ -303,9 +301,13 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
             if (boundary === null || outgoingEnd === null) return;
             const now = context.currentTime;
 
+            // With no plan the player pre-starts the next element, which is a
+            // boundary with no overlap in it — exactly what the deck can take
+            // over. Feishin's own crossfade used to be able to say otherwise
+            // here; it is gone, and a blend now only ever arrives as a plan.
             const exact = state.mix
                 ? state.mix.kind === 'gapless' || state.mix.kind === 'cut'
-                : state.transitionType === PlayerStyle.GAPLESS;
+                : true;
             const next = state.nextSong;
             const usable =
                 exact &&

@@ -102,17 +102,6 @@ export enum AuthState {
     VALID = 'valid',
 }
 
-export enum CrossfadeStyle {
-    CONSTANT_POWER = 'constantPower',
-    CONSTANT_POWER_SLOW_CUT = 'constantPowerSlowCut',
-    CONSTANT_POWER_SLOW_FADE = 'constantPowerSlowFade',
-    DIPPED = 'dipped',
-    EQUAL_POWER = 'equalPower',
-    EXPONENTIAL = 'exponential',
-    LINEAR = 'linear',
-    S_CURVE = 'sCurve',
-}
-
 export enum FontType {
     BUILT_IN = 'builtIn',
     CUSTOM = 'custom',
@@ -150,11 +139,6 @@ export enum PlayerStatus {
     PAUSED = 'paused',
     PLAYING = 'playing',
     STOPPED = 'stopped',
-}
-
-export enum PlayerStyle {
-    CROSSFADE = 'crossfade',
-    GAPLESS = 'gapless',
 }
 
 export enum TableColumn {
