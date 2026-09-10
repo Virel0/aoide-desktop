@@ -17,7 +17,6 @@ import { AppRoute } from '/@/renderer/router/routes';
 import {
     useCombinedLyricsAndVisualizer,
     useFullScreenPlayerStore,
-    usePlaybackSettings,
     usePlayerSong,
     useSettingsStore,
     useSettingsStoreActions,
@@ -60,9 +59,8 @@ export const SidebarPlayQueue = () => {
     const showQueueInSidebar = useShowQueueInSidebar();
     const showVisualizerInSidebar = useShowVisualizerInSidebar();
     const sidebarPanelOrder = useSidebarPanelOrder();
-    const { webAudio } = usePlaybackSettings();
     const { windowBarStyle } = useWindowSettings();
-    const showVisualizer = showVisualizerInSidebar && webAudio;
+    const showVisualizer = showVisualizerInSidebar;
     const showPanel = showLyricsInSidebar || showVisualizer;
     const showQueue = showQueueInSidebar && location.pathname !== AppRoute.NOW_PLAYING;
 
@@ -404,9 +402,7 @@ const CombinedLyricsAndVisualizerPanel = () => {
     const currentSong = usePlayerSong();
     const visualizerType = useSettingsStore((store) => store.visualizer.type);
     const showLyricsInSidebar = useShowLyricsInSidebar();
-    const showVisualizerInSidebar = useShowVisualizerInSidebar();
-    const { webAudio } = usePlaybackSettings();
-    const showVisualizer = showVisualizerInSidebar && webAudio;
+    const showVisualizer = useShowVisualizerInSidebar();
 
     const { data: lyricsData } = useQuery(
         lyricsQueries.songLyrics(

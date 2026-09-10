@@ -26,7 +26,6 @@ import {
     updateQueueRatings,
     useCurrentServerId,
     usePlaybackSettings,
-    useSettingsStoreActions,
 } from '/@/renderer/store';
 import { logger } from '/@/renderer/utils/logger';
 import { toast } from '/@/shared/components/toast/toast';
@@ -99,13 +98,8 @@ function isSafari() {
 
 export const AudioPlayers = () => {
     const serverId = useCurrentServerId();
-    const { resetSampleRate } = useSettingsStoreActions();
 
-    const {
-        audioDeviceId,
-        audioProperties: { audioSampleRateHz },
-        webAudio,
-    } = usePlaybackSettings();
+    const { audioDeviceId } = usePlaybackSettings();
     const { setWebAudio, webAudio: audioContext } = useWebAudio();
 
     useEffect(() => {
@@ -130,11 +124,8 @@ export const AudioPlayers = () => {
             <AudioPlayersContent
                 audioContext={audioContext}
                 audioDeviceId={audioDeviceId}
-                audioSampleRateHz={audioSampleRateHz}
-                resetSampleRate={resetSampleRate}
                 serverId={serverId}
                 setWebAudio={setWebAudio}
-                webAudio={webAudio}
             />
         </>
     );
@@ -143,36 +134,19 @@ export const AudioPlayers = () => {
 const AudioPlayersContent = ({
     audioContext,
     audioDeviceId,
-    audioSampleRateHz,
-    resetSampleRate,
     serverId,
     setWebAudio,
-    webAudio,
 }: {
     audioContext: ReturnType<typeof useWebAudio>['webAudio'];
     audioDeviceId: null | string | undefined;
-    audioSampleRateHz: number | undefined;
-    resetSampleRate: ReturnType<typeof useSettingsStoreActions>['resetSampleRate'];
     serverId: null | string;
     setWebAudio: ReturnType<typeof useWebAudio>['setWebAudio'];
-    webAudio: boolean;
 }) => {
     useEffect(() => {
-        if (webAudio && 'AudioContext' in window) {
-            let context: AudioContext;
-
-            try {
-                context = new AudioContext({
-                    latencyHint: 'playback',
-                    sampleRate: audioSampleRateHz || undefined,
-                });
-            } catch (error) {
-                // In practice, this should never be hit because the UI should validate
-                // the range. However, the actual supported range is not guaranteed
-                toast.error({ message: (error as Error).message });
-                context = new AudioContext({ latencyHint: 'playback' });
-                resetSampleRate();
-            }
+        if ('AudioContext' in window) {
+            // No rate argument: the context takes the output device's own,
+            // which is the one figure that never resamples on the way out.
+            const context = new AudioContext({ latencyHint: 'playback' });
 
             const gains = [context.createGain(), context.createGain()];
 
@@ -237,7 +211,8 @@ const AudioPlayersContent = ({
             });
         }
 
-        // Intentionally ignore the sample rate dependency, as it makes things really messy
+        // Built once, at startup, and never rebuilt: every node downstream of
+        // it is wired to this context.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

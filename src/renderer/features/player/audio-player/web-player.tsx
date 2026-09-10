@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useBufferDeck } from '/@/renderer/aoide/features/playback/use-buffer-deck';
 import { useLoudnessGain } from '/@/renderer/aoide/features/playback/use-loudness-gain';
+import { useAoideLoudnessNormalisationEnabled } from '/@/renderer/aoide/features/playback/use-loudness-normalisation';
 import { useMixTransition } from '/@/renderer/aoide/features/playback/use-mix-transition';
 import { useTrimPlayers } from '/@/renderer/aoide/features/playback/use-trim-players';
 import { eventEmitter } from '/@/renderer/events/event-emitter';
@@ -19,7 +20,6 @@ import { PlayerOnProgressProps } from '/@/renderer/features/player/audio-player/
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { useWebAudio } from '/@/renderer/features/player/hooks/use-webaudio';
 import {
-    useAudioProperties,
     usePlaybackSettings,
     usePlayerActions,
     usePlayerData,
@@ -43,12 +43,11 @@ export function WebPlayer() {
     const repeat = usePlayerRepeat();
     const repeatOneProgressRef = useRef({ player1: 0, player2: 0 });
     const { mediaAutoNext, mediaPause, setTimestamp } = usePlayerActions();
-    const playback = useAudioProperties();
     const { webAudio } = useWebAudio();
 
     const isMuted = usePlayerMuted();
     const volume = usePlayerVolume();
-    const { audioFadeOnStatusChange, transcode } = usePlaybackSettings();
+    const { transcode } = usePlaybackSettings();
     // Set while the buffer deck has the boundary in front of it. Read by the
     // trim tracker and by the transition handlers below, all of which have to
     // stand down when a join has been committed to the audio clock.
@@ -58,6 +57,7 @@ export function WebPlayer() {
     // gain node — the same node ReplayGain uses, so the two multiply.
     const loudness1 = useLoudnessGain(player1);
     const loudness2 = useLoudnessGain(player2);
+    const levelVolume = useAoideLoudnessNormalisationEnabled();
     // Aoide's Crossfade: one plan for the handover in front of us, or null when
     // the mixer is off and Feishin's own transition settings still decide.
     const mix = useMixTransition(currentSong, nextSong);
@@ -68,7 +68,6 @@ export function WebPlayer() {
     // Aoide's exact join. It only takes a boundary it can be sample-accurate
     // about; everything below is what happens when it does not.
     const deck = useBufferDeck({
-        audioFadeOnStatusChange,
         currentSong,
         isMuted,
         mix,
@@ -425,20 +424,10 @@ export function WebPlayer() {
                     }
                 }
 
-                if (audioFadeOnStatusChange) {
-                    if (status === PlayerStatus.PLAYING) {
-                        fadeAndSetStatus(0, volume, PLAY_PAUSE_FADE_DURATION, PlayerStatus.PLAYING);
-                    } else {
-                        fadeAndSetStatus(volume, 0, PLAY_PAUSE_FADE_DURATION, status);
-                    }
+                if (status === PlayerStatus.PLAYING) {
+                    fadeAndSetStatus(0, volume, PLAY_PAUSE_FADE_DURATION, PlayerStatus.PLAYING);
                 } else {
-                    if (status === PlayerStatus.PLAYING) {
-                        playerRef.current?.setVolume(volume);
-                        setLocalPlayerStatus(PlayerStatus.PLAYING);
-                    } else {
-                        playerRef.current?.setVolume(volume);
-                        setLocalPlayerStatus(status);
-                    }
+                    fadeAndSetStatus(volume, 0, PLAY_PAUSE_FADE_DURATION, status);
                 }
             },
             onPlayerVolume: (properties) => {
@@ -449,7 +438,7 @@ export function WebPlayer() {
                 player.mediaStop();
             },
         },
-        [volume, num, isTransitioning, audioFadeOnStatusChange],
+        [volume, num, isTransitioning],
     );
 
     // Cleanup fade interval on unmount
@@ -485,58 +474,45 @@ export function WebPlayer() {
         return () => clearInterval(interval);
     }, [deck.engaged, localPlayerStatus, num, setTimestamp]);
 
+    /**
+     * The half of levelling a file brought with it.
+     *
+     * Level Volume is one switch over two sources: the ReplayGain tags a file
+     * already carries, and the measurement the server made of one that carries
+     * none. `useLoudnessGain` stands down for a tagged file precisely so this
+     * can have it, and the two multiply into the same gain node — so the switch
+     * governs both or neither, and there is nothing left to configure between
+     * them.
+     *
+     * Album gain in preference to track gain, because an album is the unit
+     * somebody sat down to listen to and track gain flattens the quiet song
+     * that was meant to be quiet. Peak-limited always: a positive gain that
+     * clips is worse than no gain at all.
+     */
     const calculateReplayGain = useCallback(
         (song: QueueSong): number => {
-            if (playback.replayGainMode === 'no') {
+            if (!levelVolume) {
                 return 1;
             }
 
-            let gain: number | undefined;
-            let peak: number | undefined;
-
-            if (playback.replayGainMode === 'track') {
-                gain = song.gain?.track ?? song.gain?.album;
-                peak = song.peak?.track ?? song.peak?.album;
-            } else {
-                gain = song.gain?.album ?? song.gain?.track;
-                peak = song.peak?.album ?? song.peak?.track;
-            }
+            const gain = song.gain?.album ?? song.gain?.track;
 
             if (gain === undefined) {
-                gain = playback.replayGainFallbackDB;
-
-                if (!gain) {
-                    return 1;
-                }
+                return 1;
             }
 
-            if (peak === undefined) {
-                peak = 1;
-            }
-
-            const preAmp = playback.replayGainPreampDB ?? 0;
+            const peak = song.peak?.album ?? song.peak?.track ?? 1;
 
             // https://wiki.hydrogenaud.io/index.php?title=ReplayGain_1.0_specification&section=19
-            // Normalized to max gain
-            let expectedGain = 10 ** ((gain + preAmp) / 20);
+            const expectedGain = 10 ** (gain / 20);
 
-            // Nothing in the system should allow this. But, in the case that preAmp is a
-            // bad value (not a number, for example), a NaN gain will cause the entire system to panic
             if (isNaN(expectedGain)) {
-                expectedGain = 1;
+                return 1;
             }
 
-            if (playback.replayGainClip) {
-                return Math.min(expectedGain, 1 / peak);
-            }
-            return expectedGain;
+            return Math.min(expectedGain, 1 / peak);
         },
-        [
-            playback.replayGainClip,
-            playback.replayGainFallbackDB,
-            playback.replayGainMode,
-            playback.replayGainPreampDB,
-        ],
+        [levelVolume],
     );
 
     useEffect(() => {

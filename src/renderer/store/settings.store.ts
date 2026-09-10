@@ -296,23 +296,6 @@ const TranscodingConfigSchema = z.object({
     format: z.string().optional(),
 });
 
-/**
- * The rate the AudioContext is built with, and ReplayGain.
- *
- * Named for mpv until the backend went, which is why these two unrelated
- * things share an object: mpv took them as properties and everything it took
- * as a property lived here. They are the web player's now — the rate is the
- * argument to `new AudioContext`, ReplayGain a factor into each slot's gain
- * node — and the mpv-only members (gapless-audio, audio-exclusive,
- * audio-format) went with it.
- */
-const AudioPropertiesSchema = z.object({
-    audioSampleRateHz: z.number().optional(),
-    replayGainClip: z.boolean(),
-    replayGainFallbackDB: z.number().optional(),
-    replayGainMode: z.enum(['album', 'no', 'track']),
-    replayGainPreampDB: z.number().optional(),
-});
 const EqSettingsSchema = z.object({
     bands: z.array(
         z.object({
@@ -709,15 +692,12 @@ const PlayerFilterSchema = z.object({
 
 const PlaybackSettingsSchema = z.object({
     audioDeviceId: z.string().nullable().optional(),
-    audioFadeOnStatusChange: z.boolean(),
-    audioProperties: AudioPropertiesSchema,
     compressor: CompressorSettingsSchema,
     equalizer: EqSettingsSchema,
     filters: z.array(PlayerFilterSchema),
     mediaSession: z.boolean(),
     scrobble: ScrobbleSettingsSchema,
     transcode: TranscodingConfigSchema,
-    webAudio: z.boolean(),
 });
 
 const WindowSettingsSchema = z.object({
@@ -1003,7 +983,6 @@ export interface SettingsSlice extends z.infer<typeof SettingsStateSchema> {
         addCollection: (collection: SavedCollection) => void;
         removeCollection: (id: string) => void;
         reset: () => void;
-        resetSampleRate: () => void;
         setAlbumGroupItems: (items: SortableItem<AlbumGroupItem>[]) => void;
         setArtistItems: (item: SortableItem<ArtistItem>[]) => void;
         setArtistReleaseTypeItems: (item: SortableItem<ArtistReleaseTypeItem>[]) => void;
@@ -1986,14 +1965,6 @@ const initialState: SettingsState = {
     },
     playback: {
         audioDeviceId: undefined,
-        audioFadeOnStatusChange: true,
-        audioProperties: {
-            audioSampleRateHz: 0,
-            replayGainClip: true,
-            replayGainFallbackDB: undefined,
-            replayGainMode: 'no',
-            replayGainPreampDB: 0,
-        },
         compressor: {
             attack: 20,
             enabled: false,
@@ -2032,7 +2003,6 @@ const initialState: SettingsState = {
         transcode: {
             enabled: false,
         },
-        webAudio: true,
     },
     queryBuilder: {
         tag: [],
@@ -2145,11 +2115,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                         reset: () => {
                             localStorage.removeItem('store_settings');
                             window.location.reload();
-                        },
-                        resetSampleRate: () => {
-                            set((state) => {
-                                state.playback.audioProperties.audioSampleRateHz = 0;
-                            });
                         },
                         setAlbumGroupItems: (items: SortableItem<AlbumGroupItem>[]) => {
                             set((state) => {
@@ -2770,32 +2735,17 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                 }
 
                 if (version < 34) {
-                    // The MPV backend went. Two of the settings it owned are
-                    // the web player's — the sample rate and ReplayGain — so
-                    // they are carried across the rename rather than reset;
-                    // someone who had ReplayGain on album mode should not have
-                    // to find it again. The members only mpv could act on
-                    // (gapless-audio, audio-exclusive, audio-format) are not
-                    // copied, and the rest of its keys are deleted so an
-                    // exported settings file does not carry them forward.
+                    // The MPV backend went, and its keys are deleted so an
+                    // exported settings file does not carry them forward. This
+                    // step used to carry the sample rate and ReplayGain across
+                    // the rename as well; both have since gone the same way as
+                    // mpv, and step 43 below would only delete what this one
+                    // wrote.
                     const playback = state.playback as typeof state.playback & {
                         mpvAudioDeviceId?: null | string;
                         mpvExtraParameters?: string[];
-                        mpvProperties?: Partial<SettingsState['playback']['audioProperties']>;
+                        mpvProperties?: unknown;
                         type?: string;
-                    };
-                    const previous = playback.mpvProperties;
-                    const fallback = initialState.playback.audioProperties;
-
-                    playback.audioProperties = {
-                        audioSampleRateHz:
-                            previous?.audioSampleRateHz ?? fallback.audioSampleRateHz,
-                        replayGainClip: previous?.replayGainClip ?? fallback.replayGainClip,
-                        replayGainFallbackDB:
-                            previous?.replayGainFallbackDB ?? fallback.replayGainFallbackDB,
-                        replayGainMode: previous?.replayGainMode ?? fallback.replayGainMode,
-                        replayGainPreampDB:
-                            previous?.replayGainPreampDB ?? fallback.replayGainPreampDB,
                     };
 
                     delete playback.mpvProperties;
@@ -2856,10 +2806,36 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     delete (state.general as { disabledContextMenu?: unknown }).disabledContextMenu;
                 }
 
+                if (version < 43) {
+                    // "Use web audio" turned the audio graph off, and with it
+                    // the equaliser, the compressor, the visualiser, loudness
+                    // levelling and the buffer deck. Nobody wants that; it is
+                    // the only player now, and the switch went.
+                    //
+                    // ReplayGain's four fields went with it. There is one
+                    // loudness switch, Level Volume, and it governs both halves
+                    // — the tags a file carries and the measurement the server
+                    // made — so a mode, a preamp, a clipping toggle and a
+                    // fallback are four ways to disagree with a switch that is
+                    // already on. The sample rate went too: the AudioContext
+                    // takes the device's own rate, which is the one answer that
+                    // never resamples. And the play/pause fade is simply always
+                    // on now.
+                    const playback = state.playback as typeof state.playback & {
+                        audioFadeOnStatusChange?: boolean;
+                        audioProperties?: unknown;
+                        webAudio?: boolean;
+                    };
+
+                    delete playback.audioProperties;
+                    delete playback.audioFadeOnStatusChange;
+                    delete playback.webAudio;
+                }
+
                 return persistedState;
             },
             name: 'store_settings',
-            version: 42,
+            version: 43,
         },
     ),
 );
@@ -2900,9 +2876,6 @@ export const useLayoutHotkeyBindings = () =>
         }),
         shallow,
     );
-
-export const useAudioProperties = () =>
-    useSettingsStore((state) => state.playback.audioProperties, shallow);
 
 export const useLyricsSettings = () => useSettingsStore((state) => state.lyrics, shallow);
 

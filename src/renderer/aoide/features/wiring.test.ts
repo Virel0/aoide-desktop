@@ -1165,6 +1165,10 @@ describe('the exact join: a buffer deck takes the boundary, or the elements keep
     it('hands the track back on a pause, a seek, a skip or a queue that moved', () => {
         expect(hook).toContain('onPlayerSeekToTimestamp: () => {');
         expect(hook).toContain('onPlayerStatus: (properties) => {');
+        // And a pause fades out on the way. The buffer is a decoded stretch of
+        // audio being cut off mid-sample; stopping it dead is a click, which is
+        // exactly what a person hears when a fade length quietly becomes zero.
+        expect(hook).toContain('relinquish({ fadeSeconds: PAUSE_FADE_SECONDS })');
         expect(hook).toContain('onQueueCleared: () => relinquish()');
         expect(hook).toContain('if (deckRef.current?.currentId() !== currentId)');
         expect(hook).toContain("elementFor(num)?.ref?.seekTo(position, 'seconds')");

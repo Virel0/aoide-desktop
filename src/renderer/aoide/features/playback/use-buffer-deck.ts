@@ -21,7 +21,6 @@ import { PlayerRepeat, PlayerStatus } from '/@/shared/types/types';
 
 export interface BufferDeckArgs {
     /** Whether a pause is faded. The deck rides its own fader down to match. */
-    audioFadeOnStatusChange: boolean;
     currentSong: QueueSong | undefined;
     isMuted: boolean;
     /** Aoide's plan for this pair, or null when its mixer is switched off. */
@@ -533,7 +532,6 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
         }
     }, [blending, relinquish, repeatingOne]);
 
-    const fadeOnPause = args.audioFadeOnStatusChange;
     usePlayerEvents(
         {
             onPlayerSeekToTimestamp: () => {
@@ -544,11 +542,11 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
             onPlayerStatus: (properties) => {
                 if (properties.status === PlayerStatus.PLAYING) return;
                 if (!engagedRef.current && !planned.current) return;
-                relinquish({ fadeSeconds: fadeOnPause ? PAUSE_FADE_SECONDS : 0 });
+                relinquish({ fadeSeconds: PAUSE_FADE_SECONDS });
             },
             onQueueCleared: () => relinquish(),
         },
-        [fadeOnPause, relinquish],
+        [relinquish],
     );
 
     useEffect(() => clearTimers, [clearTimers]);

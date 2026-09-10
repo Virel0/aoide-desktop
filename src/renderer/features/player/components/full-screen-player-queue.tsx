@@ -8,7 +8,7 @@ import styles from './full-screen-player-queue.module.css';
 import { Lyrics } from '/@/renderer/features/lyrics/lyrics';
 import { PlayQueue } from '/@/renderer/features/now-playing/components/play-queue';
 import { FullScreenSimilarSongs } from '/@/renderer/features/player/components/full-screen-similar-songs';
-import { usePlaybackSettings, useSettingsStore } from '/@/renderer/store';
+import { useSettingsStore } from '/@/renderer/store';
 import {
     useFullScreenPlayerStore,
     useFullScreenPlayerStoreActions,
@@ -33,7 +33,6 @@ export const FullScreenPlayerQueue = () => {
     const { t } = useTranslation();
     const { activeTab, opacity } = useFullScreenPlayerStore();
     const { setStore } = useFullScreenPlayerStoreActions();
-    const { webAudio } = usePlaybackSettings();
     const visualizerType = useSettingsStore((store) => store.visualizer.type);
 
     const headerItems = useMemo(() => {
@@ -55,16 +54,14 @@ export const FullScreenPlayerQueue = () => {
             },
         ];
 
-        if (webAudio) {
-            items.push({
-                active: activeTab === 'visualizer',
-                label: t('page.fullscreenPlayer.visualizer'),
-                onClick: () => setStore({ activeTab: 'visualizer' }),
-            });
-        }
+        items.push({
+            active: activeTab === 'visualizer',
+            label: t('page.fullscreenPlayer.visualizer'),
+            onClick: () => setStore({ activeTab: 'visualizer' }),
+        });
 
         return items;
-    }, [activeTab, setStore, t, webAudio]);
+    }, [activeTab, setStore, t]);
 
     return (
         <div
@@ -119,7 +116,7 @@ export const FullScreenPlayerQueue = () => {
                 </div>
             ) : activeTab === 'lyrics' ? (
                 <Lyrics fadeOutNoLyricsMessage={false} />
-            ) : activeTab === 'visualizer' && webAudio ? (
+            ) : activeTab === 'visualizer' ? (
                 <Suspense fallback={<></>}>
                     {visualizerType === 'butterchurn' ? (
                         <ButterchurnVisualizer />

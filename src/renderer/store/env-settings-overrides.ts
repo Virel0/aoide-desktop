@@ -340,12 +340,6 @@ const ENV_SETTING_SPECS: EnvSettingSpec[] = [
     },
     { key: 'FS_GENERAL_ZOOM_FACTOR', path: ['general', 'zoomFactor'], type: 'num' },
     { key: 'FS_PLAYBACK_MEDIA_SESSION', path: ['playback', 'mediaSession'], type: 'bool' },
-    { key: 'FS_PLAYBACK_WEB_AUDIO', path: ['playback', 'webAudio'], type: 'bool' },
-    {
-        key: 'FS_PLAYBACK_AUDIO_FADE_ON_STATUS_CHANGE',
-        path: ['playback', 'audioFadeOnStatusChange'],
-        type: 'bool',
-    },
     { key: 'FS_PLAYBACK_PRESERVE_PITCH', path: ['playback', 'preservePitch'], type: 'bool' },
     {
         key: 'FS_PLAYBACK_SCROBBLE_ENABLED',

@@ -9,11 +9,7 @@ import { VISUALIZER_FULLSCREEN_TARGET_ID } from '/@/renderer/hooks/use-fullscree
 import { useHotkeys } from '/@/renderer/hooks/use-hotkeys';
 import { useIsMobile } from '/@/renderer/hooks/use-is-mobile';
 import { useFullScreenPlayerStoreActions } from '/@/renderer/store/full-screen-player.store';
-import {
-    usePlaybackSettings,
-    useSettingsStore,
-    useWindowSettings,
-} from '/@/renderer/store/settings.store';
+import { useSettingsStore, useWindowSettings } from '/@/renderer/store/settings.store';
 import { Platform } from '/@/shared/types/types';
 
 const AudioMotionAnalyzerVisualizer = lazy(() =>
@@ -132,7 +128,6 @@ VisualizerContainer.displayName = 'VisualizerContainer';
 export const FullScreenVisualizer = () => {
     const { setStore } = useFullScreenPlayerStoreActions();
     const { windowBarStyle } = useWindowSettings();
-    const { webAudio } = usePlaybackSettings();
     const visualizerType = useSettingsStore((store) => store.visualizer.type);
     const isMobile = useIsMobile();
 
@@ -170,15 +165,13 @@ export const FullScreenVisualizer = () => {
     return (
         <VisualizerContainer isMobile={isMobile} windowBarStyle={windowBarStyle}>
             <div className={styles.visualizerContainer} id={VISUALIZER_FULLSCREEN_TARGET_ID}>
-                {webAudio ? (
-                    <Suspense fallback={<></>}>
-                        {visualizerType === 'butterchurn' ? (
-                            <ButterchurnVisualizer />
-                        ) : (
-                            <AudioMotionAnalyzerVisualizer />
-                        )}
-                    </Suspense>
-                ) : null}
+                <Suspense fallback={<></>}>
+                    {visualizerType === 'butterchurn' ? (
+                        <ButterchurnVisualizer />
+                    ) : (
+                        <AudioMotionAnalyzerVisualizer />
+                    )}
+                </Suspense>
                 <FullScreenVisualizerSongInfo />
             </div>
         </VisualizerContainer>
