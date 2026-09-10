@@ -258,6 +258,60 @@ describe('the search people actually click', () => {
     });
 });
 
+describe('collapsing the sidebar still reaches the Aoide rows', () => {
+    // The report: collapse the sidebar and Mixes, Import, Replay and every Aoide
+    // playlist vanish. `collapsed-sidebar.tsx` draws `general.sidebarItems` and
+    // nothing else; the Aoide section is an accordion item `sidebar.tsx` renders
+    // beside that list, so the collapsed one never had it. Nothing else reached
+    // those routes either — no sidebar item points at `/aoide/...`, and the
+    // command palette's "go to" list is Feishin's own routes.
+    const collapsed = readFileSync(
+        join(import.meta.dirname, '../../features/sidebar/components/collapsed-sidebar.tsx'),
+        'utf8',
+    );
+    const expanded = sourceOf('sidebar/aoide-sidebar-list.tsx');
+    const item = sourceOf('sidebar/aoide-collapsed-sidebar-item.tsx');
+
+    it('renders the Aoide entry in the collapsed sidebar', () => {
+        expect(collapsed).toContain(
+            "import { AoideCollapsedSidebarItem } from '/@/renderer/aoide/features/sidebar/aoide-collapsed-sidebar-item'",
+        );
+        expect(collapsed).toContain('<AoideCollapsedSidebarItem />');
+    });
+
+    // The whole destination, not the route name: `AppRoute.AOIDE_PLAYLISTS` is a
+    // prefix of `AppRoute.AOIDE_PLAYLISTS_DETAIL`, so a bare substring check
+    // passes with the "all playlists" row deleted.
+    it('offers every destination the expanded section does', () => {
+        for (const route of ['AOIDE_MIX', 'AOIDE_IMPORT', 'AOIDE_REPLAY', 'AOIDE_PLAYLISTS']) {
+            expect(expanded, route).toContain(`to={AppRoute.${route}}`);
+            expect(item, route).toContain(`to={AppRoute.${route}}`);
+        }
+    });
+
+    it('lists the same playlists, from the same query', () => {
+        expect(item).toContain('useAoidePlaylistList()');
+        expect(expanded).toContain('generatePath(AppRoute.AOIDE_PLAYLISTS_DETAIL, {');
+        expect(item).toContain('generatePath(AppRoute.AOIDE_PLAYLISTS_DETAIL, {');
+    });
+
+    // Present in one sidebar and absent from the other would be worse than the
+    // bug: both must answer to the surface preference and to whether there is a
+    // main process holding the store at all.
+    it('hides on the same two conditions the expanded section does', () => {
+        expect(item).toContain('isAoideAvailable()');
+        expect(item).toContain('showsAoidePlaylists(surface)');
+    });
+
+    // A dropdown off one row, which is what the collapsed sidebar already does
+    // with a list it cannot show — Collections is the same shape.
+    it('opens as a dropdown hung off a collapsed row', () => {
+        expect(item).toContain('<DropdownMenu.Target>');
+        expect(item).toContain('<CollapsedSidebarItem');
+        expect(item).toContain('component={Flex}');
+    });
+});
+
 describe('mixes', () => {
     const screen = sourceOf('mix/aoide-mix.tsx');
     const hook = sourceOf('mix/use-mix.ts');

@@ -6,6 +6,7 @@ import { Link, NavLink, useNavigate } from 'react-router';
 
 import styles from './collapsed-sidebar.module.css';
 
+import { AoideCollapsedSidebarItem } from '/@/renderer/aoide/features/sidebar/aoide-collapsed-sidebar-item';
 import { useScanStatus } from '/@/renderer/features/shared/hooks/use-scan-status';
 import { CollapsedSidebarButton } from '/@/renderer/features/sidebar/components/collapsed-sidebar-button';
 import { CollapsedSidebarItem } from '/@/renderer/features/sidebar/components/collapsed-sidebar-item';
@@ -172,6 +173,7 @@ export const CollapsedSidebar = () => {
                         />
                     ),
                 )}
+                <AoideCollapsedSidebarItem />
             </ScrollArea>
         </motion.div>
     );
