@@ -5,6 +5,7 @@ import { Link, useParams } from 'react-router';
 
 import styles from './album-detail-header.module.css';
 
+import { AoideAlbumFinishRate } from '/@/renderer/aoide/features/finish-rate/aoide-finish-rate';
 import {
     rememberAlbum,
     rememberStation,
@@ -129,6 +130,15 @@ export const AlbumDetailHeader = forwardRef<HTMLDivElement>((_props, ref) => {
 
     const releaseYear = detailQuery?.data?.releaseYear;
     const releaseDate = detailQuery?.data?.releaseDate;
+
+    // The tracklist this page already has, which is what the finish rate is
+    // summed over. Memoised because it is a query key: a fresh array of the
+    // same ids on every render is a fresh key, and the figure would be refetched
+    // for every keystroke elsewhere on the page.
+    const finishRateTrackIds = useMemo(
+        () => (detailQuery?.data?.songs ?? []).map((song) => song.id),
+        [detailQuery?.data?.songs],
+    );
 
     const metadataItems = useMemo(() => {
         const items: Array<{ id: string; value: React.ReactNode | string | undefined }> = [];
@@ -278,6 +288,14 @@ export const AlbumDetailHeader = forwardRef<HTMLDivElement>((_props, ref) => {
                                 <Text fw={400}>{item.value}</Text>
                             </Fragment>
                         ))}
+                        {/*
+                         * Last on the line that already says how many tracks
+                         * and how many plays, because it is the same kind of
+                         * fact — and the only one here the server could not
+                         * have told us. It renders nothing, separator included,
+                         * until there is enough listening to be honest about.
+                         */}
+                        <AoideAlbumFinishRate jellyfinIds={finishRateTrackIds} />
                     </Group>
                     <Group className={styles.metadataGroup}>
                         <JoinedArtists

@@ -23,6 +23,10 @@
             "playNoneResolved": "None of these tracks are in your library on this server.",
             "remove": "Could not remove the track"
         },
+        "finishRate": {
+            "album": "You finish {{percent}}% of this album",
+            "artist": "You finish {{percent}}% of this artist\u2019s songs"
+        },
         "form": {
             "createTitle": "New Aoide playlist",
             "deleteConfirm": "Delete \"{{name}}\"?",

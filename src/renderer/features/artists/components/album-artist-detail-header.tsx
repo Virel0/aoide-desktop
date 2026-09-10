@@ -5,6 +5,7 @@ import { useParams } from 'react-router';
 
 import styles from './album-artist-detail-header.module.css';
 
+import { AoideArtistFinishRate } from '/@/renderer/aoide/features/finish-rate/aoide-finish-rate';
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
 import { artistsQueries } from '/@/renderer/features/artists/api/artists-api';
 import { getArtistAlbumsGrouped } from '/@/renderer/features/artists/hooks/use-artist-albums-grouped';
@@ -297,6 +298,15 @@ export const AlbumArtistDetailHeader = forwardRef<HTMLDivElement, AlbumArtistDet
                                     <Text isMuted={item.secondary}>{item.value}</Text>
                                 </Fragment>
                             ))}
+                        {/*
+                         * Beside the album and track counts, and last, for the
+                         * same reason as on an album: it is one more small fact
+                         * about this artist, and the only one on the line that
+                         * comes from how you actually listen rather than from
+                         * the library. Nothing is drawn until there is enough
+                         * history to say it honestly.
+                         */}
+                        <AoideArtistFinishRate artist={detailQuery.data?.name} />
                     </Group>
                     <LibraryHeaderMenu
                         favorite={detailQuery.data?.userFavorite}

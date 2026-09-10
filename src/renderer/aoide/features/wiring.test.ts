@@ -1153,3 +1153,118 @@ describe('the Flatpak can find the mpv it ships', () => {
         expect(player).toContain('...fromPath, ...MPV_BINARY_CANDIDATES');
     });
 });
+
+describe('the finish rate, surfaced where you browse', () => {
+    const component = sourceOf('finish-rate/aoide-finish-rate.tsx');
+    const hook = sourceOf('finish-rate/use-finish-rate.ts');
+    const album = readFileSync(
+        join(import.meta.dirname, '../../features/albums/components/album-detail-header.tsx'),
+        'utf8',
+    );
+    const artist = readFileSync(
+        join(
+            import.meta.dirname,
+            '../../features/artists/components/album-artist-detail-header.tsx',
+        ),
+        'utf8',
+    );
+    const preload = readFileSync(join(import.meta.dirname, '../../../preload/aoide.ts'), 'utf8');
+    const main = readFileSync(
+        join(import.meta.dirname, '../../../main/features/aoide/index.ts'),
+        'utf8',
+    );
+
+    // A component that is written and not mounted shows exactly as much as
+    // none, which is the failure the play recorder already shipped with once.
+    it('is mounted on the album page, over the tracklist that page already has', () => {
+        expect(album).toContain('<AoideAlbumFinishRate ');
+        expect(album).toContain('jellyfinIds={finishRateTrackIds}');
+        expect(album).toContain('(detailQuery?.data?.songs ?? []).map((song) => song.id)');
+    });
+
+    it('is mounted on the artist page, under the name that page is showing', () => {
+        expect(artist).toContain('<AoideArtistFinishRate ');
+        expect(artist).toContain('artist={detailQuery.data?.name}');
+    });
+
+    it('is published by preload and handled by main', () => {
+        expect(preload).toContain("ipcRenderer.invoke('aoide:history-finish-rates'");
+        expect(preload).toContain("ipcRenderer.invoke('aoide:history-finish-rate-artist'");
+        expect(main).toContain("'aoide:history-finish-rates'");
+        expect(main).toContain("'aoide:history-finish-rate-artist'");
+    });
+
+    // One crossing of the process boundary for the whole record. The batched
+    // call in the main process exists for this, and a page that asked per row
+    // would quietly undo it.
+    it('asks once for the whole tracklist', () => {
+        expect(hook).toContain('window.api.aoide.history.finishRates([...jellyfinIds])');
+        expect(hook).not.toMatch(/\.map\([^)]*finishRates/);
+    });
+
+    // Nothing at all below the floor: no dash, no "not enough plays yet", not
+    // even the separator that would precede it.
+    it('renders nothing when there is no figure', () => {
+        expect(component).toContain('if (percent === undefined) return null;');
+        expect(component).not.toMatch(/'—'|"—"|toFixed/);
+    });
+
+    /**
+     * The one rule this feature is allowed to have, and the one place it lives.
+     *
+     * `finish-rate.ts` is a reimplementation target: the phone will be handed
+     * the same three rules verbatim, exactly as it was for `play-definition.ts`.
+     * A screen that compared against its own `3`, or divided its own counts,
+     * would be a second definition — and the symptom is an album reading 78%
+     * here and 71% there from the very same synced events, which nobody can
+     * report usefully.
+     */
+    it('keeps the threshold and the aggregation in the shared module alone', () => {
+        const sources = (root: string): string[] =>
+            readdirSync(root, { recursive: true, withFileTypes: true })
+                .filter(
+                    (entry) =>
+                        entry.isFile() &&
+                        /\.tsx?$/.test(entry.name) &&
+                        !/\.test\.tsx?$/.test(entry.name),
+                )
+                .map((entry) => join(entry.parentPath, entry.name));
+
+        const shared = readFileSync(
+            join(import.meta.dirname, '../../../shared/aoide/finish-rate.ts'),
+            'utf8',
+        );
+
+        // Not vacuous: the rules really are in there, so the sweep below means
+        // "only here" rather than "nowhere".
+        expect(shared).toContain('MINIMUM_FINISH_SAMPLE = 3');
+        expect(shared).toContain('counts.starts < MINIMUM_FINISH_SAMPLE');
+        expect(shared).toContain('total.completed += one.completed');
+        expect(shared).toContain('total.starts += one.starts');
+
+        const elsewhere = [
+            ...sources(join(import.meta.dirname, '..')),
+            ...sources(join(import.meta.dirname, '../../../main/features/aoide')),
+            join(import.meta.dirname, '../../features/albums/components/album-detail-header.tsx'),
+            join(
+                import.meta.dirname,
+                '../../features/artists/components/album-artist-detail-header.tsx',
+            ),
+        ];
+        expect(elsewhere.length).toBeGreaterThan(1);
+
+        for (const file of elsewhere) {
+            const text = readFileSync(file, 'utf8');
+            // A second floor, whether by constant or by literal.
+            expect(text, file).not.toMatch(/MINIMUM_FINISH_SAMPLE\s*=/);
+            expect(text, file).not.toMatch(/\bstarts\s*[<>]=?\s*\d/);
+            // A second division: the ratio is the shared module's to take.
+            expect(text, file).not.toMatch(/completed\s*\/\s*[\w.]*starts/);
+        }
+
+        // The renderer sums through the shared helper rather than by hand, so
+        // an album is its tracks' counts added up and not their rates averaged.
+        expect(hook).toContain('finishRatePercent(totalFinishCounts(Object.values(query.data)))');
+        expect(hook).not.toMatch(/reduce\(/);
+    });
+});
