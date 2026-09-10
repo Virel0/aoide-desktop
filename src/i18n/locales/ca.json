@@ -91,8 +91,7 @@
             "goToAlbumArtist": "Ves a $t(entity.albumArtist, {\"count\": 1})",
             "goToAlbum": "Ves a $t(entity.album, {\"count\": 1})",
             "moveItems": "$t(action.moveItems)",
-            "goTo": "Ves a",
-            "editMetadata": "Edita les metadades"
+            "goTo": "Ves a"
         },
         "genreList": {
             "title": "$t(entity.genre, {\"count\": 2})",
@@ -202,26 +201,9 @@
             "copyPath": "Copia ruta al porta-retalls",
             "copiedPath": "Ruta copiada correctament",
             "openFile": "Mostra la pista al gestor d'arxius",
-            "tagConfiguration": "Configuració d'etiquetes",
-            "addTagConfig": "Afegeix una etiqueta…",
             "multiValueToggle": "Valors múltiples",
-            "autocompleteSource": "Completa la font automàticament",
-            "customValues": "Valors personalitzats",
             "addCustomValue": "Afegeix un valor personalitzat…",
-            "serverSuggestions": "Servidor",
-            "fileNotWritable": "L'arxiu no és accessible o editable",
-            "triggerRescan": "Fes un nou escaneig de la biblioteca després de desar",
-            "addField": "Afegeix un camp…",
-            "emptyFields": "Els camps no poden estar buits",
-            "tagsTab": "Etiquetes",
-            "artworkTab": "Il·lustració",
-            "removeArtwork": "Elimina la il·lustració",
-            "noArtwork": "Sense il·lustració",
-            "multipleValues": "(Valors múltiples)",
-            "multipleArtworks": "Múltiples il·lustracions",
-            "noLocalSongs": "No s'ha trobat cap cançó amb ruta d'arxiu local",
-            "readPartialFailure": "No s'han pogut llegir les metadades de {{count}} de {{total}} arxiu(s)",
-            "writePartialFailure": "Error en desar {{count}} arxiu(s)"
+            "multipleArtworks": "Múltiples il·lustracions"
         },
         "playlist": {
             "reorder": "El reordenament només s'activa quan s'ordena per ID"
@@ -373,7 +355,6 @@
         "numberOfResults": "{{numberOfResults}} resultats",
         "back": "Enrere",
         "openFolder": "Obre la carpeta",
-        "saveAndClose": "Desa i tanca",
         "undo": "Desfés",
         "lastScan": "Darrer escaneig: {{date}}",
         "scanFolderCount": "{{count}} carpetes",

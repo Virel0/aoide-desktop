@@ -174,7 +174,6 @@
         "grouping": "Grupowanie",
         "back": "Wstecz",
         "openFolder": "Otwórz folder",
-        "saveAndClose": "Zapisz i zamknij",
         "undo": "Cofnij",
         "lastScan": "Ostatnie skanowanie {{date}}",
         "scanFolderCount": "{{count}} folderów",
@@ -530,8 +529,7 @@
             "goToAlbum": "Przejdź do $t(entity.album, {\"count\": 1})",
             "goToAlbumArtist": "Przejdź do $t(entity.albumArtist, {\"count\": 1})",
             "moveItems": "$t(action.moveItems)",
-            "goTo": "Przejdź do",
-            "editMetadata": "Edytuj metadane"
+            "goTo": "Przejdź do"
         },
         "albumDetail": {
             "moreFromArtist": "Więcej od $t(entity.artist, {\"count\": 1})",
@@ -640,26 +638,9 @@
             "copyPath": "Kopiuj ścieżkę do schowka",
             "copiedPath": "Ścieżka została skopiowana pomyślnie",
             "openFile": "Pokaż utwór w menedżerze plików",
-            "tagConfiguration": "Konfiguracja tagów",
-            "addTagConfig": "Dodaj tag…",
             "multiValueToggle": "Wielowartościowy",
-            "autocompleteSource": "Źródło autowypełniania",
-            "customValues": "Niestandardowe wartości",
             "addCustomValue": "Dodaj niestandardową wartość…",
-            "serverSuggestions": "Serwer",
-            "fileNotWritable": "Plik nie jest dostępny lub zapisywalny",
-            "triggerRescan": "Uruchom ponowne skanowanie biblioteki po zapisaniu",
-            "addField": "Dodaj pole…",
-            "emptyFields": "Pola nie mogą być puste",
-            "tagsTab": "Tagi",
-            "artworkTab": "Okładka",
-            "removeArtwork": "Usuń okładkę",
-            "noArtwork": "Brak okładki",
-            "multipleValues": "(Wiele wartości)",
-            "multipleArtworks": "Wiele okładek",
-            "noLocalSongs": "Nie znaleziono piosenek z lokalnymi ścieżkami",
-            "readPartialFailure": "Nie udało się odczytać metadanych z {{count}} na {{total}} plik(ów)",
-            "writePartialFailure": "Nie udało się zapisać {{count}} plik(ów)"
+            "multipleArtworks": "Wiele okładek"
         },
         "manageServers": {
             "title": "Zarządzaj serwerami",

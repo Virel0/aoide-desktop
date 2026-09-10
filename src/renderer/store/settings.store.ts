@@ -808,35 +808,6 @@ const AutoDJSettingsSchema = z.object({
     timing: z.number(),
 });
 
-const TagAutocompleteSourceSchema = z.string();
-
-const TagConfigSchema = z.object({
-    autocompleteSource: TagAutocompleteSourceSchema,
-    customValues: z.array(z.string()),
-    multiValue: z.boolean(),
-});
-
-const TagEditorSettingsSchema = z.object({
-    tagConfigs: z.record(z.string(), TagConfigSchema),
-    triggerRescan: z.boolean(),
-});
-
-export type TagAutocompleteSource = string;
-export type TagConfig = z.infer<typeof TagConfigSchema>;
-
-export const SERVER_TAG_AUTOCOMPLETE_PREFIX = 'tag:';
-
-export const isServerTagAutocompleteSource = (source: string): boolean =>
-    source.startsWith(SERVER_TAG_AUTOCOMPLETE_PREFIX);
-
-export const getServerTagAutocompleteName = (source: string): null | string =>
-    isServerTagAutocompleteSource(source)
-        ? source.slice(SERVER_TAG_AUTOCOMPLETE_PREFIX.length)
-        : null;
-
-export const toServerTagAutocompleteSource = (tagName: string): string =>
-    `${SERVER_TAG_AUTOCOMPLETE_PREFIX}${tagName}`;
-
 /**
  * This schema is used for validation of the imported settings json
  */
@@ -860,7 +831,6 @@ export const ValidationSettingsStateSchema = z.object({
         z.literal('window'),
         z.string(),
     ]),
-    tagEditor: TagEditorSettingsSchema,
     visualizer: VisualizerSettingsSchema,
     window: WindowSettingsSchema,
 });
@@ -2113,56 +2083,6 @@ const initialState: SettingsState = {
         username: 'aoide',
     },
     tab: 'general',
-    tagEditor: {
-        tagConfigs: {
-            albumArtist: {
-                autocompleteSource: 'serverArtists',
-                customValues: [],
-                multiValue: false,
-            },
-            ALBUMARTISTS: {
-                autocompleteSource: 'serverArtists',
-                customValues: [],
-                multiValue: true,
-            },
-            albumArtistSort: {
-                autocompleteSource: 'serverArtists',
-                customValues: [],
-                multiValue: false,
-            },
-            ALBUMARTISTSSORT: {
-                autocompleteSource: 'serverArtists',
-                customValues: [],
-                multiValue: false,
-            },
-            artist: {
-                autocompleteSource: 'serverArtists',
-                customValues: [],
-                multiValue: true,
-            },
-            ARTISTS: {
-                autocompleteSource: 'serverArtists',
-                customValues: [],
-                multiValue: true,
-            },
-            artistSort: {
-                autocompleteSource: 'serverArtists',
-                customValues: [],
-                multiValue: false,
-            },
-            ARTISTSSORT: {
-                autocompleteSource: 'serverArtists',
-                customValues: [],
-                multiValue: false,
-            },
-            genre: {
-                autocompleteSource: 'serverGenres',
-                customValues: [],
-                multiValue: true,
-            },
-        },
-        triggerRescan: true,
-    },
     visualizer: {
         audiomotionanalyzer: {
             alphaBars: false,
@@ -2855,7 +2775,15 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                 }
 
                 if (version < 32) {
-                    const tagConfigs = state.tagEditor?.tagConfigs;
+                    // The tag editor is gone, and this step is the only thing
+                    // that still names it: it has to keep running, because a
+                    // store old enough to need it is old enough to need every
+                    // step after it too.
+                    const tagConfigs = (
+                        state as SettingsSlice & {
+                            tagEditor?: { tagConfigs?: Record<string, { multiValue: boolean }> };
+                        }
+                    ).tagEditor?.tagConfigs;
                     if (tagConfigs) {
                         for (const key of [
                             'albumArtistSort',
@@ -2938,10 +2866,19 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     );
                 }
 
+                if (version < 38) {
+                    // The tag editor's own settings — every tag's autocomplete
+                    // source, its custom values and whether it takes more than
+                    // one — have nothing left to configure. Deleted here rather
+                    // than left to rot, so an exported settings file does not
+                    // hand them to the next install.
+                    delete (state as SettingsSlice & { tagEditor?: unknown }).tagEditor;
+                }
+
                 return persistedState;
             },
             name: 'store_settings',
-            version: 37,
+            version: 38,
         },
     ),
 );
@@ -3001,8 +2938,6 @@ export const useCssSettings = () => useSettingsStore((state) => state.css, shall
 
 export const useQueryBuilderSettings = () =>
     useSettingsStore((state) => state.queryBuilder, shallow);
-
-export const useTagEditorSettings = () => useSettingsStore((state) => state.tagEditor, shallow);
 
 const getSettingsStoreVersion = () => useSettingsStore.persist.getOptions().version!;
 

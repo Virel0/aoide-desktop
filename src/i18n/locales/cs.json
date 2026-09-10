@@ -682,7 +682,6 @@
         "grouping": "Seskupování",
         "back": "Zpět",
         "openFolder": "Otevřít složku",
-        "saveAndClose": "Uložit a zavřít",
         "undo": "Vrátit",
         "lastScan": "Poslední sken {{date}}",
         "scanFolderCount": "{{count}} složek",
@@ -994,8 +993,7 @@
             "goToAlbum": "Přejít na $t(entity.album, {\"count\": 1})",
             "goToAlbumArtist": "Přejít na $t(entity.albumArtist, {\"count\": 1})",
             "moveItems": "$t(action.moveItems)",
-            "goTo": "Přejít na",
-            "editMetadata": "Upravit metadata"
+            "goTo": "Přejít na"
         },
         "home": {
             "mostPlayed": "Nejpřehrávanější",
@@ -1087,26 +1085,9 @@
             "copiedPath": "Cesta úspěšně zkopírována",
             "copyPath": "Kopírovat cestu do schránky",
             "openFile": "Zobrazit skladbu ve správci souborů",
-            "tagConfiguration": "Nastavení štítků",
-            "addTagConfig": "Přidat štítek…",
             "multiValueToggle": "Více hodnot",
-            "autocompleteSource": "Automatické dokončení zdroje",
-            "customValues": "Vlastní hodnoty",
             "addCustomValue": "Přidat vlastní hodnotu…",
-            "serverSuggestions": "Server",
-            "fileNotWritable": "Soubor není přístupný nebo zapisovatelný",
-            "triggerRescan": "Spustit opětovný sken knihovny po uložení",
-            "addField": "Přidat pole…",
-            "emptyFields": "Pole nemohou být prázdná",
-            "tagsTab": "Štítky",
-            "artworkTab": "Obal",
-            "removeArtwork": "Odstranit obal",
-            "noArtwork": "Žádný obal",
-            "multipleValues": "(Více hodnot)",
-            "multipleArtworks": "Více obalů",
-            "noLocalSongs": "Nenalezeny žádné skladby s lokálními cestami k souborům",
-            "readPartialFailure": "Nepodařilo se přečíst metadata {{count}} z {{total}} souborů",
-            "writePartialFailure": "Nepodařilo se uložit {{count}} soubor(ů)"
+            "multipleArtworks": "Více obalů"
         },
         "playlist": {
             "reorder": "Změna pořadí povolena pouze při řazení podle ID"

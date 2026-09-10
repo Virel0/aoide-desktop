@@ -4,7 +4,6 @@ import { AddToAoidePlaylistAction } from '/@/renderer/aoide/features/playlists/a
 import { TasteFlagActions } from '/@/renderer/aoide/features/taste/taste-flag-actions';
 import { AddToPlaylistAction } from '/@/renderer/features/context-menu/actions/add-to-playlist-action';
 import { DownloadAction } from '/@/renderer/features/context-menu/actions/download-action';
-import { EditMetadataAction } from '/@/renderer/features/context-menu/actions/edit-metadata-action';
 import { GetInfoAction } from '/@/renderer/features/context-menu/actions/get-info-action';
 import { GoToAction } from '/@/renderer/features/context-menu/actions/go-to-action';
 import { MoveQueueItemsAction } from '/@/renderer/features/context-menu/actions/move-queue-items-action';
@@ -53,7 +52,6 @@ export const QueueContextMenu = ({ items }: QueueContextMenuProps) => {
             <GoToAction items={items} />
             <ShowInFileExplorerAction items={items} />
             <ContextMenu.Divider />
-            <EditMetadataAction songs={items} />
             <GetInfoAction disabled={items.length === 0} items={items} />
         </ContextMenu.Content>
     );

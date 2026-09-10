@@ -175,7 +175,6 @@
         "numberOfResults": "Найдено {{numberOfResults}} результатов",
         "back": "Назад",
         "openFolder": "Открыть папку",
-        "saveAndClose": "Сохранить и закрыть",
         "undo": "Отменить",
         "lastScan": "Последнее сканирование {{date}}",
         "scanFolderCount": "{{count}} папок",
@@ -590,8 +589,7 @@
             "moveToNext": "$t(action.moveToNext)",
             "playShuffled": "$t(player.shuffle)",
             "moveItems": "$t(action.moveItems)",
-            "playSimilarSongs": "$t(player.playSimilarSongs)",
-            "editMetadata": "Редактировать метаданные"
+            "playSimilarSongs": "$t(player.playSimilarSongs)"
         },
         "home": {
             "mostPlayed": "Самые прослушиваемые",
@@ -679,26 +677,9 @@
             "copyPath": "Скопировать путь в буфер обмена",
             "openFile": "Показать трек в файловом менеджере",
             "copiedPath": "Путь успешно скопирован",
-            "addTagConfig": "Добавить тег…",
-            "autocompleteSource": "Источник автозаполнения",
-            "customValues": "Пользовательские значения",
             "addCustomValue": "Добавить пользовательский градиент…",
-            "serverSuggestions": "Сервер",
-            "fileNotWritable": "Файл недоступен или нет прав на запись",
-            "triggerRescan": "Запустить повторное сканирование библиотеки после сохранения",
-            "addField": "Добавить поле…",
-            "emptyFields": "Поля не могут быть пустыми",
-            "artworkTab": "Обложка",
-            "removeArtwork": "Удалить обложку",
-            "noArtwork": "Обложка отсутствует",
-            "multipleValues": "(Несколько)",
             "multipleArtworks": "Несколько обложек",
-            "noLocalSongs": "Не найдено песен с локальными путями к файлам",
-            "readPartialFailure": "Не удалось прочитать метаданные из {{count}} из {{total}} файла(ов)",
-            "writePartialFailure": "Не удалось сохранить {{count}} файл(ов)",
-            "tagConfiguration": "Конфигурация тегов",
-            "multiValueToggle": "Множественное значение",
-            "tagsTab": "Теги"
+            "multiValueToggle": "Множественное значение"
         },
         "windowBar": {
             "privateMode": "(Приватный режим)",

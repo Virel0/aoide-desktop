@@ -230,7 +230,6 @@
         "numberOfResults": "{{numberOfResults}} résultats",
         "back": "Retour",
         "openFolder": "Ouvrir le dossier",
-        "saveAndClose": "Enregistrer et fermer",
         "undo": "Annuler",
         "lastScan": "Dernière analyse {{date}}",
         "scanFolderCount": "{{count}} dossiers",
@@ -460,8 +459,7 @@
             "goToAlbumArtist": "Aller à l'$t(entity.albumArtist, {\"count\": 1})",
             "goToAlbum": "Aller à l'$t(entity.album, {\"count\": 1})",
             "moveItems": "$t(action.moveItems)",
-            "goTo": "Aller à",
-            "editMetadata": "Modifier les Métadonnées"
+            "goTo": "Aller à"
         },
         "albumArtistList": {
             "title": "$t(entity.albumArtist, {\"count\": 2})"
@@ -505,26 +503,9 @@
             "copyPath": "Copier le chemin dans le presse-papiers",
             "openFile": "Afficher la piste dans le gestionnaire de fichiers",
             "copiedPath": "Chemin copié avec succès",
-            "tagConfiguration": "Configuration des Tags",
-            "addTagConfig": "Ajouter un tag…",
             "multiValueToggle": "Valeurs multiples",
-            "autocompleteSource": "Source de saisie automatique",
-            "customValues": "Valeurs personnalisées",
             "addCustomValue": "Ajouter une valeur personnalisée…",
-            "serverSuggestions": "Serveur",
-            "fileNotWritable": "Le fichier est inaccessible ou non modifiable",
-            "triggerRescan": "Déclencher une nouvelle analyse de la bibliothèque après l'enregistrement",
-            "addField": "Ajouter un champs…",
-            "emptyFields": "Le champs ne peut pas être vide",
-            "tagsTab": "Tags",
-            "artworkTab": "Artwork",
-            "removeArtwork": "Supprimer l'Artwork",
-            "noArtwork": "Aucun Artwork",
-            "multipleValues": "(Valeurs multiples)",
-            "multipleArtworks": "Artworks multiple",
-            "noLocalSongs": "Aucun titres avec des chemins d'accès locaux trouvée",
-            "readPartialFailure": "Impossible de lire les métadonnées de {{count}} fichier(s) sur {{total}}",
-            "writePartialFailure": "Impossible d'enregistrer {{count}} fichier(s)"
+            "multipleArtworks": "Artworks multiple"
         },
         "playlist": {
             "reorder": "La réorganisation n'est possible que lors du tri par identifiant"

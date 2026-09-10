@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 import { AddToAoidePlaylistAction } from '/@/renderer/aoide/features/playlists/add-to-aoide-playlist-action';
 import { AddToPlaylistAction } from '/@/renderer/features/context-menu/actions/add-to-playlist-action';
 import { DownloadAction } from '/@/renderer/features/context-menu/actions/download-action';
-import { EditMetadataAction } from '/@/renderer/features/context-menu/actions/edit-metadata-action';
 import { GetInfoAction } from '/@/renderer/features/context-menu/actions/get-info-action';
 import { GoToAction } from '/@/renderer/features/context-menu/actions/go-to-action';
 import { PlayAction } from '/@/renderer/features/context-menu/actions/play-action';
@@ -44,7 +43,6 @@ export const AlbumContextMenu = ({ items, type }: AlbumContextMenuProps) => {
             <ContextMenu.Divider />
             <GoToAction items={items} />
             <ContextMenu.Divider />
-            <EditMetadataAction albumIds={ids} />
             <GetInfoAction disabled={items.length === 0} items={items} />
         </ContextMenu.Content>
     );

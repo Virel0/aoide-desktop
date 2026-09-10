@@ -121,7 +121,6 @@
         "grouping": "分組",
         "back": "返回",
         "openFolder": "開啟資料夾",
-        "saveAndClose": "儲存並關閉",
         "undo": "還原",
         "lastScan": "上次掃描 {{date}}",
         "scanFolderCount": "{{count}} 個資料夾",
@@ -188,8 +187,7 @@
             "goToAlbum": "前往$t(entity.album, {\"count\": 1})",
             "goToAlbumArtist": "前往 $t(entity.albumArtist, {\"count\": 1})",
             "moveItems": "$t(action.moveItems)",
-            "goTo": "前往",
-            "editMetadata": "編輯後設資料"
+            "goTo": "前往"
         },
         "globalSearch": {
             "title": "指令",
@@ -373,26 +371,9 @@
             "copyPath": "複製路徑至剪貼簿",
             "copiedPath": "成功複製路徑",
             "openFile": "在檔案管理器中顯示曲目",
-            "tagConfiguration": "標籤配置",
-            "addTagConfig": "新增標籤…",
             "multiValueToggle": "多重值",
-            "autocompleteSource": "自動完成來源",
-            "customValues": "自訂值",
             "addCustomValue": "新增自訂值…",
-            "serverSuggestions": "伺服器",
-            "fileNotWritable": "檔案無法訪問或無法寫入",
-            "triggerRescan": "儲存後重新掃描媒體庫",
-            "addField": "新增欄位…",
-            "emptyFields": "欄位不可為空",
-            "tagsTab": "標籤",
-            "artworkTab": "專輯照",
-            "removeArtwork": "移除專輯照",
-            "noArtwork": "無專輯照",
-            "multipleValues": "(多重值)",
-            "multipleArtworks": "多重專輯照",
-            "noLocalSongs": "未找到具有本地檔案路徑的歌曲",
-            "readPartialFailure": "{{count}} 個檔案無法讀取後設資料 (共 {{total}} 個)",
-            "writePartialFailure": "{{count}} 個檔案儲存失敗"
+            "multipleArtworks": "多重專輯照"
         },
         "playlist": {
             "reorder": "僅當按 ID 排序時才啟用重新排序"

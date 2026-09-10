@@ -688,7 +688,6 @@
         "grouping": "Agrupar",
         "back": "Atrás",
         "openFolder": "Abrir carpeta",
-        "saveAndClose": "Guardar y cerrar",
         "undo": "Deshacer",
         "lastScan": "Último escaneo {{date}}",
         "scanFolderCount": "{{count}} carpetas",
@@ -841,8 +840,7 @@
             "goToAlbum": "Ir a $t(entity.album, {\"count\": 1})",
             "goToAlbumArtist": "Ir a $t(entity.albumArtist, {\"count\": 1})",
             "moveItems": "$t(action.moveItems)",
-            "goTo": "Ir a",
-            "editMetadata": "Editar metadatos"
+            "goTo": "Ir a"
         },
         "home": {
             "mostPlayed": "Más reproducidos",
@@ -982,26 +980,9 @@
             "copiedPath": "Ruta copiada correctamente",
             "openFile": "Mostrar pista en el gestor de archivos",
             "copyPath": "Copiar ruta al portapapeles",
-            "tagConfiguration": "Configuración de etiqueta",
-            "addTagConfig": "Añadir etiqueta…",
             "multiValueToggle": "Valor múltiple",
-            "autocompleteSource": "Completar fuente automáticamente",
-            "customValues": "Valores personalizados",
             "addCustomValue": "Añadir valor personalizado…",
-            "serverSuggestions": "Servidor",
-            "fileNotWritable": "El archivo no es accesible o editable",
-            "addField": "Añadir campo…",
-            "emptyFields": "Los campos no pueden estar vacíos",
-            "tagsTab": "Etiquetas",
-            "artworkTab": "Ilustración",
-            "removeArtwork": "Eliminar ilustración",
-            "noArtwork": "Sin ilustración",
-            "multipleValues": "(Valores múltiples)",
-            "multipleArtworks": "Múltiples ilustraciones",
-            "noLocalSongs": "Ninguna canción con rutas de archivo locales encontrada",
-            "readPartialFailure": "No se pudo leer los metadatos de {{count}} de {{total}} archivo(s)",
-            "writePartialFailure": "Error al guardar {{count}} archivo(s)",
-            "triggerRescan": "Activar otro escaneo de la biblioteca después de guardar"
+            "multipleArtworks": "Múltiples ilustraciones"
         },
         "playlist": {
             "reorder": "La reordenación solo se activa al ordenar por ID"

@@ -167,7 +167,6 @@
         "numberOfResults": "{{numberOfResults}} resultaten",
         "newVersionAvailable": "Een nieuwe versie is beschikbaar",
         "back": "Terug",
-        "saveAndClose": "Opslaan en afsluiten",
         "undo": "Ongedaan maken",
         "lastScan": "Laatste scan {{date}}"
     },
@@ -246,8 +245,7 @@
             "moveToNext": "$t(action.moveToNext)",
             "playSimilarSongs": "$t(player.playSimilarSongs)",
             "playShuffled": "$t(player.shuffle)",
-            "goTo": "Ga naar",
-            "editMetadata": "Bewerk Metadata"
+            "goTo": "Ga naar"
         },
         "appMenu": {
             "selectServer": "Selecteer server",
@@ -361,11 +359,7 @@
         "itemDetail": {
             "copyPath": "Kopieer pad naar klembord",
             "copiedPath": "Pad succesvol gekopieerd",
-            "openFile": "Toon nummer in bestandsbeheerder",
-            "fileNotWritable": "Bestand is niet beschikbaar of beschrijfbaar",
-            "addField": "Voeg veld toe…",
-            "emptyFields": "Velden kunnen niet leeg zijn",
-            "readPartialFailure": "Kon metadata niet lezen van {{count}} van de {{total}} bestand(en)"
+            "openFile": "Toon nummer in bestandsbeheerder"
         },
         "playlist": {
             "reorder": "Herschikken is alleen ingeschakeld wanneer er op ID wordt gestorteerd"

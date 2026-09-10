@@ -678,7 +678,6 @@
         "grouping": "グループ化",
         "back": "戻る",
         "openFolder": "フォルダーを開く",
-        "saveAndClose": "保存して閉じる",
         "undo": "元に戻す",
         "lastScan": "前回のスキャン {{date}}",
         "scanFolderCount": "{{count}} 個のフォルダー",
@@ -996,8 +995,7 @@
             "showDetails": "情報を取得する",
             "playShuffled": "$t(player.shuffle)",
             "moveItems": "$t(action.moveItems)",
-            "goTo": "移動",
-            "editMetadata": "メタデータを編集"
+            "goTo": "移動"
         },
         "home": {
             "mostPlayed": "最も多く再生",
@@ -1098,26 +1096,9 @@
             "openFile": "ファイルマネージャーでトラックを表示",
             "copyPath": "パスをクリップボードにコピーする",
             "copiedPath": "パスが正常にコピーされました",
-            "tagConfiguration": "タグ設定",
-            "addTagConfig": "タグを追加…",
             "multiValueToggle": "複数値",
-            "autocompleteSource": "自動入力ソース",
-            "customValues": "カスタム値",
             "addCustomValue": "カスタム値を追加…",
-            "serverSuggestions": "サーバー",
-            "fileNotWritable": "ファイルにアクセスできないか、書き込み権限がありません",
-            "triggerRescan": "保存後にライブラリの再スキャンを実行",
-            "addField": "フィールドを追加…",
-            "emptyFields": "フィールドは空欄にできません",
-            "tagsTab": "タグ",
-            "artworkTab": "アートワーク",
-            "removeArtwork": "アートワークを削除",
-            "noArtwork": "アートワークがありません",
-            "multipleValues": "（複数値）",
-            "multipleArtworks": "複数のアートワーク",
-            "noLocalSongs": "ローカルファイルパスを持つ曲は見つかりませんでした",
-            "readPartialFailure": "{{total}} 個のファイルのうち、{{count}} 個のファイルからメタデータを読み取ることができませんでした",
-            "writePartialFailure": "{{count}} 個のファイルの保存に失敗しました"
+            "multipleArtworks": "複数のアートワーク"
         },
         "playlist": {
             "reorder": "ID 順に並べ替えた場合のみ、並べ替えの順序変更が可能になります"

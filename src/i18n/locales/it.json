@@ -169,7 +169,6 @@
         "mood": "Mood",
         "numberOfResults": "{{numberOfResults}} risultati",
         "releaseType": "Tipo di uscita",
-        "saveAndClose": "Salva e chiudi",
         "slower": "Più lento",
         "undo": "Ripristina",
         "gridRows": "Righe della griglia",
@@ -859,8 +858,7 @@
             "goToAlbum": "Vai all'$t(entity.album, {\"count\": 1})",
             "goToAlbumArtist": "Vai all'$t(entity.albumArtist, {\"count\": 1})",
             "moveItems": "$t(action.moveItems)",
-            "goTo": "Vai a",
-            "editMetadata": "Modifica metadati"
+            "goTo": "Vai a"
         },
         "home": {
             "mostPlayed": "Più riprodotti",
@@ -959,26 +957,9 @@
             "copyPath": "Copia percorso negli appunti",
             "copiedPath": "Percorso copiato con successo",
             "openFile": "Mostra traccia nel gestore file",
-            "tagConfiguration": "Configurazione tag",
-            "addTagConfig": "Aggiungi tag…",
             "multiValueToggle": "Multi-valore",
-            "autocompleteSource": "Sorgente completamento automatico",
-            "customValues": "Valori personalizzati",
             "addCustomValue": "Aggiungi valore personalizzato…",
-            "serverSuggestions": "Server",
-            "fileNotWritable": "Il file non è accessibile o non è scrivibile",
-            "triggerRescan": "Avvia scansione della libreria dopo il salvataggio",
-            "addField": "Aggiungi campo…",
-            "emptyFields": "I campi non possono essere vuoti",
-            "tagsTab": "Tags",
-            "artworkTab": "Copertina",
-            "removeArtwork": "Rimuovi copertina",
-            "noArtwork": "Nessuna copertina",
-            "multipleValues": "(Valori multipli)",
-            "multipleArtworks": "Copertine multiple",
-            "noLocalSongs": "Nessuna traccia con percorso file locale trovata",
-            "readPartialFailure": "Impossibile leggere i metadati da {{count}} di {{total}} file",
-            "writePartialFailure": "Salvataggio di {{count}} file non riuscito"
+            "multipleArtworks": "Copertine multiple"
         },
         "playlist": {
             "reorder": "Riordino abilitato solo quando si ordina per ID"
