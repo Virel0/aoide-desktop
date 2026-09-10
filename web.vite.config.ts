@@ -149,7 +149,6 @@ export default defineConfig({
                 __dirname,
                 './src/main/features/core/lyrics/furigana.ts',
             ),
-            '/@/remote': path.resolve(__dirname, './src/remote'),
             '/@/renderer': path.resolve(__dirname, './src/renderer'),
             '/@/shared': path.resolve(__dirname, './src/shared'),
             path: path.resolve(__dirname, './src/renderer/shims/path.ts'),

@@ -1,6 +1,5 @@
 import { useIsMutating, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
-import isElectron from 'is-electron';
 import { useTranslation } from 'react-i18next';
 
 import { api } from '/@/renderer/api';
@@ -14,8 +13,6 @@ import {
 import { MutationHookArgs } from '/@/renderer/lib/react-query';
 import { toast } from '/@/shared/components/toast/toast';
 import { FavoriteArgs, FavoriteResponse, LibraryItem } from '/@/shared/types/domain-types';
-
-const remote = isElectron() ? window.api.remote : null;
 
 const createFavoriteMutationKey = ['set-favorite', true];
 
@@ -61,9 +58,6 @@ export const useCreateFavorite = (args: MutationHookArgs) => {
             return applyFavoriteOptimisticUpdates(queryClient, variables, true);
         },
         onSuccess: (_data, variables) => {
-            if (variables.query.type === LibraryItem.SONG) {
-                remote?.updateFavorite(true, variables.apiClientProps.serverId, variables.query.id);
-            }
             if (
                 variables.query.type === LibraryItem.SONG ||
                 variables.query.type === LibraryItem.PLAYLIST_SONG ||

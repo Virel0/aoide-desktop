@@ -48,7 +48,6 @@ import { AppRoute } from '/@/renderer/router/routes';
 import { getEnvSettingsOverrides } from '/@/renderer/store/env-settings-overrides';
 import { mergeOverridingColumns } from '/@/renderer/store/utils';
 import { FontValueSchema } from '/@/renderer/types/fonts';
-import { randomString } from '/@/renderer/utils';
 import { sanitizeCss } from '/@/renderer/utils/sanitize';
 import { AppTheme } from '/@/shared/themes/app-theme-types';
 import { LibraryItem, LyricSource, SavedCollection } from '/@/shared/types/domain-types';
@@ -742,13 +741,6 @@ const PlaybackSettingsSchema = z.object({
     webAudio: z.boolean(),
 });
 
-const RemoteSettingsSchema = z.object({
-    enabled: z.boolean(),
-    password: z.string(),
-    port: z.number(),
-    username: z.string(),
-});
-
 const WindowSettingsSchema = z.object({
     disableAutoUpdate: z.boolean(),
     exitToTray: z.boolean(),
@@ -823,7 +815,6 @@ export const ValidationSettingsStateSchema = z.object({
     lyricsDisplay: z.record(z.string(), LyricsDisplaySettingsSchema),
     playback: PlaybackSettingsSchema,
     queryBuilder: QueryBuilderSettingsSchema,
-    remote: RemoteSettingsSchema,
     tab: z.union([
         z.literal('general'),
         z.literal('hotkeys'),
@@ -2076,12 +2067,6 @@ const initialState: SettingsState = {
     queryBuilder: {
         tag: [],
     },
-    remote: {
-        enabled: false,
-        password: randomString(8),
-        port: 4333,
-        username: 'aoide',
-    },
     tab: 'general',
     visualizer: {
         audiomotionanalyzer: {
@@ -2927,8 +2912,6 @@ export const useLyricsSettings = () => useSettingsStore((state) => state.lyrics,
 
 export const useLyricsDisplaySettings = (key: string = 'default') =>
     useSettingsStore((state) => state.lyricsDisplay[key] || state.lyricsDisplay.default, shallow);
-
-export const useRemoteSettings = () => useSettingsStore((state) => state.remote, shallow);
 
 export const useFontSettings = () => useSettingsStore((state) => state.font, shallow);
 

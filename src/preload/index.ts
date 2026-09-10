@@ -10,7 +10,6 @@ import { localSettings } from './local-settings';
 import { lyrics } from './lyrics';
 import { mpris } from './mpris';
 import { playerEvents } from './player-events';
-import { remote } from './remote';
 import { utils } from './utils';
 
 // Custom APIs for renderer
@@ -26,7 +25,6 @@ const api = {
     lyrics,
     mpris,
     playerEvents,
-    remote,
     utils,
 };
 

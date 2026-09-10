@@ -20,7 +20,6 @@ import {
 import { ScrobbleHook } from '/@/renderer/features/player/hooks/use-scrobble';
 import { UpdateCurrentSongHook } from '/@/renderer/features/player/hooks/use-update-current-song';
 import { useWebAudio } from '/@/renderer/features/player/hooks/use-webaudio';
-import { RemoteHook } from '/@/renderer/features/remote/hooks/use-remote';
 import { useSettingsStore } from '/@/renderer/store';
 import {
     updateQueueFavorites,
@@ -123,7 +122,6 @@ export const AudioPlayers = () => {
             <MainPlayerListenerHook />
             <MediaSessionHook />
             <PlaybackHotkeysHook />
-            <RemoteHook />
             <AutoDJHook />
             <QueueRestoreTimestampHook />
             <InitialTimestampRestoreHook />

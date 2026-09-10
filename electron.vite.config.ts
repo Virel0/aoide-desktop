@@ -79,7 +79,6 @@ const createConfig = (isDevelopment: boolean): UserConfig => ({
                         ? 'src/renderer/features/lyrics/api/development-lyrics-conversion-api.ts'
                         : 'src/renderer/features/lyrics/api/electron-lyrics-conversion-api.ts',
                 ),
-                '/@/remote': resolve('src/remote'),
                 '/@/renderer': resolve('src/renderer'),
                 '/@/shared': resolve('src/shared'),
                 ...(isDevelopment ? { path: resolve('src/renderer/shims/path.ts') } : {}),

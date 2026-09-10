@@ -219,9 +219,6 @@ importers:
       wavesurfer.js:
         specifier: ^7.12.7
         version: 7.12.8
-      ws:
-        specifier: ^8.21.0
-        version: 8.21.0
       zod:
         specifier: ^3.25.76
         version: 3.25.76
@@ -262,9 +259,6 @@ importers:
       '@types/source-map-support':
         specifier: ^0.5.10
         version: 0.5.10
-      '@types/ws':
-        specifier: ^8.18.1
-        version: 8.18.1
       '@vitejs/plugin-react':
         specifier: ^5.2.0
         version: 5.2.0(vite@7.3.5(@types/node@24.13.2)(jiti@2.7.0)(sugarss@5.0.1(postcss@8.5.15))(terser@5.48.0))
@@ -2203,9 +2197,6 @@ packages:
 
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
-
-  '@types/ws@8.18.1':
-    resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
 
   '@typescript-eslint/eslint-plugin@8.61.0':
     resolution: {integrity: sha512-bFNvl9ZczlVb+wR2Akszf3gHfKVj/8WanXaGJ3UstTA7brNKg0cNdk6X1Psu5V7MZ2oQtzZKOEzIUehaoxbDGw==}
@@ -7710,10 +7701,6 @@ snapshots:
   '@types/symlink-or-copy@1.2.2': {}
 
   '@types/trusted-types@2.0.7': {}
-
-  '@types/ws@8.18.1':
-    dependencies:
-      '@types/node': 24.13.2
 
   '@typescript-eslint/eslint-plugin@8.61.0(@typescript-eslint/parser@8.61.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)':
     dependencies:

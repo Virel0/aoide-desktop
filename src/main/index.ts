@@ -27,7 +27,6 @@ import semver from 'semver';
 
 import packageJson from '../../package.json';
 import { disableMediaKeys, enableMediaKeys } from './features/core/media-keys';
-import { shutdownServer } from './features/core/remote';
 import { store } from './features/core/settings';
 import log, { autoUpdaterLogInterface } from './logger';
 import MenuBuilder, { MenuPlaybackState } from './menu';
@@ -685,7 +684,6 @@ async function createWindow(first = true): Promise<void> {
 
     ipcMain.on('window-quit', () => {
         log.info('App quitting', { reason: 'window-quit' });
-        shutdownServer();
         mainWindow?.close();
         app.exit();
     });
