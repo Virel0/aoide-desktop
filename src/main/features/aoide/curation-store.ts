@@ -19,6 +19,8 @@ import {
     stampsFromRow,
 } from './merge';
 
+import { parseActivity } from '/@/shared/aoide/activity';
+
 /**
  * Which table each syncable entity lives in, and what identifies a row.
  *
@@ -146,6 +148,14 @@ export class CurationStore {
         // no error, no conflict, just a listening history that says nothing was
         // ever listened to.
         if (op.entity === 'play_events') {
+            // The tag is a closed set both clients agree on, and this is where
+            // somebody else's spelling of it arrives. A value this build does
+            // not know — a fifth activity added by a newer one — is dropped to
+            // null rather than stored: the listen is real and is kept, but a tag
+            // nothing here can query or show would sit in an append-only table
+            // forever, and would come back out of it on the next push.
+            incoming.activity = parseActivity(incoming.activity);
+
             const existingEvent = this.db
                 .prepare('SELECT endedAt FROM play_events WHERE id = ?')
                 .get(id) as undefined | { endedAt: null | number };

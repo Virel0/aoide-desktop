@@ -8,6 +8,8 @@ import { DEFAULT_AOIDE_LOUDNESS_NORMALISATION } from './playback/loudness-normal
 import { syncOutcome } from './sync/sync-report';
 import { FOCUS_SYNC_MIN_INTERVAL_MS } from './sync/sync-schedule';
 
+import { ACTIVITIES } from '/@/shared/aoide/activity';
+
 /**
  * Guards over the component *source*, because these components cannot be
  * rendered here.
@@ -1532,5 +1534,137 @@ describe('scrolling a grouped table', () => {
         );
         expect(keyboard).toContain('sectionHeaderRowsBefore(newIndex, groupItemCounts)');
         expect(keyboard).toContain('const gridIndex = enableHeader ? rowIndex + 1 : rowIndex;');
+    });
+});
+
+describe('activity tags: what you were doing, recorded with the listen', () => {
+    const effect = sourceOf('history/aoide-play-recorder-effect.tsx');
+    const store = sourceOf('activity/use-activity.ts');
+    const control = sourceOf('activity/aoide-activity-button.tsx');
+    const rightControls = readFileSync(
+        join(import.meta.dirname, '../../features/player/components/right-controls.tsx'),
+        'utf8',
+    );
+    const preload = readFileSync(join(import.meta.dirname, '../../../preload/aoide.ts'), 'utf8');
+    const main = readFileSync(
+        join(import.meta.dirname, '../../../main/features/aoide/index.ts'),
+        'utf8',
+    );
+
+    // A picker nobody can reach while music is playing is a picker nobody uses,
+    // and the tag is only ever set in the middle of listening. The player bar
+    // is the one thing on screen at every such moment.
+    it('is mounted in the player bar, not only in settings', () => {
+        expect(rightControls).toContain('<AoideActivityButton />');
+        expect(rightControls).toContain(
+            "import { AoideActivityButton } from '/@/renderer/aoide/features/activity/aoide-activity-button'",
+        );
+    });
+
+    // A tag left on quietly colours everything after it, and the data still
+    // looks fine. The label on the button is the only thing that says so.
+    it('shows the tag on the button rather than hiding it behind a click', () => {
+        expect(control).toMatch(/activity \? t\(`aoide\.activity\.\$\{activity\}`\)/);
+        expect(control).toContain("t('aoide.activity.none')");
+    });
+
+    it('offers the four and no list of its own', () => {
+        expect(control).toContain('ACTIVITIES.map(');
+        expect(control).toContain("from '/@/shared/aoide/activity'");
+    });
+
+    // The recorder reads the store; it does not hold the selection itself, and
+    // the effect does not decide anything about it.
+    it('is read by the play recorder', () => {
+        expect(effect).toContain('useActivityStore.subscribe(');
+        expect(effect).toContain('onActivityChanged(state.current, currentActivity())');
+        expect(effect).toContain(
+            '.beginPlay(call.track, call.source, call.startedAt, call.activity)',
+        );
+    });
+
+    // The tag is stamped at the begin and is never sent again. If a finish
+    // could carry one, a long listen would be retagged by whatever was set when
+    // it happened to end.
+    it('travels on the begin and never on the finish', () => {
+        expect(preload).toContain(
+            "ipcRenderer.invoke('aoide:history-begin-play', track, source, startedAt, activity)",
+        );
+        expect(preload).not.toMatch(/history-finish-play[^)]*activity/);
+        expect(main).toContain('activity: parseActivity(activity)');
+    });
+
+    // localStorage is a file on disk, and an op payload is written by another
+    // device. Neither is this process, so neither is believed.
+    it('parses the value at every boundary it arrives through', () => {
+        expect(store).toContain('parseActivity(state.activity)');
+        expect(main).toContain('parseActivity(activity)');
+        expect(
+            readFileSync(
+                join(import.meta.dirname, '../../../main/features/aoide/curation-store.ts'),
+                'utf8',
+            ),
+        ).toContain('incoming.activity = parseActivity(incoming.activity)');
+    });
+
+    // The tag on a play event travels — it is a column on a row that syncs.
+    // The *selection* does not: it says where this machine is, and the phone is
+    // somewhere else. There is no entity for it and no op is written.
+    it('keeps the selection on this device', () => {
+        const syncTypes = readFileSync(
+            join(import.meta.dirname, '../../../shared/aoide/sync-types.ts'),
+            'utf8',
+        );
+
+        expect(syncTypes).not.toMatch(/'activit/i);
+        expect(store).not.toMatch(/record\(|pendingOps|aoideSyncStore|window\.api/);
+        expect(store).toContain("name: 'aoide-activity'");
+    });
+
+    /**
+     * One copy of the value set, and the guard that keeps it that way.
+     *
+     * Two of the four could not be greppable on their own: `'focus'` is a DOM
+     * event name and a Mantine prop, and a rule that failed on those would be
+     * turned off. So this asks the two questions that are answerable — the
+     * three unambiguous values appear nowhere else, and no other file spells
+     * *two or more* of the four, which is what a second copy of the set looks
+     * like however it is written.
+     */
+    describe('the four strings live in one file', () => {
+        const OWNER = 'shared/aoide/activity.ts';
+        const PIN = 'shared/aoide/activity.test.ts';
+
+        const quoted = (value: string) => new RegExp(`['"\`]${value}['"\`]`);
+
+        const sources = (): string[] =>
+            readdirSync(join(import.meta.dirname, '../../..'), {
+                recursive: true,
+                withFileTypes: true,
+            })
+                .filter((entry) => entry.isFile() && /\.tsx?$/.test(entry.name))
+                .map((entry) => join(entry.parentPath, entry.name))
+                .filter((path) => !path.endsWith(OWNER) && !path.endsWith(PIN));
+
+        it('finds every file to look at', () => {
+            expect(sources().length).toBeGreaterThan(100);
+        });
+
+        it('spells gaming, chores and commute nowhere else', () => {
+            for (const path of sources()) {
+                const text = readFileSync(path, 'utf8');
+                for (const value of ACTIVITIES.filter((option) => option !== 'focus')) {
+                    expect(text, `${value} in ${path}`).not.toMatch(quoted(value));
+                }
+            }
+        });
+
+        it('lets no other file spell two of them', () => {
+            for (const path of sources()) {
+                const text = readFileSync(path, 'utf8');
+                const found = ACTIVITIES.filter((value) => quoted(value).test(text));
+                expect(found.length, `${found.join(', ')} in ${path}`).toBeLessThan(2);
+            }
+        });
     });
 });

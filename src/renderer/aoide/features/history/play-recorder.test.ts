@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
     initialState,
     MAX_LISTEN_GAP_SEC,
+    onActivityChanged,
     onContextStarted,
     onQueueReplaced,
     onStatusChanged,
@@ -19,6 +20,8 @@ import {
     sourceOf,
     TRACK_START_SEC,
 } from './play-recorder';
+
+import { ACTIVITIES } from '/@/shared/aoide/activity';
 
 /**
  * Every transition, one at a time. The recorder cannot be watched in a
@@ -97,6 +100,7 @@ describe('starting', () => {
 
         expect(step.calls).toEqual([
             {
+                activity: null,
                 kind: 'begin',
                 source: 'unknown',
                 startedAt: t0 + 5_000,
@@ -479,5 +483,76 @@ describe('telling a replaced queue from an added-to one', () => {
     it('is not when nothing changed', () => {
         expect(queueWasReplaced(['a'], ['a'])).toBe(false);
         expect(queueWasReplaced([], [])).toBe(false);
+    });
+});
+
+describe('the activity a listen is tagged with', () => {
+    // Untagged is the default and stays the default: a recorder nobody has
+    // spoken to opens its listens with no tag at all.
+    it('is untagged until somebody says otherwise', () => {
+        expect(initialState().activity).toBeNull();
+
+        const started = onStatusChanged(initialState(), 'playing', t0).state;
+        expect(beginOf(onTrackChanged(started, song('a'), t0).calls).activity).toBeNull();
+    });
+
+    it('rides the begin call, so the tag is decided where the listen opens', () => {
+        const tagged = onActivityChanged(initialState(), ACTIVITIES[0]).state;
+        const started = onStatusChanged(tagged, 'playing', t0).state;
+        const step = onTrackChanged(started, song('a'), t0);
+
+        expect(beginOf(step.calls).activity).toBe(ACTIVITIES[0]);
+    });
+
+    // Selecting an activity is not a playback event: it opens nothing, closes
+    // nothing, and leaves the listen in progress exactly as it was.
+    it('changes nothing about a listen already open', () => {
+        const state = playing();
+        const step = onActivityChanged(state, ACTIVITIES[1]);
+
+        expect(step.calls).toEqual([]);
+        expect(step.state.open).toBe(state.open);
+    });
+
+    // The contract, on this side of the bridge: the tag in force at the begin
+    // is the one that travels, and a change made while the track is still
+    // playing reaches only the next listen.
+    it('reaches the next listen and not the one it interrupted', () => {
+        let state = onActivityChanged(initialState(), ACTIVITIES[0]).state;
+        state = onStatusChanged(state, 'playing', t0).state;
+
+        const first = onTrackChanged(state, song('a'), t0);
+        expect(beginOf(first.calls).activity).toBe(ACTIVITIES[0]);
+
+        state = onActivityChanged(first.state, ACTIVITIES[1]).state;
+
+        // The finish of the first listen carries no tag at all — there is
+        // nothing on `FinishPlayInput` to carry one, which is what makes the
+        // rule impossible to break from here.
+        const second = onTrackChanged(state, song('b'), t0 + 60_000);
+        expect(kinds(second.calls)).toEqual(['finish', 'begin']);
+        expect(finishOf(second.calls)).not.toHaveProperty('activity');
+        expect(beginOf(second.calls).activity).toBe(ACTIVITIES[1]);
+    });
+
+    it('goes back to untagged when the tag is taken off', () => {
+        let state = onActivityChanged(initialState(), ACTIVITIES[0]).state;
+        state = onActivityChanged(state, null).state;
+        state = onStatusChanged(state, 'playing', t0).state;
+
+        expect(beginOf(onTrackChanged(state, song('a'), t0).calls).activity).toBeNull();
+    });
+
+    // A restart under Repeat One opens a second listen, and that one is a new
+    // listen in every sense — including which tag it carries.
+    it('tags a restart with what is in force when it restarts', () => {
+        let state = playing();
+        state = listen(state, 0, RESTART_MIN_SEC + 1);
+        state = onActivityChanged(state, ACTIVITIES[2]).state;
+
+        const step = onTick(state, { playing: true, positionSec: 0 }, t0 + 20_000);
+
+        expect(kinds(step.calls)).toEqual(['finish', 'begin']);
+        expect(beginOf(step.calls).activity).toBe(ACTIVITIES[2]);
     });
 });

@@ -57,6 +57,8 @@ const PHONE_COLUMNS: Record<string, string[]> = {
         'skipped',
         'source',
         'originDevice',
+        // Schema.swift v9: what the listener was doing when the listen began.
+        'activity',
     ],
     playlist_items: [
         'id',

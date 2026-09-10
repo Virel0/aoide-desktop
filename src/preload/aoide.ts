@@ -20,6 +20,7 @@ import type {
     SmartSearchOutcome,
 } from '/@/main/features/aoide/smart-search';
 import type { FlaggedTrack, TrackFlagRow } from '/@/main/features/aoide/track-flags';
+import type { Activity } from '/@/shared/aoide/activity';
 import type { FinishCounts } from '/@/shared/aoide/finish-rate';
 import type { SmartRules } from '/@/shared/aoide/smart-rules';
 import type { SyncOp } from '/@/shared/aoide/sync-types';
@@ -98,13 +99,18 @@ export const aoide = {
          * takes back; the track is cached on the way so the play has an artist
          * and album to be filed under. Null for a track flagged "don't count":
          * nothing was opened, so there is nothing to finish.
+         *
+         * `activity` is what the listener had selected at this moment, or null
+         * for untagged, and it is only ever passed here: the tag belongs to the
+         * listen that began, and `finishPlay` has no say in it.
          */
         beginPlay: (
             track: TrackInput,
             source: PlaySource,
             startedAt: number,
+            activity: Activity | null,
         ): Promise<null | string> =>
-            ipcRenderer.invoke('aoide:history-begin-play', track, source, startedAt),
+            ipcRenderer.invoke('aoide:history-begin-play', track, source, startedAt, activity),
 
         /** The track ended or was left. Finishing twice is a no-op. */
         finishPlay: (eventId: string, input: FinishPlayInput): Promise<FinishPlayOutcome> =>

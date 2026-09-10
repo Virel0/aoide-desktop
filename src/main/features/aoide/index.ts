@@ -20,6 +20,7 @@ import { registerSmartSearchHandlers } from './smart-search';
 import { TrackFlags } from './track-flags';
 
 import log from '/@/main/logger';
+import { parseActivity } from '/@/shared/aoide/activity';
 
 /**
  * The curation store's one owner, and the renderer's way in.
@@ -344,12 +345,24 @@ handle('aoide:history-recap', ({ history }, from: number, to: number) => history
  * Replay page can file the play under its artist and album rather than
  * reporting it unattributed — this is the one moment the desktop knows for
  * certain what it is playing.
+ *
+ * The activity arrives as `unknown` and is parsed here rather than trusted.
+ * It comes from a store persisted in the renderer's localStorage, which is a
+ * file on disk that anything can edit, and this is the boundary where it stops
+ * being somebody else's string and becomes a column that syncs to the phone.
  */
 handle(
     'aoide:history-begin-play',
-    ({ history, playlists }, track: TrackInput, source: PlaySource, startedAt: number) => {
+    (
+        { history, playlists },
+        track: TrackInput,
+        source: PlaySource,
+        startedAt: number,
+        activity: unknown,
+    ) => {
         playlists.cacheTracks([track]);
         return history.beginPlay({
+            activity: parseActivity(activity),
             album: track.album,
             artist: track.artist,
             durationMs: track.durationMs ?? null,

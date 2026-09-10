@@ -6,6 +6,15 @@
             "newPlaylist": "New playlist…",
             "removeFromPlaylist": "Remove from playlist"
         },
+        "activity": {
+            "chores": "Chores",
+            "commute": "Commute",
+            "description": "Plays are tagged with what you are doing when they start.",
+            "focus": "Focus",
+            "gaming": "Gaming",
+            "none": "None",
+            "title": "Activity"
+        },
         "detail": {
             "empty": "Nothing in this playlist yet",
             "emptyHint": "Right-click a track anywhere in your library and choose \"Add to Aoide playlist\".",

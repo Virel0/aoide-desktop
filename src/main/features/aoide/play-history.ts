@@ -1,3 +1,4 @@
+import type { Activity } from '/@/shared/aoide/activity';
 import type { FinishCounts } from '/@/shared/aoide/finish-rate';
 import type { DatabaseSync } from 'node:sqlite';
 
@@ -37,6 +38,16 @@ import {
 
 /** What opening a listen needs: the track, and when and from where it started. */
 export interface BeginPlayInput {
+    /**
+     * What the listener said they were doing, or null for untagged.
+     *
+     * Taken here rather than at `finishPlay` because the tag that belongs to a
+     * listen is the one that was in force when it *began*: a track started
+     * during a gaming session is a gaming play even if the picker is changed
+     * while it is still going. Null is the default and stays the default —
+     * nothing detects an activity.
+     */
+    activity: Activity | null;
     album: string;
     artist: string;
     durationMs: null | number;
@@ -195,6 +206,10 @@ export class PlayHistory {
      * `msPlayed: 0` and no outcome, and `play-definition`'s SQL knows to count
      * it as neither a play nor a skip until it is finished.
      *
+     * The listener's activity is stamped here and nowhere else, for the same
+     * reason: it is what they were doing when the track came on. `finishPlay`
+     * carries it forward untouched.
+     *
      * Returns the event's id, which is what `finishPlay` wants back — or null
      * for a track flagged "don't count", which opens no event at all. Nothing
      * is written, so there is nothing to finish and nothing to count later; the
@@ -207,6 +222,7 @@ export class PlayHistory {
         const id = randomUUID();
 
         this.store.record('play_events', {
+            activity: input.activity,
             completed: false,
             contentKey: contentKeyFor(input),
             endedAt: null,
@@ -224,6 +240,12 @@ export class PlayHistory {
     /**
      * Close a listen with what was heard, and let the shared definition say
      * what it amounted to.
+     *
+     * The row is amended from `existing`, so every column the begin wrote —
+     * `activity` above all — survives the finish unchanged. A listen that began
+     * during a gaming session stays a gaming listen however the picker has been
+     * changed since; re-reading the current tag here would silently retag every
+     * long play with whatever was set when it happened to end.
      *
      * An amendment of the same row under the same id, never a second row — the
      * op it records carries the finished row, and every other device applies it

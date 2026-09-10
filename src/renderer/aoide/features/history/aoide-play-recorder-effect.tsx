@@ -4,6 +4,7 @@ import type { RecorderCall, RecorderStep } from './play-recorder';
 
 import {
     initialState,
+    onActivityChanged,
     onContextStarted,
     onQueueReplaced,
     onStatusChanged,
@@ -13,6 +14,10 @@ import {
     queueWasReplaced,
 } from './play-recorder';
 
+import {
+    currentActivity,
+    useActivityStore,
+} from '/@/renderer/aoide/features/activity/use-activity';
 import { useRecentContextsStore } from '/@/renderer/aoide/features/home/use-recent-contexts';
 import { trackInputFromSong } from '/@/renderer/aoide/features/playlists/track-input';
 import { isAoideAvailable } from '/@/renderer/aoide/features/shared/aoide-bridge';
@@ -52,10 +57,12 @@ const Recorder = () => {
         if (call.kind === 'begin') {
             eventIds.current.set(
                 call.token,
-                history.beginPlay(call.track, call.source, call.startedAt).catch((error) => {
-                    logger.warn('Aoide could not open a play event', { error });
-                    return undefined;
-                }),
+                history
+                    .beginPlay(call.track, call.source, call.startedAt, call.activity)
+                    .catch((error) => {
+                        logger.warn('Aoide could not open a play event', { error });
+                        return undefined;
+                    }),
             );
             return;
         }
@@ -113,6 +120,17 @@ const Recorder = () => {
     );
 
     useEffect(() => {
+        // Whatever was selected before this mounted — the store is persisted,
+        // so an app reopened during a gaming evening is still tagging for it,
+        // and the first track of the session must not be untagged merely
+        // because nothing has changed since the recorder started.
+        apply(onActivityChanged(state.current, currentActivity()));
+
+        const unsubscribeActivity = useActivityStore.subscribe((next, previous) => {
+            if (next.activity === previous.activity) return;
+            apply(onActivityChanged(state.current, currentActivity()));
+        });
+
         // A page announcing what it started playback from — the same one-line
         // calls that feed the resume grid. The newest entry of whichever server
         // changed is the one just announced.
@@ -135,6 +153,7 @@ const Recorder = () => {
         window.addEventListener('beforeunload', finish);
 
         return () => {
+            unsubscribeActivity();
             unsubscribe();
             window.removeEventListener('beforeunload', finish);
             finish();

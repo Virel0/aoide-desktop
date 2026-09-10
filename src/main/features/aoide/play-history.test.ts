@@ -6,6 +6,7 @@ import { MAX_PARAMETERS, PlayHistory, RECAP_TOP_LIMIT } from './play-history';
 import { contentKeyFor } from './playlists';
 import { TrackFlags } from './track-flags';
 
+import { ACTIVITIES } from '/@/shared/aoide/activity';
 import { finishRateOf, MINIMUM_FINISH_SAMPLE } from '/@/shared/aoide/finish-rate';
 import {
     classify,
@@ -631,6 +632,7 @@ describe('recording a listen at this desk', () => {
     const duration = 200_000;
     const tryBegin = (over: Partial<Parameters<PlayHistory['beginPlay']>[0]> = {}) =>
         history.beginPlay({
+            activity: null,
             album: 'An Album',
             artist: 'An Artist',
             durationMs: duration,
@@ -835,6 +837,74 @@ describe('recording a listen at this desk', () => {
         const fractional = begin({ jellyfinId: 'fractional' });
         history.finishPlay(fractional, { durationMs: duration, endedAt: now, msPlayed: 1234.9 });
         expect(row(fractional).msPlayed).toBe(1234);
+    });
+
+    // The tag belongs to the listen that *began*. Everything below is one rule
+    // read three ways: it is written at the begin, it is on the wire, and
+    // nothing that happens afterwards can move it.
+    describe('the activity it was tagged with', () => {
+        it('writes what was in force when the listen began', () => {
+            const id = begin({ activity: ACTIVITIES[0], jellyfinId: 'tagged' });
+            expect(row(id).activity).toBe(ACTIVITIES[0]);
+        });
+
+        it('calls an untagged listen null rather than inventing a default', () => {
+            const id = begin({ activity: null, jellyfinId: 'untagged' });
+            expect(row(id).activity).toBeNull();
+        });
+
+        // The specific failure this contract exists to rule out: a listener
+        // switches from Gaming to Focus while a long track is still playing.
+        // The track was started during the gaming session and stays a gaming
+        // play — re-reading the tag at the finish would retag every long listen
+        // with whatever happened to be set when it ended.
+        it('is untouched by a change made before the finish', () => {
+            cacheTrack('mid-change', duration);
+            const id = begin({ activity: ACTIVITIES[0], jellyfinId: 'mid-change' });
+
+            // The picker moved; the listen did not. Nothing in this process
+            // knows or asks — the next `beginPlay` is where a new tag lands.
+            const next = begin({ activity: ACTIVITIES[1], jellyfinId: 'another' });
+
+            history.finishPlay(id, {
+                durationMs: duration,
+                endedAt: now + 150_000,
+                msPlayed: 150_000,
+            });
+
+            expect(row(id).activity).toBe(ACTIVITIES[0]);
+            expect(row(next).activity).toBe(ACTIVITIES[1]);
+        });
+
+        it('rides both ops, so the phone sees the same tag this device stored', () => {
+            cacheTrack('desk-track', duration);
+            const id = begin({ activity: ACTIVITIES[2] });
+            history.finishPlay(id, {
+                durationMs: duration,
+                endedAt: now + 150_000,
+                msPlayed: 150_000,
+            });
+
+            const payloads = eventOps().map(
+                (op) => JSON.parse(op.payload) as Record<string, unknown>,
+            );
+            expect(payloads).toHaveLength(2);
+            for (const payload of payloads) expect(payload.activity).toBe(ACTIVITIES[2]);
+        });
+
+        it('has nothing to say about whether a listen was a play', () => {
+            // The tag is a label on history, never an input to the verdict.
+            cacheTrack('judged', duration);
+            const tagged = begin({ activity: ACTIVITIES[3], jellyfinId: 'judged' });
+            history.finishPlay(tagged, {
+                durationMs: duration,
+                endedAt: now + 150_000,
+                msPlayed: 150_000,
+            });
+
+            expect(history.playCount('judged')).toBe(1);
+            expect(row(tagged).skipped).toBe(0);
+        });
     });
 
     it('lets the finish say where the listen came from, and otherwise keeps the beginning’s answer', () => {

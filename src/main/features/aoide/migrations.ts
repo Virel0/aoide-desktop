@@ -250,6 +250,31 @@ export const MIGRATIONS: ReadonlyArray<(db: DatabaseSync) => void> = [
             );
         `);
     },
+
+    // v3 — the activity a listen was tagged with: the phone's
+    // \`PlayEvent.activity\`, spelled the same because the column travels.
+    (db) => {
+        db.exec(`
+            -- What the listener said they were doing when this listen *began*.
+            -- One of the four values in 'shared/aoide/activity.ts', or null —
+            -- and null is what every row written before this column existed
+            -- holds. Untagged, which is also what a listener who never opens
+            -- the picker records from now on.
+            --
+            -- Nullable with no DEFAULT, so the ALTER rewrites no rows: on a
+            -- device with real history this is the largest table here, and a
+            -- listening log is not worth a long migration to write "untagged"
+            -- in a way that null already says.
+            --
+            -- No CHECK on the four values, deliberately. This column travels,
+            -- and an op carrying an activity from a newer build is dropped to
+            -- null by 'parseActivity' at the boundary instead. A constraint
+            -- here would turn that op into a failed insert — a real listen
+            -- quarantined and never retried, over a tag this build could not
+            -- have shown anyway.
+            ALTER TABLE play_events ADD COLUMN activity TEXT;
+        `);
+    },
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CurationStore } from './curation-store';
 import { CurationDatabase, openCurationDatabase } from './database';
 
+import { ACTIVITIES } from '/@/shared/aoide/activity';
+
 let alpha: CurationDatabase;
 let beta: CurationDatabase;
 let a: CurationStore;
@@ -128,6 +130,70 @@ describe('applying an op from another device', () => {
             b.applyRemote(tampered);
 
             expect(b.live('play_events')[0].msPlayed).toBe(200_000);
+        });
+
+        // The tag is a closed set of four that both clients agree on, and this
+        // is the one place somebody else's spelling of it arrives.
+        it('carries an activity both clients know', () => {
+            const { op } = a.record('play_events', {
+                ...event('e1'),
+                activity: ACTIVITIES[0],
+            });
+
+            expect(b.applyRemote(op)).toBe('applied');
+            expect(b.live('play_events')[0].activity).toBe(ACTIVITIES[0]);
+        });
+
+        // A build newer than this one adds a fifth activity and records a listen
+        // under it. The listen is real and is kept — refusing the op would
+        // quarantine it, and a quarantined op is never retried — but the tag
+        // this build cannot query or show is dropped rather than stored in an
+        // append-only table forever.
+        it('keeps a listen tagged by a future build, and drops the tag', () => {
+            const { op } = a.record('play_events', event('e1'));
+            const fromTheFuture: SyncOp = {
+                ...op,
+                payload: { ...op.payload, activity: 'driving' },
+            };
+
+            expect(b.applyRemote(fromTheFuture)).toBe('applied');
+
+            const stored = b.live('play_events')[0];
+            expect(stored.msPlayed).toBe(200_000);
+            expect(stored.activity).toBeNull();
+        });
+
+        it('drops junk of any other shape in that column', () => {
+            // Built from the real value rather than retyped, so this list
+            // cannot become the second copy of the set that `wiring.test.ts`
+            // greps for — and so a rename keeps these near misses near.
+            const real = ACTIVITIES[0];
+            const junk: unknown[] = [
+                real.toUpperCase(),
+                ` ${real}`,
+                `${real} `,
+                '',
+                7,
+                true,
+                [real],
+                { kind: real },
+            ];
+
+            // A distinct id each time, because an event already stored is left
+            // alone by the append-only merge — reusing one would pass whether
+            // the column was parsed or not.
+            junk.forEach((value, index) => {
+                const id = `junk-${index}`;
+                const { op } = a.record('play_events', event(id));
+
+                expect(b.applyRemote({ ...op, payload: { ...op.payload, activity: value } })).toBe(
+                    'applied',
+                );
+
+                const stored = b.live('play_events').find((row) => row.id === id);
+                expect(stored?.msPlayed, `msPlayed for ${String(value)}`).toBe(200_000);
+                expect(stored?.activity, `activity for ${String(value)}`).toBeNull();
+            });
         });
     });
 });

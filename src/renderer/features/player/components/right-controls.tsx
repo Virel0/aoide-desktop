@@ -2,6 +2,7 @@ import { t } from 'i18next';
 import { useCallback, useEffect, useMemo, useState, WheelEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { AoideActivityButton } from '/@/renderer/aoide/features/activity/aoide-activity-button';
 import { PopoverPlayQueue } from '/@/renderer/features/now-playing/components/popover-play-queue';
 import { PlayerConfig } from '/@/renderer/features/player/components/player-config';
 import { CustomPlayerbarSlider } from '/@/renderer/features/player/components/playerbar-slider';
@@ -91,6 +92,7 @@ export const RightControls = () => {
         <Flex align="flex-end" direction="column" h="100%" px="1rem" py="0.5rem">
             <Group h="calc(100% / 3)">
                 {showRatings && <RatingButton />}
+                <AoideActivityButton />
                 <AutoDJButton />
             </Group>
             <Group align="center" gap="xs" wrap="nowrap">

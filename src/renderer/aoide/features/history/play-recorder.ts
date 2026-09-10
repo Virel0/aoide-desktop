@@ -1,6 +1,7 @@
 import type { FinishPlayInput, PlaySource } from '/@/main/features/aoide/play-history';
 import type { TrackInput } from '/@/main/features/aoide/playlists';
 import type { RecentContextKind } from '/@/renderer/aoide/features/home/recent-contexts';
+import type { Activity } from '/@/shared/aoide/activity';
 
 /**
  * When a listen starts, when it ends, and how much of it was heard — decided
@@ -46,10 +47,24 @@ export interface OpenListen {
 
 /** One call the effect should make, in the order returned. */
 export type RecorderCall =
-    | { input: FinishPlayInput; kind: 'finish'; token: number }
-    | { kind: 'begin'; source: PlaySource; startedAt: number; token: number; track: TrackInput };
+    | {
+          activity: Activity | null;
+          kind: 'begin';
+          source: PlaySource;
+          startedAt: number;
+          token: number;
+          track: TrackInput;
+      }
+    | { input: FinishPlayInput; kind: 'finish'; token: number };
 
 export interface RecorderState {
+    /**
+     * The tag in force, or null for untagged. Kept in the state rather than
+     * read at the moment a call is performed so that the rule worth testing —
+     * a listen keeps the tag it began under — is a transition and not a timing
+     * accident in the effect.
+     */
+    activity: Activity | null;
     /** What the player is on, playing or not. Undefined when the queue is empty. */
     current?: RecorderTrack;
     nextToken: number;
@@ -115,10 +130,26 @@ export const SOURCE_TOLD_AFTER_MS = 1_000;
 export const SOURCE_TOLD_BEFORE_MS = 15_000;
 
 export const initialState = (): RecorderState => ({
+    activity: null,
     nextToken: 1,
     playing: false,
     source: 'unknown',
 });
+
+/**
+ * The listener changed what they are doing.
+ *
+ * Opens and closes nothing. A listen already in progress keeps the tag it began
+ * under — that is the contract both apps implement, and it is why the tag is
+ * stamped into the `begin` call rather than read again at the finish: a track
+ * started during a gaming session is a gaming play even if the picker moves to
+ * Focus while it is still going. The new tag applies to the next listen to
+ * begin, which may be the very next track.
+ */
+export const onActivityChanged = (
+    state: RecorderState,
+    activity: Activity | null,
+): RecorderStep => ({ calls: [], state: { ...state, activity } });
 
 /**
  * The player moved to another queue entry, or to none.
@@ -345,7 +376,16 @@ const beginListen = (state: RecorderState, track: RecorderTrack, now: number): R
     };
 
     return {
-        calls: [{ kind: 'begin', source: state.source, startedAt: now, token, track: track.track }],
+        calls: [
+            {
+                activity: state.activity,
+                kind: 'begin',
+                source: state.source,
+                startedAt: now,
+                token,
+                track: track.track,
+            },
+        ],
         state: { ...state, nextToken: token + 1, open },
     };
 };
