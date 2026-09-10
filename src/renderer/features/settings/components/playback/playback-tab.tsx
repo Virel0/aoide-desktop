@@ -2,7 +2,7 @@ import isElectron from 'is-electron';
 import { lazy, memo, Suspense, useMemo } from 'react';
 import { shallow } from 'zustand/shallow';
 
-import { AutomixSettings } from '/@/renderer/aoide/features/settings/automix-settings';
+import { CrossfadeSettings } from '/@/renderer/aoide/features/settings/crossfade-settings';
 import { AudioSettings } from '/@/renderer/features/settings/components/playback/audio-settings';
 import { AutoDJSettings } from '/@/renderer/features/settings/components/playback/auto-dj-settings';
 import { EqSettings } from '/@/renderer/features/settings/components/playback/eq-settings';
@@ -48,7 +48,7 @@ export const PlaybackTab = memo(() => {
             {/* Aoide's own, kept in a file of its own so an upstream merge does
                 not have to reconcile it. Beside Auto DJ: one decides how a song
                 becomes the next, the other that there is a next one. */}
-            <AutomixSettings />
+            <CrossfadeSettings />
             <Divider />
             <AutoDJSettings />
         </Stack>

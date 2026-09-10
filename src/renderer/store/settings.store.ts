@@ -17,10 +17,10 @@ import {
 } from '/@/renderer/aoide/features/now-playing/now-playing-column';
 import {
     AoideAlbumLockSchema,
-    AoideAutomixSchema,
+    AoideCrossfadeSchema,
     DEFAULT_AOIDE_ALBUM_LOCK,
-    DEFAULT_AOIDE_AUTOMIX,
-} from '/@/renderer/aoide/features/playback/automix';
+    DEFAULT_AOIDE_CROSSFADE,
+} from '/@/renderer/aoide/features/playback/crossfade';
 import {
     AoideLoudnessNormalisationSchema,
     DEFAULT_AOIDE_LOUDNESS_NORMALISATION,
@@ -532,7 +532,7 @@ export const GeneralSettingsSchema = z.object({
     albumGroupShowFavoriteRating: z.boolean(),
     albumGroupVerticalLayout: z.boolean(),
     aoideAlbumLock: AoideAlbumLockSchema,
-    aoideAutomix: AoideAutomixSchema,
+    aoideCrossfade: AoideCrossfadeSchema,
     aoideLoudnessNormalisation: AoideLoudnessNormalisationSchema,
     aoideNowPlayingColumn: AoideNowPlayingColumnSchema,
     aoidePlaylistSurface: AoidePlaylistSurfaceSchema,
@@ -1323,7 +1323,7 @@ const initialState: SettingsState = {
         albumGroupShowFavoriteRating: true,
         albumGroupVerticalLayout: true,
         aoideAlbumLock: DEFAULT_AOIDE_ALBUM_LOCK,
-        aoideAutomix: DEFAULT_AOIDE_AUTOMIX,
+        aoideCrossfade: DEFAULT_AOIDE_CROSSFADE,
         aoideLoudnessNormalisation: DEFAULT_AOIDE_LOUDNESS_NORMALISATION,
         aoideNowPlayingColumn: DEFAULT_AOIDE_NOW_PLAYING_COLUMN,
         aoidePlaylistSurface: DEFAULT_AOIDE_PLAYLIST_SURFACE,

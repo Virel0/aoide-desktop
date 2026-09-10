@@ -31,7 +31,7 @@ import { Text } from '/@/shared/components/text/text';
  * putting it on.
  *
  * Nothing here reads history back. Play events carry the tag from today; what
- * asks about them — smart rules, a Replay split by activity, the automixer —
+ * asks about them — smart rules, a Replay split by activity, the crossfader —
  * comes later, and would have nothing to work with if the recording had waited
  * for it.
  */

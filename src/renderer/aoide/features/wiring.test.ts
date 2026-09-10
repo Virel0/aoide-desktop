@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { RESUME_GRID_LIMIT } from './home/recent-contexts';
 import { INACTIVE_LINE_OPACITY } from './now-playing/now-playing-column';
-import { DEFAULT_AOIDE_ALBUM_LOCK, DEFAULT_AOIDE_AUTOMIX } from './playback/automix';
+import { DEFAULT_AOIDE_ALBUM_LOCK, DEFAULT_AOIDE_CROSSFADE } from './playback/crossfade';
 import { DEFAULT_AOIDE_LOUDNESS_NORMALISATION } from './playback/loudness-normalisation';
 import { syncOutcome } from './sync/sync-report';
 import { FOCUS_SYNC_MIN_INTERVAL_MS } from './sync/sync-schedule';
@@ -1281,7 +1281,7 @@ describe('loudness normalisation: both backends consult the gain module, the set
     });
 });
 
-describe('AutoMix decides the handover, and only when it is on', () => {
+describe('Crossfade decides the handover, and only when it is on', () => {
     const hook = sourceOf('playback/use-mix-transition.ts');
     const store = sourceOf('playback/audio-analysis-store.ts');
     const webPlayer = readFileSync(
@@ -1298,7 +1298,7 @@ describe('AutoMix decides the handover, and only when it is on', () => {
     );
 
     // The whole promise of a default-off feature: someone who set Feishin's own
-    // crossfade to nine seconds and never heard of AutoMix is owed those nine
+    // crossfade to nine seconds and never heard of Crossfade is owed those nine
     // seconds. The planner has no answer meaning "leave it as it was", so the
     // hook answers null instead and the player falls through to its own switch.
     it('a mixer that is off is a player that behaves as it always has', () => {
@@ -1308,7 +1308,7 @@ describe('AutoMix decides the handover, and only when it is on', () => {
     });
 
     it('the two defaults are the phone’s', () => {
-        expect(DEFAULT_AOIDE_AUTOMIX).toBe(false);
+        expect(DEFAULT_AOIDE_CROSSFADE).toBe(false);
         expect(DEFAULT_AOIDE_ALBUM_LOCK).toBe(true);
     });
 
@@ -1335,23 +1335,23 @@ describe('AutoMix decides the handover, and only when it is on', () => {
     // levelling off does not stop the mixer deciding and vice versa.
     it('the tempo comes from the cache the leveller fills, never a fetch of its own', () => {
         expect(store).toContain('export const useMixAnalysis =');
-        expect(store).toContain('const enabled = useAoideAutomixEnabled();');
+        expect(store).toContain('const enabled = useAoideCrossfadeEnabled();');
         expect(store).toContain('return useAnalysisWhen(trackId, enabled);');
         expect(hook).toContain('useMixAnalysis(');
         expect(hook).not.toMatch(/fetch\(|audioAnalysis\(|SidecarClient/);
     });
 
     it('the settings exist, are defaulted, and sit beside Auto DJ', () => {
-        expect(settings).toContain('aoideAutomix: AoideAutomixSchema');
+        expect(settings).toContain('aoideCrossfade: AoideCrossfadeSchema');
         expect(settings).toContain('aoideAlbumLock: AoideAlbumLockSchema');
-        expect(settings).toContain('aoideAutomix: DEFAULT_AOIDE_AUTOMIX');
+        expect(settings).toContain('aoideCrossfade: DEFAULT_AOIDE_CROSSFADE');
         expect(settings).toContain('aoideAlbumLock: DEFAULT_AOIDE_ALBUM_LOCK');
-        expect(playbackTab).toContain('<AutomixSettings />');
+        expect(playbackTab).toContain('<CrossfadeSettings />');
         expect(playbackTab).toContain('<AutoDJSettings />');
-        expect(sourceOf('settings/automix-settings.tsx')).toContain(
-            'aoideAutomix: e.currentTarget.checked',
+        expect(sourceOf('settings/crossfade-settings.tsx')).toContain(
+            'aoideCrossfade: e.currentTarget.checked',
         );
-        expect(sourceOf('settings/automix-settings.tsx')).toContain(
+        expect(sourceOf('settings/crossfade-settings.tsx')).toContain(
             'aoideAlbumLock: e.currentTarget.checked',
         );
     });

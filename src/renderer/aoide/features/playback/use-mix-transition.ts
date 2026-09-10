@@ -8,18 +8,18 @@ import { useMixAnalysis } from '/@/renderer/aoide/features/playback/audio-analys
 import { useSoundBounds } from '/@/renderer/aoide/features/playback/sound-bounds-store';
 import {
     useAoideAlbumLockEnabled,
-    useAoideAutomixEnabled,
-} from '/@/renderer/aoide/features/playback/use-automix';
+    useAoideCrossfadeEnabled,
+} from '/@/renderer/aoide/features/playback/use-crossfade';
 import { MixTrack, MixTransition, planTransition } from '/@/shared/aoide/mix-transition';
 
 /**
- * The plan for the handover the player is about to make, or null when AutoMix
+ * The plan for the handover the player is about to make, or null when Crossfade
  * is switched off.
  *
  * Null rather than a plan, because the planner has no answer meaning "however
  * this player was already configured": its `cut` is a specific handover — this
  * track ends, the next one starts — and someone who set Feishin's own
- * crossfade to nine seconds and never turned AutoMix on is owed those nine
+ * crossfade to nine seconds and never turned Crossfade on is owed those nine
  * seconds, not a cut. So the mixer either decides the whole handover or does
  * not exist.
  *
@@ -31,7 +31,7 @@ export const useMixTransition = (
     outgoing: QueueSong | undefined,
     incoming: QueueSong | undefined,
 ): MixTransition | null => {
-    const automix = useAoideAutomixEnabled();
+    const automix = useAoideCrossfadeEnabled();
     const albumLock = useAoideAlbumLockEnabled();
 
     const outgoingAnalysis = useMixAnalysis(outgoing?.id);

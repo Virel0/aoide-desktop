@@ -80,6 +80,7 @@
 
 .row-cover {
     object-fit: cover;
+
     /* iOS rounds a list thumbnail at 5pt; this one is twice the size. */
     border-radius: 8px;
 }

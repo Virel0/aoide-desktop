@@ -55,7 +55,7 @@ export function WebPlayer() {
     // gain node — the same node ReplayGain uses, so the two multiply.
     const loudness1 = useLoudnessGain(player1);
     const loudness2 = useLoudnessGain(player2);
-    // Aoide's AutoMix: one plan for the handover in front of us, or null when
+    // Aoide's Crossfade: one plan for the handover in front of us, or null when
     // the mixer is off and Feishin's own transition settings still decide.
     const mix = useMixTransition(currentSong, nextSong);
 
@@ -154,7 +154,7 @@ export function WebPlayer() {
             }
 
             if (mix) {
-                automixHandler({
+                plannedTransitionHandler({
                     currentPlayer: playerRef.current.player1(),
                     currentPlayerNum: num,
                     currentTime: e.playedSeconds,
@@ -237,7 +237,7 @@ export function WebPlayer() {
             }
 
             if (mix) {
-                automixHandler({
+                plannedTransitionHandler({
                     currentPlayer: playerRef.current.player2(),
                     currentPlayerNum: num,
                     currentTime: e.playedSeconds,
@@ -636,103 +636,6 @@ export function WebPlayer() {
     );
 }
 
-/**
- * The handover AutoMix planned, carried out with the machinery Feishin already
- * has.
- *
- * Nothing here decides anything: `planTransition` did, on numbers that can move
- * under it — a tempo arriving from the sidecar, a queue edited mid-song — and
- * this is re-consulted on every progress sample, so it cannot go stale.
- *
- * A blend is the existing crossfade over the planned length. A gapless
- * handover is the existing pre-start, which is what an album run gets so a
- * record that segues still does. A cut is the player doing nothing at all: the
- * element reaches its end, `onEnded` advances the queue, and the next track
- * starts — which is the behaviour every other part of this player already
- * falls back to, so a plan that gives up is never worse than not having the
- * feature.
- */
-function automixHandler(args: {
-    currentPlayer: {
-        ref: null | ReactPlayer;
-        setVolume: (volume: number) => void;
-    };
-    currentPlayerNum: number;
-    currentTime: number;
-    duration: number;
-    hasNextSong: boolean;
-    isTransitioning: boolean | string;
-    mix: MixTransition;
-    nextPlayer: {
-        ref: null | ReactPlayer;
-        setVolume: (volume: number) => void;
-    };
-    playerNum: number;
-    setIsTransitioning: Dispatch<boolean | string>;
-    volume: number;
-}) {
-    const {
-        currentPlayer,
-        currentPlayerNum,
-        currentTime,
-        duration,
-        hasNextSong,
-        isTransitioning,
-        mix,
-        nextPlayer,
-        playerNum,
-        setIsTransitioning,
-        volume,
-    } = args;
-
-    switch (mix.kind) {
-        case 'blend':
-            crossfadeHandler({
-                crossfadeDuration: mix.overlapSeconds,
-                // Equal power, not whichever curve the person picked for their
-                // own crossfade: the planner's lengths were chosen against a
-                // fade that holds a constant level across the handover, and an
-                // exponential eight seconds is a different transition wearing
-                // the same number.
-                crossfadeStyle: CrossfadeStyle.EQUAL_POWER,
-                currentPlayer,
-                currentPlayerNum,
-                currentTime,
-                duration,
-                hasNextSong,
-                isTransitioning,
-                nextPlayer,
-                playerNum,
-                setIsTransitioning,
-                volume,
-            });
-            return;
-        case 'cut':
-            // The only work a cut has is undoing a blend the queue moved out
-            // from under — the same tidy-up the crossfade does when it runs out
-            // of songs to fade into. Left alone otherwise, so a cut never
-            // touches a volume the play/pause fade is in the middle of riding.
-            if (isTransitioning) {
-                currentPlayer.setVolume(volume);
-                nextPlayer.setVolume(0);
-                nextPlayer.ref?.getInternalPlayer()?.pause();
-                setIsTransitioning(false);
-            }
-            return;
-        case 'gapless':
-            gaplessHandler({
-                currentTime,
-                duration,
-                hasNextSong,
-                isFlac: false,
-                isTransitioning,
-                nextPlayer,
-                setIsTransitioning,
-            });
-            return;
-    }
-}
-
 function crossfadeHandler(args: {
     crossfadeDuration: number;
     crossfadeStyle: CrossfadeStyle;
@@ -979,6 +882,103 @@ function getDurationPadding(isFlac: boolean) {
  */
 function linearEase(t: number): number {
     return Math.max(0, Math.min(1, t));
+}
+
+/**
+ * The handover Crossfade planned, carried out with the machinery Feishin already
+ * has.
+ *
+ * Nothing here decides anything: `planTransition` did, on numbers that can move
+ * under it — a tempo arriving from the sidecar, a queue edited mid-song — and
+ * this is re-consulted on every progress sample, so it cannot go stale.
+ *
+ * A blend is the existing crossfade over the planned length. A gapless
+ * handover is the existing pre-start, which is what an album run gets so a
+ * record that segues still does. A cut is the player doing nothing at all: the
+ * element reaches its end, `onEnded` advances the queue, and the next track
+ * starts — which is the behaviour every other part of this player already
+ * falls back to, so a plan that gives up is never worse than not having the
+ * feature.
+ */
+function plannedTransitionHandler(args: {
+    currentPlayer: {
+        ref: null | ReactPlayer;
+        setVolume: (volume: number) => void;
+    };
+    currentPlayerNum: number;
+    currentTime: number;
+    duration: number;
+    hasNextSong: boolean;
+    isTransitioning: boolean | string;
+    mix: MixTransition;
+    nextPlayer: {
+        ref: null | ReactPlayer;
+        setVolume: (volume: number) => void;
+    };
+    playerNum: number;
+    setIsTransitioning: Dispatch<boolean | string>;
+    volume: number;
+}) {
+    const {
+        currentPlayer,
+        currentPlayerNum,
+        currentTime,
+        duration,
+        hasNextSong,
+        isTransitioning,
+        mix,
+        nextPlayer,
+        playerNum,
+        setIsTransitioning,
+        volume,
+    } = args;
+
+    switch (mix.kind) {
+        case 'blend':
+            crossfadeHandler({
+                crossfadeDuration: mix.overlapSeconds,
+                // Equal power, not whichever curve the person picked for their
+                // own crossfade: the planner's lengths were chosen against a
+                // fade that holds a constant level across the handover, and an
+                // exponential eight seconds is a different transition wearing
+                // the same number.
+                crossfadeStyle: CrossfadeStyle.EQUAL_POWER,
+                currentPlayer,
+                currentPlayerNum,
+                currentTime,
+                duration,
+                hasNextSong,
+                isTransitioning,
+                nextPlayer,
+                playerNum,
+                setIsTransitioning,
+                volume,
+            });
+            return;
+        case 'cut':
+            // The only work a cut has is undoing a blend the queue moved out
+            // from under — the same tidy-up the crossfade does when it runs out
+            // of songs to fade into. Left alone otherwise, so a cut never
+            // touches a volume the play/pause fade is in the middle of riding.
+            if (isTransitioning) {
+                currentPlayer.setVolume(volume);
+                nextPlayer.setVolume(0);
+                nextPlayer.ref?.getInternalPlayer()?.pause();
+                setIsTransitioning(false);
+            }
+            return;
+        case 'gapless':
+            gaplessHandler({
+                currentTime,
+                duration,
+                hasNextSong,
+                isFlac: false,
+                isTransitioning,
+                nextPlayer,
+                setIsTransitioning,
+            });
+            return;
+    }
 }
 
 /**

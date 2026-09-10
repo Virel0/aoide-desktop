@@ -12,7 +12,7 @@ import {
     takeToAsk,
 } from './audio-analysis-cache';
 
-import { useAoideAutomixEnabled } from '/@/renderer/aoide/features/playback/use-automix';
+import { useAoideCrossfadeEnabled } from '/@/renderer/aoide/features/playback/use-crossfade';
 import { useAoideLoudnessNormalisationEnabled } from '/@/renderer/aoide/features/playback/use-loudness-normalisation';
 import { useSidecarTransport } from '/@/renderer/aoide/features/sync/use-sidecar-transport';
 import { SidecarClient } from '/@/renderer/aoide/sync/sidecar-client';
@@ -131,13 +131,13 @@ export const useAudioAnalysis = (trackId: string | undefined): AudioAnalysis | n
 };
 
 /**
- * The tempo half: what AutoMix reads, gated by its own setting.
+ * The tempo half: what Crossfade reads, gated by its own setting.
  *
  * A separate door onto the same cache, because someone who wants their songs
  * mixed has not thereby asked for them to be levelled, and someone who turned
  * levelling off has not asked the mixer to stop deciding.
  */
 export const useMixAnalysis = (trackId: string | undefined): AudioAnalysis | null | undefined => {
-    const enabled = useAoideAutomixEnabled();
+    const enabled = useAoideCrossfadeEnabled();
     return useAnalysisWhen(trackId, enabled);
 };

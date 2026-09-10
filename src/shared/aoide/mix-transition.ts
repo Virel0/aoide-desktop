@@ -1,5 +1,5 @@
 /**
- * How one song is handed over to the next when AutoMix is on.
+ * How one song is handed over to the next when Crossfade is on.
  *
  * A port of `PlaybackKit/MixTransition.swift` in the iOS repo, rule for rule
  * and constant for constant — `mix-transition-parity.test.ts` and its twin in
@@ -180,7 +180,7 @@ const tracksAgree = (outgoing: MixTrack, incoming: MixTrack): boolean => {
  *
  * `automix` is the toggle, off by default: off means the player behaves as it
  * always has. `albumLock` keeps album runs intact — on, two consecutive tracks
- * of one album hand over gaplessly whatever AutoMix says, which is what makes
+ * of one album hand over gaplessly whatever Crossfade says, which is what makes
  * album lock the mixer's off-switch for the records that need one rather than
  * a second mixer.
  */
