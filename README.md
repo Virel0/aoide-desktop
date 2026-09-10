@@ -41,9 +41,8 @@ sudo pacman -Syu aoide
 flatpak install aoide.flatpak
 ```
 
-mpv is built into the Flatpak, so gapless playback works with nothing else
-installed. See [packaging/flatpak](packaging/flatpak/README.md) for building it
-yourself and for moving your settings across.
+See [packaging/flatpak](packaging/flatpak/README.md) for building it yourself
+and for moving your settings across.
 
 **From source**, for development: `pnpm install && pnpm dev`.
 
@@ -97,8 +96,6 @@ skipped without a stall at the boundary.
 - The [Aoide sidecar](https://github.com/Virel0/aoide-sidecar) plugin on it, for
   sync, taste flags, Spotify matching and silence measurement. Without it Aoide
   still plays music and keeps playlists locally.
-- mpv, for gapless playback and the wider format support. The Arch package
-  depends on it; the Flatpak carries its own.
 
 ## Packaging
 
@@ -107,7 +104,7 @@ skipped without a stall at the boundary.
 | [`packaging/arch`](packaging/arch) | Build and install from a checkout |
 | [`packaging/arch/release`](packaging/arch/release) | The package CI builds for a tag, and the pacman repository |
 | [`packaging/aur`](packaging/aur) | An AUR package, for whenever AUR registration reopens |
-| [`packaging/flatpak`](packaging/flatpak) | The Flatpak, with mpv built into the sandbox |
+| [`packaging/flatpak`](packaging/flatpak) | The Flatpak |
 
 Pushing a tag `v*` builds the Arch package and creates the release. The Flatpak
 is attached by running the **Flatpak** workflow with that tag, because GitHub
@@ -133,9 +130,10 @@ mirrored in the iOS app, each side checked against the same cases.
 
 ## FAQ
 
-**MPV is not working, or pause/play flickers.** Check the binary path in
-Settings and restart. Known-good versions are 0.35 and later; 0.34 is broken.
-Inside the Flatpak, mpv is bundled at `/app/bin/mpv` and needs no setting.
+**A track will not play, or plays as a much larger download than it should.**
+Everything decodes in Chromium, which does not handle ALAC, WavPack, DSD, APE or
+WMA. Those transcode on the server instead, which needs transcoding enabled in
+Jellyfin. Aoide used to decode them itself through mpv; that backend is gone.
 
 **Which servers are supported?** Jellyfin. Feishin's Navidrome and OpenSubsonic
 support is still in the code but is not what Aoide is built or tested against,

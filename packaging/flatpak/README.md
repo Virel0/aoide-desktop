@@ -12,11 +12,10 @@ repository, which installs anywhere with `flatpak install aoide.flatpak`.
 
 ## What is in it
 
-mpv is **built into the sandbox** at `/app/bin/mpv`. A Flatpak cannot reach the
-host's mpv, and Aoide's MPV backend is what gives gapless playback and the wider
-format support, so it comes along. It is built audio-only: nothing in Aoide asks
-mpv to draw a frame, so every GPU backend is left out and the build is a fraction
-of the full player's.
+The app, and nothing else built from source. It used to carry mpv, libplacebo
+and libass into the sandbox, because a Flatpak cannot reach the host's mpv and
+the MPV backend was what gave gapless playback; the backend went and so did
+they, which is most of the build time back.
 
 Codecs come from `org.freedesktop.Platform.codecs-extra`, which Flatpak installs
 alongside. Without it the runtime's own ffmpeg would refuse some of what a

@@ -1,10 +1,13 @@
 # Aoide as a Flatpak.
 #
-# Two things make this different from the Arch package. A Flatpak cannot see the
-# host's mpv, so mpv is built here and installed inside the sandbox at
-# /app/bin/mpv — audio only, because nothing in Aoide ever asks it to draw a
-# frame. And Electron needs zypak to run under Flatpak's own sandbox, which the
-# Electron base app provides and packaging/flatpak/aoide.sh invokes.
+# What makes this different from the Arch package is that Electron needs zypak
+# to run under Flatpak's own sandbox, which the Electron base app provides and
+# packaging/flatpak/aoide.sh invokes.
+#
+# This used to build mpv, libplacebo and libass into the sandbox as well — about
+# eighty lines and most of the build time — because a Flatpak cannot see the
+# host's mpv and the MPV backend was the one that gave gapless playback. The
+# backend went, so they did.
 #
 # The app itself is NOT built here. flatpak-builder builds offline, and teaching
 # it to run pnpm inside the sandbox buys nothing: ./build.sh runs the same
@@ -62,89 +65,6 @@ finish-args:
   - --env=TMPDIR=/var/tmp
 
 modules:
-  # mpv's own dependency, and a hard one since 0.38 even when no video is drawn.
-  # Built without every GPU backend: this mpv decodes audio and answers IPC.
-  - name: libplacebo
-    buildsystem: meson
-    config-opts:
-      # Meson defaults to lib64 on x86_64, and nothing in the image looks there:
-      # libplacebo installed fine and mpv then could not find it, which is what
-      # the first green-lit build failed on. The autotools modules default to
-      # lib and need no such help.
-      - --libdir=lib
-      - -Dvulkan=disabled
-      - -Dopengl=disabled
-      - -Dd3d11=disabled
-      - -Dshaderc=disabled
-      - -Ddemos=false
-      - -Dtests=false
-    cleanup:
-      - /include
-      - /lib/pkgconfig
-    sources:
-      - type: git
-        url: https://github.com/haasn/libplacebo.git
-        tag: v7.360.1
-        commit: cee9b076f2c63104ccfd497fa79c39a867293ec4
-
-  # Subtitle rendering, which mpv wants present whether or not it is asked to
-  # use it. Its own dependencies — freetype, harfbuzz, fribidi — are in the
-  # runtime, which is why the upstream mpv Flatpak does not build them either.
-  - name: libass
-    buildsystem: autotools
-    config-opts:
-      - --disable-static
-      - --enable-harfbuzz
-      - --enable-fontconfig
-    cleanup:
-      - /include
-      - /lib/pkgconfig
-    sources:
-      - type: git
-        url: https://github.com/libass/libass.git
-        tag: 0.17.5
-        commit: 4a05d8127f525943ebf45fdc6497c9e665947f0d
-
-  # Deliberately few options. Everything named here is something Aoide relies on
-  # or something that would pull in a dependency for nothing; the rest is left to
-  # mpv's own detection, which disables what the runtime cannot satisfy. Naming
-  # an option mpv has since renamed fails the build outright, so the list stays
-  # short on purpose.
-  - name: mpv
-    buildsystem: meson
-    config-opts:
-      - --libdir=lib
-      - -Dcplayer=true
-      - -Dlibmpv=false
-      - -Dbuild-date=false
-      - -Dalsa=enabled
-      - -Dpulse=enabled
-      - -Dpipewire=enabled
-      - -Dlua=disabled
-      - -Djavascript=disabled
-      - -Dlibarchive=disabled
-      - -Dlibbluray=disabled
-      - -Dcdda=disabled
-      - -Ddvdnav=disabled
-      - -Ddvbin=disabled
-      - -Dopenal=disabled
-      - -Djack=disabled
-      - -Drubberband=disabled
-      - -Dlibavdevice=disabled
-    cleanup:
-      - /include
-      - /lib/pkgconfig
-      - /share/applications
-      - /share/icons
-      - /share/bash-completion
-      - /share/zsh
-      - /share/metainfo
-    sources:
-      - type: git
-        url: https://github.com/mpv-player/mpv.git
-        tag: v0.41.0
-        commit: 41f6a645068483470267271e1d09966ca3b9f413
-
   - name: aoide
     buildsystem: simple
     build-commands:

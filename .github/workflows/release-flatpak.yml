@@ -35,8 +35,9 @@ permissions:
 jobs:
     flatpak:
         runs-on: ubuntu-latest
-        # mpv, libplacebo and libass are built from source inside the sandbox.
-        timeout-minutes: 90
+        # Nothing is built from source here any more; the manifest installs
+        # what electron-builder already produced.
+        timeout-minutes: 30
 
         steps:
             - name: Check out the repository

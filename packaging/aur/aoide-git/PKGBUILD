@@ -15,9 +15,9 @@ url="https://github.com/Virel0/aoide-desktop"
 license=('GPL-3.0-or-later')
 
 # Electron is bundled by electron-builder, so these are the shared libraries it
-# expects rather than a runtime. mpv is a real dependency on purpose: it is what
-# gives gapless playback and the wider format support.
-depends=('gtk3' 'nss' 'alsa-lib' 'libxss' 'libnotify' 'mpv')
+# expects rather than a runtime. mpv was here while the app could decode through
+# it; it plays everything through Chromium now and never looks for a binary.
+depends=('gtk3' 'nss' 'alsa-lib' 'libxss' 'libnotify')
 makedepends=('git' 'nodejs' 'pnpm')
 provides=("$_pkgname")
 conflicts=("$_pkgname")

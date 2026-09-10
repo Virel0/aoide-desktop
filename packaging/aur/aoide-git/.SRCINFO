@@ -13,7 +13,6 @@ pkgbase = aoide-git
 	depends = alsa-lib
 	depends = libxss
 	depends = libnotify
-	depends = mpv
 	provides = aoide
 	conflicts = aoide
 	options = !strip
