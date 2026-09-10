@@ -914,7 +914,6 @@
         },
         "setting": {
             "advanced": "Advanced",
-            "analytics": "Analytics",
             "generalTab": "General",
             "hotkeysTab": "Hotkeys",
             "playbackTab": "Playback",
@@ -1082,10 +1081,6 @@
         "albumBackground": "Album background image",
         "albumBackgroundBlur_description": "Adjusts the amount of blur applied to the album background image",
         "albumBackgroundBlur": "Album background image blur size",
-        "analyticsDisable": "Opt-out of usage based analytics",
-        "analyticsDisable_description": "Anonymized usage data is sent to the developer to help improve the application",
-        "analyticsEnable": "Send usage-based analytics",
-        "analyticsEnable_description": "Anonymized usage data is sent to the developer to help improve the application",
         "applicationHotkeys_description": "Configure application hotkeys. Toggle the checkbox to set as a global hotkey (desktop only)",
         "applicationHotkeys": "Application hotkeys",
         "artistBackground": "Artist background image",
