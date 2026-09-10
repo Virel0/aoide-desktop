@@ -34,8 +34,6 @@ interface WebPlayerEngineProps {
     playerNum: number;
     playerRef: RefObject<null | WebPlayerEngineHandle>;
     playerStatus: PlayerStatus;
-    preservesPitch: boolean;
-    speed?: number;
     src1: string | undefined;
     src2: string | undefined;
     volume: number;
@@ -68,8 +66,6 @@ export const WebPlayerEngine = (props: WebPlayerEngineProps) => {
         playerNum,
         playerRef,
         playerStatus,
-        preservesPitch,
-        speed,
         src1,
         src2,
         volume,
@@ -279,37 +275,18 @@ export const WebPlayerEngine = (props: WebPlayerEngineProps) => {
         }
     }, [isTransitioning, playerNum, playerStatus, pauseBothPlayers]);
 
-    useEffect(() => {
-        const player1 = player1Ref.current?.getInternalPlayer();
-        if (player1 && player1 instanceof HTMLAudioElement) {
-            player1.preservesPitch = preservesPitch;
-        }
-        const player2 = player2Ref.current?.getInternalPlayer();
-        if (player2 && player2 instanceof HTMLAudioElement) {
-            player2.preservesPitch = preservesPitch;
-        }
-    }, [preservesPitch]);
-
     const handleOnReadyPlayer1 = useCallback(
         (player: ReactPlayer) => {
-            const internal = player.getInternalPlayer();
-            if (internal && internal instanceof HTMLAudioElement) {
-                internal.preservesPitch = preservesPitch;
-            }
             onStartedPlayer1(player);
         },
-        [onStartedPlayer1, preservesPitch],
+        [onStartedPlayer1],
     );
 
     const handleOnReadyPlayer2 = useCallback(
         (player: ReactPlayer) => {
-            const internal = player.getInternalPlayer();
-            if (internal && internal instanceof HTMLAudioElement) {
-                internal.preservesPitch = preservesPitch;
-            }
             onStartedPlayer2(player);
         },
-        [onStartedPlayer2, preservesPitch],
+        [onStartedPlayer2],
     );
 
     if (isLoading || !ReactPlayerComponent) {
@@ -336,7 +313,6 @@ export const WebPlayerEngine = (props: WebPlayerEngineProps) => {
                 )}
                 onProgress={onProgressPlayer1}
                 onReady={handleOnReadyPlayer1}
-                playbackRate={speed || 1}
                 playing={playerNum === 1 && playerStatus === PlayerStatus.PLAYING}
                 progressInterval={isTransitioning ? 10 : 250}
                 ref={player1Ref}
@@ -362,7 +338,6 @@ export const WebPlayerEngine = (props: WebPlayerEngineProps) => {
                 )}
                 onProgress={onProgressPlayer2}
                 onReady={handleOnReadyPlayer2}
-                playbackRate={speed || 1}
                 playing={playerNum === 2 && playerStatus === PlayerStatus.PLAYING}
                 progressInterval={isTransitioning ? 10 : 250}
                 ref={player2Ref}

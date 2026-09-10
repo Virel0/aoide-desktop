@@ -28,7 +28,7 @@ export function WaveSurferPlayer() {
     const playerRef = useRef<null | WaveSurferPlayerEngineHandle>(null);
     const { num, player1, player2, status } = usePlayerData();
     const { mediaAutoNext, setTimestamp } = usePlayerActions();
-    const { crossfadeDuration, speed, transitionType } = usePlayerProperties();
+    const { crossfadeDuration, transitionType } = usePlayerProperties();
     const isMuted = usePlayerMuted();
     const volume = usePlayerVolume();
     const { transcode } = usePlaybackSettings();
@@ -266,7 +266,6 @@ export function WaveSurferPlayer() {
             playerNum={num}
             playerRef={playerRef}
             playerStatus={localPlayerStatus}
-            speed={speed}
             src1={player1Url}
             src2={player2Url}
             volume={volume}

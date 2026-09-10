@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -9,55 +9,33 @@ import {
     ListConfigBooleanControl,
     ListConfigTable,
 } from '/@/renderer/features/shared/components/list-config-menu';
-import {
-    usePlayerActions,
-    usePlayerProperties,
-    usePlayerSongProperties,
-    usePlayerSpeed,
-    usePlayerStatus,
-} from '/@/renderer/store';
+import { usePlayerActions, usePlayerProperties, usePlayerStatus } from '/@/renderer/store';
 import {
     useCombinedLyricsAndVisualizer,
-    useMicrotonalPitchControls,
     usePlaybackSettings,
-    useSettingsStore,
     useSettingsStoreActions,
     useShowLyricsInSidebar,
     useShowQueueInSidebar,
     useShowVisualizerInSidebar,
 } from '/@/renderer/store/settings.store';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
-import { Button } from '/@/shared/components/button/button';
-import { Group } from '/@/shared/components/group/group';
 import { Paper } from '/@/shared/components/paper/paper';
 import { Popover } from '/@/shared/components/popover/popover';
 import { SegmentedControl } from '/@/shared/components/segmented-control/segmented-control';
 import { Select } from '/@/shared/components/select/select';
 import { Slider } from '/@/shared/components/slider/slider';
 import { Stack } from '/@/shared/components/stack/stack';
-import { Text } from '/@/shared/components/text/text';
 import { CrossfadeStyle, PlayerStatus, PlayerStyle } from '/@/shared/types/types';
 
 export const PlayerConfig = () => {
     const { t } = useTranslation();
-    const preservePitch = useSettingsStore((state) => state.playback.preservePitch);
     const showLyricsInSidebar = useShowLyricsInSidebar();
     const showQueueInSidebar = useShowQueueInSidebar();
     const showVisualizerInSidebar = useShowVisualizerInSidebar();
     const combinedLyricsAndVisualizer = useCombinedLyricsAndVisualizer();
     const { transitionType } = usePlayerProperties();
 
-    const playbackSettings = usePlaybackSettings();
     const { setSettings } = useSettingsStoreActions();
-
-    const setPreservePitch = useCallback(
-        (value: boolean) => {
-            setSettings({
-                playback: { ...playbackSettings, preservePitch: value },
-            });
-        },
-        [playbackSettings, setSettings],
-    );
 
     const audioOptions = useMemo(
         () => [
@@ -91,30 +69,6 @@ export const PlayerConfig = () => {
             },
         ],
         [t, transitionType],
-    );
-
-    const playbackOptions = useMemo(
-        () => [
-            {
-                component: <PlaybackSpeedSlider />,
-                id: 'playbackSpeed',
-                label: t('player.playbackSpeed'),
-            },
-            {
-                component: <PitchControls />,
-                id: 'pitchControls',
-                isHidden: preservePitch,
-                label: '',
-            },
-            {
-                component: (
-                    <ListConfigBooleanControl onChange={setPreservePitch} value={preservePitch} />
-                ),
-                id: 'preservePitch',
-                label: t('setting.preservePitch'),
-            },
-        ],
-        [preservePitch, setPreservePitch, t],
     );
 
     const sidebarOptions = useMemo(
@@ -218,9 +172,6 @@ export const PlayerConfig = () => {
                     </Paper>
                     <Paper p="md" radius="md">
                         <ListConfigTable options={transitionOptions} />
-                    </Paper>
-                    <Paper p="md" radius="md">
-                        <ListConfigTable options={playbackOptions} />
                     </Paper>
                     <Paper p="md" radius="md">
                         <ListConfigTable options={sidebarOptions} />
@@ -337,114 +288,5 @@ const CrossfadeDurationConfig = () => {
             }}
             w="100%"
         />
-    );
-};
-
-export const PlaybackSpeedSlider = () => {
-    const speed = usePlayerSpeed();
-    const { setSpeed } = usePlayerActions();
-    const { bpm } = usePlayerSongProperties(['bpm']) ?? {};
-
-    const formatPlaybackSpeedSliderLabel = useMemo(
-        () => (value: number) => {
-            const bpmValue = Number(bpm);
-            if (bpmValue > 0) {
-                return `${value.toFixed(2)} x / ${(bpmValue * value).toFixed(1)} BPM`;
-            }
-            return `${value.toFixed(2)} x`;
-        },
-        [bpm],
-    );
-
-    return (
-        <Slider
-            label={formatPlaybackSpeedSliderLabel}
-            marks={[
-                { label: '0.5', value: 0.5 },
-                { label: '0.75', value: 0.75 },
-                { label: '1', value: 1 },
-                { label: '1.25', value: 1.25 },
-                { label: '1.5', value: 1.5 },
-                { label: '1.75', value: 1.75 },
-                { label: '2', value: 2 },
-            ]}
-            max={2}
-            min={0.5}
-            onChange={setSpeed}
-            onDoubleClick={() => setSpeed(1)}
-            step={0.01}
-            value={speed}
-            w="320px"
-        />
-    );
-};
-
-export const PitchControls = () => {
-    const microtonal = useMicrotonalPitchControls();
-    const speed = usePlayerSpeed();
-    const { setSpeed } = usePlayerActions();
-
-    const speedToPitch = (speed: number) => {
-        return 12 * Math.log2(speed);
-    };
-
-    const pitchToSpeed = (pitch: number) => {
-        return 2 ** (pitch / 12);
-    };
-
-    const adjustMusicalSpeed = (adjustment: number) => {
-        const curPitch = speedToPitch(speed);
-        const newSpeed = pitchToSpeed(curPitch + adjustment);
-        setSpeed(newSpeed);
-    };
-
-    return (
-        <Group gap={microtonal ? 'xs' : 'md'} my="md" w="100%" wrap="nowrap">
-            <Button
-                aria-label="-1 semitone"
-                fullWidth
-                fw={400}
-                onClick={() => adjustMusicalSpeed(-1)}
-                size="compact-xs"
-            >
-                -1st
-            </Button>
-            {microtonal && (
-                <Button
-                    aria-label="-10 cents"
-                    fullWidth
-                    fw={400}
-                    onClick={() => adjustMusicalSpeed(-0.1)}
-                    size="compact-xs"
-                >
-                    -10ct
-                </Button>
-            )}
-            <Text size="sm" style={{ fontFamily: 'monospace' }} ta="center">
-                {speed.toFixed(2)}x {speedToPitch(speed) > 0 && '+'}
-                {speedToPitch(speed) == 0 && '±'}
-                {speedToPitch(speed).toFixed(2)}st
-            </Text>
-            {microtonal && (
-                <Button
-                    aria-label="+10 cents"
-                    fullWidth
-                    fw={400}
-                    onClick={() => adjustMusicalSpeed(0.1)}
-                    size="compact-xs"
-                >
-                    +10ct
-                </Button>
-            )}
-            <Button
-                aria-label="+1 semitone"
-                fullWidth
-                fw={400}
-                onClick={() => adjustMusicalSpeed(1)}
-                size="compact-xs"
-            >
-                +1st
-            </Button>
-        </Group>
     );
 };

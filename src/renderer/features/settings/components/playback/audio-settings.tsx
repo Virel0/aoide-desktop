@@ -131,20 +131,6 @@ export const AudioSettings = memo(() => {
         {
             control: (
                 <Switch
-                    defaultChecked={settings.preservePitch}
-                    onChange={(e) => {
-                        setSettings({
-                            playback: { preservePitch: e.currentTarget.checked },
-                        });
-                    }}
-                />
-            ),
-            description: t('setting.preservePitch', { context: 'description' }),
-            title: t('setting.preservePitch'),
-        },
-        {
-            control: (
-                <Switch
                     defaultChecked={settings.audioFadeOnStatusChange}
                     onChange={(e) => {
                         setSettings({

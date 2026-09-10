@@ -46,10 +46,10 @@ export function WebPlayer() {
     const playback = useAudioProperties();
     const { webAudio } = useWebAudio();
 
-    const { crossfadeDuration, crossfadeStyle, speed, transitionType } = usePlayerProperties();
+    const { crossfadeDuration, crossfadeStyle, transitionType } = usePlayerProperties();
     const isMuted = usePlayerMuted();
     const volume = usePlayerVolume();
-    const { audioFadeOnStatusChange, preservePitch, transcode } = usePlaybackSettings();
+    const { audioFadeOnStatusChange, transcode } = usePlaybackSettings();
     const trim = useTrimPlayers({ num, player1, player2, playerRef });
     // Aoide's loudness normalisation, as a factor into each slot's existing
     // gain node — the same node ReplayGain uses, so the two multiply.
@@ -627,8 +627,6 @@ export function WebPlayer() {
             playerNum={num}
             playerRef={playerRef}
             playerStatus={localPlayerStatus}
-            preservesPitch={preservePitch}
-            speed={speed}
             src1={player1Url}
             src2={player2Url}
             volume={volume}

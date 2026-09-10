@@ -29,7 +29,6 @@ interface WaveSurferPlayerEngineProps {
     playerNum: number;
     playerRef: RefObject<null | WaveSurferPlayerEngineHandle>;
     playerStatus: PlayerStatus;
-    speed?: number;
     src1: string | undefined;
     src2: string | undefined;
     volume: number;
@@ -54,7 +53,6 @@ export const WaveSurferPlayerEngine = (props: WaveSurferPlayerEngineProps) => {
         playerNum,
         playerRef,
         playerStatus,
-        speed,
         src1,
         src2,
         volume,
@@ -104,19 +102,6 @@ export const WaveSurferPlayerEngine = (props: WaveSurferPlayerEngineProps) => {
             wavesurfer2.setVolume(isMuted ? 0 : logVolume2);
         }
     }, [wavesurfer2, internalVolume2, isMuted]);
-
-    // Handle playback rate (speed)
-    useEffect(() => {
-        if (wavesurfer1 && speed) {
-            wavesurfer1.setPlaybackRate(speed);
-        }
-    }, [wavesurfer1, speed]);
-
-    useEffect(() => {
-        if (wavesurfer2 && speed) {
-            wavesurfer2.setPlaybackRate(speed);
-        }
-    }, [wavesurfer2, speed]);
 
     // Handle play/pause based on playerNum and status
     useEffect(() => {

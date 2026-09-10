@@ -501,26 +501,6 @@ export const ControlSettings = memo(() => {
                   },
               ]
             : []),
-        {
-            control: (
-                <Switch
-                    defaultChecked={settings.microtonalPitchControls}
-                    onChange={(e) =>
-                        setSettings({
-                            general: {
-                                ...settings,
-                                microtonalPitchControls: e.currentTarget.checked,
-                            },
-                        })
-                    }
-                />
-            ),
-            description: t('setting.microtonalPitchControls', {
-                context: 'description',
-            }),
-            isHidden: false,
-            title: t('setting.microtonalPitchControls'),
-        },
     ];
 
     return <SettingsSection options={controlOptions} title={t('page.setting.controls')} />;

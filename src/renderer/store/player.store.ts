@@ -81,7 +81,6 @@ interface Actions {
     setQueue: (data: Song[], index?: number, position?: number) => void;
     setRepeat: (repeat: PlayerRepeat) => void;
     setShuffle: (shuffle: PlayerShuffle) => void;
-    setSpeed: (speed: number) => void;
     setTransitionType: (transitionType: PlayerStyle) => void;
     setVolume: (volume: number) => void;
     shuffle: () => void;
@@ -120,7 +119,6 @@ interface State {
         repeat: PlayerRepeat;
         seekToTimestamp: string;
         shuffle: PlayerShuffle;
-        speed: number;
         status: PlayerStatus;
         transitionType: PlayerStyle;
         volume: number;
@@ -433,7 +431,6 @@ const initialState: State = {
         repeat: PlayerRepeat.NONE,
         seekToTimestamp: uniqueSeekToTimestamp(0),
         shuffle: PlayerShuffle.NONE,
-        speed: 1,
         status: PlayerStatus.PAUSED,
         transitionType: PlayerStyle.GAPLESS,
         volume: 30,
@@ -1571,12 +1568,6 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                         cleanupOrphanedSongs(state);
                     });
                 },
-                setSpeed: (speed: number) => {
-                    set((state) => {
-                        const normalizedSpeed = Math.max(0.5, Math.min(2, speed));
-                        state.player.speed = normalizedSpeed;
-                    });
-                },
                 setTransitionType: (transitionType: PlayerStyle) => {
                     set((state) => {
                         state.player.transitionType = transitionType;
@@ -1829,7 +1820,6 @@ export const usePlayerActions = () => {
             setQueue: state.setQueue,
             setRepeat: state.setRepeat,
             setShuffle: state.setShuffle,
-            setSpeed: state.setSpeed,
             setTransitionType: state.setTransitionType,
             setVolume: state.setVolume,
             shuffle: state.shuffle,
@@ -2014,17 +2004,6 @@ export const subscribePlayerMute = (
     );
 };
 
-export const subscribePlayerSpeed = (
-    onChange: (properties: { speed: number }, prev: { speed: number }) => void,
-) => {
-    return usePlayerStoreBase.subscribe(
-        (state) => state.player.speed,
-        (speed, prevSpeed) => {
-            onChange({ speed }, { speed: prevSpeed });
-        },
-    );
-};
-
 export const subscribePlayerRepeat = (
     onChange: (properties: { repeat: PlayerRepeat }, prev: { repeat: PlayerRepeat }) => void,
 ) => {
@@ -2071,7 +2050,6 @@ export const usePlayerProperties = () => {
             playerNum: state.player.playerNum,
             repeat: state.player.repeat,
             shuffle: state.player.shuffle,
-            speed: state.player.speed,
             status: state.player.status,
             transitionType: state.player.transitionType,
             volume: state.player.volume,
@@ -2242,10 +2220,6 @@ export const usePlayerHydrated = () => {
 
 export const usePlayerVolume = () => {
     return usePlayerStoreBase((state) => state.player.volume);
-};
-
-export const usePlayerSpeed = () => {
-    return usePlayerStoreBase((state) => state.player.speed);
 };
 
 export const usePlayerSong = () => {

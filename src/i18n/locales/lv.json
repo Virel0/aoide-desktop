@@ -615,7 +615,6 @@
         "playbackFetchCancel": "Šis process aizņem nedaudz laika… aizveriet paziņojumu, lai atceltu",
         "playbackFetchInProgress": "Ielādē dziesmas…",
         "playbackFetchNoResults": "Dziesmas netika atrastas",
-        "playbackSpeed": "Atskaņošanas ātrums",
         "playRandom": "Atskaņot nejaušā secībā",
         "playSimilarSongs": "Atskaņot līdzīgas dziesmas",
         "previous": "Iepriekšējais",
@@ -988,8 +987,6 @@
         "compressorSavePreset_description": "Saglabājiet pašreizējos kompresora iestatījumus kā nosaukta iepriekš iestatīta veidni",
         "compressorThreshold_description": "Signāla līmenis, virs kura sākas kompresija.",
         "compressorThreshold": "Sliekšņa vērtība",
-        "preservePitch_description": "Saglabā toni, mainot atskaņošanas ātrumu",
-        "preservePitch": "Saglabāt toni",
         "audioFadeOnStatusChange": "Skaņas pakāpeniska izmaiņa, kad mainās statuss",
         "audioFadeOnStatusChange_description": "Iespējo pakāpenisku skaņas samazināšanu un palielināšanu, kad mainās atskaņošanas/pauzes statuss",
         "preventSleepOnPlayback_description": "Neļaujiet ekrānam pāriet miega režīmā, kamēr atskaņo mūziku",
@@ -1103,9 +1100,7 @@
         "queryBuilderCustomFields_inputLabel": "Uzraksts",
         "queryBuilderCustomFields_inputTag": "Atzīme",
         "queryBuilderCustomFields": "Pielāgoti lauki",
-        "queryBuilderCustomFields_description": "Pievienojiet pielāgotus laukus, lai tos izmantotu vaicājumu veidotājos",
-        "microtonalPitchControls": "Mikrotonālas skaņas regulēšanas elementi",
-        "microtonalPitchControls_description": "Pievienojiet vairāk toņu regulēšanas elementu, lai varētu pārslēgties starp pusotonīm"
+        "queryBuilderCustomFields_description": "Pievienojiet pielāgotus laukus, lai tos izmantotu vaicājumu veidotājos"
     },
     "table": {
         "column": {

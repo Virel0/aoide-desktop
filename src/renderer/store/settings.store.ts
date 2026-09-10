@@ -573,7 +573,6 @@ export const GeneralSettingsSchema = z.object({
     lastFM: z.boolean(),
     lastfmApiKey: z.string(),
     listenBrainz: z.boolean(),
-    microtonalPitchControls: z.boolean(),
     musicBrainz: z.boolean(),
     nativeAspectRatio: z.boolean(),
     nativeSpotify: z.boolean(),
@@ -735,7 +734,6 @@ const PlaybackSettingsSchema = z.object({
     equalizer: EqSettingsSchema,
     filters: z.array(PlayerFilterSchema),
     mediaSession: z.boolean(),
-    preservePitch: z.boolean(),
     scrobble: ScrobbleSettingsSchema,
     transcode: TranscodingConfigSchema,
     webAudio: z.boolean(),
@@ -1312,7 +1310,6 @@ const initialState: SettingsState = {
         lastFM: true,
         lastfmApiKey: '',
         listenBrainz: true,
-        microtonalPitchControls: false,
         musicBrainz: true,
         nativeAspectRatio: false,
         nativeSpotify: false,
@@ -2052,7 +2049,6 @@ const initialState: SettingsState = {
         },
         filters: [],
         mediaSession: false,
-        preservePitch: true,
         scrobble: {
             enabled: true,
             notify: false,
@@ -2851,6 +2847,14 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     );
                 }
 
+                if (version < 39) {
+                    // The 0.5x-2x control is gone, and with it the two settings
+                    // that only meant anything while the rate was not 1.
+                    delete (state.general as { microtonalPitchControls?: boolean })
+                        .microtonalPitchControls;
+                    delete (state.playback as { preservePitch?: boolean }).preservePitch;
+                }
+
                 if (version < 38) {
                     // The tag editor's own settings — every tag's autocomplete
                     // source, its custom values and whether it takes more than
@@ -2863,7 +2867,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                 return persistedState;
             },
             name: 'store_settings',
-            version: 38,
+            version: 39,
         },
     ),
 );
@@ -3164,6 +3168,3 @@ export const useButterchurnSettings = () => {
         };
     }, shallow);
 };
-
-export const useMicrotonalPitchControls = () =>
-    useSettingsStore((state) => state.general.microtonalPitchControls, shallow);

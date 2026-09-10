@@ -84,7 +84,6 @@ export interface PlayerContext {
     setQueue: (data: Song[], index?: number, position?: number) => void;
     setRepeat: (repeat: PlayerRepeat) => void;
     setShuffle: (shuffle: PlayerShuffle) => void;
-    setSpeed: (speed: number) => void;
     setVolume: (volume: number) => void;
     shuffle: () => void;
     shuffleAll: () => void;
@@ -120,7 +119,6 @@ export const PlayerContext = createContext<PlayerContext>({
     setQueue: () => {},
     setRepeat: () => {},
     setShuffle: () => {},
-    setSpeed: () => {},
     setVolume: () => {},
     shuffle: () => {},
     shuffleAll: () => {},
@@ -721,15 +719,6 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
         [confirmQueueChange, storeActions],
     );
 
-    const setSpeed = useCallback(
-        (speed: number) => {
-            logger.debug('Set speed', { speed });
-
-            storeActions.setSpeed(speed);
-        },
-        [storeActions],
-    );
-
     const mediaToggleMute = useCallback(() => {
         logger.debug('Media toggle mute');
 
@@ -866,7 +855,6 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
             setQueue,
             setRepeat,
             setShuffle,
-            setSpeed,
             setVolume,
             shuffle,
             shuffleAll,
@@ -901,7 +889,6 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
             setQueue,
             setRepeat,
             setShuffle,
-            setSpeed,
             setVolume,
             shuffle,
             shuffleAll,

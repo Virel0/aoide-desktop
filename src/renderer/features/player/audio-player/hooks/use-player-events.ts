@@ -10,7 +10,6 @@ import {
     subscribePlayerRepeat,
     subscribePlayerSeekToTimestamp,
     subscribePlayerShuffle,
-    subscribePlayerSpeed,
     subscribePlayerStatus,
     subscribePlayerVolume,
     subscribeQueueCleared,
@@ -45,7 +44,6 @@ interface PlayerEventsCallbacks {
         properties: { shuffle: PlayerShuffle },
         prev: { shuffle: PlayerShuffle },
     ) => void;
-    onPlayerSpeed?: (properties: { speed: number }, prev: { speed: number }) => void;
     onPlayerStatus?: (properties: { status: PlayerStatus }, prev: { status: PlayerStatus }) => void;
     onPlayerStop?: (properties: { id?: string; index?: number; reset: boolean }) => void;
     onPlayerVolume?: (properties: { volume: number }, prev: { volume: number }) => void;
@@ -130,12 +128,6 @@ function createPlayerEvents(callbacks: PlayerEventsCallbacks): PlayerEvents {
     // Subscribe to mute changes
     if (callbacks.onPlayerMute) {
         const unsubscribe = subscribePlayerMute(callbacks.onPlayerMute);
-        unsubscribers.push(unsubscribe);
-    }
-
-    // Subscribe to speed changes
-    if (callbacks.onPlayerSpeed) {
-        const unsubscribe = subscribePlayerSpeed(callbacks.onPlayerSpeed);
         unsubscribers.push(unsubscribe);
     }
 

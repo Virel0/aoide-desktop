@@ -9,7 +9,6 @@ import {
     useAppStore,
     usePlaybackSettings,
     usePlayerSong,
-    usePlayerSpeed,
     usePlayerStore,
     useSettingsStore,
     useTimestampStoreBase,
@@ -111,7 +110,9 @@ export const useScrobble = () => {
     const isPrivateModeEnabled = useAppStore((state) => state.privateMode);
     const sendScrobble = useSendScrobble();
     const currentSong = usePlayerSong();
-    const playbackRate = usePlayerSpeed();
+    // Nothing varies the rate any more — the speed control is gone. The
+    // field stays in the scrobble payload because the endpoints take it.
+    const playbackRate = 1;
 
     const imageUrl = useItemImageUrl({
         id: currentSong?.imageId || undefined,

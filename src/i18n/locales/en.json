@@ -931,7 +931,6 @@
         "playbackFetchCancel": "This is taking a while… close the notification to cancel",
         "playbackFetchInProgress": "Loading songs…",
         "playbackFetchNoResults": "No songs found",
-        "playbackSpeed": "Playback speed",
         "playRandom": "Play random",
         "playSimilarSongs": "Play similar songs",
         "previous": "Previous",
@@ -1315,8 +1314,6 @@
         "compressorSavePreset_description": "Save the current compressor settings as a named preset",
         "compressorThreshold_description": "Signal level above which compression begins.",
         "compressorThreshold": "Threshold",
-        "preservePitch_description": "Preserves pitch when modifying playback speed",
-        "preservePitch": "Preserve pitch",
         "audioFadeOnStatusChange": "Audio fade on status change",
         "audioFadeOnStatusChange_description": "Enables fade out and fade in when play/pause status changes",
         "preventSleepOnPlayback_description": "Prevent the display from sleeping while music is playing",
@@ -1440,9 +1437,7 @@
         "queryBuilderCustomFields_inputLabel": "Label",
         "queryBuilderCustomFields_inputTag": "Tag",
         "queryBuilderCustomFields": "Custom fields",
-        "queryBuilderCustomFields_description": "Add custom fields to use in query builders",
-        "microtonalPitchControls": "Microtonal pitch controls",
-        "microtonalPitchControls_description": "Add more pitch controls to go between semi-tones"
+        "queryBuilderCustomFields_description": "Add custom fields to use in query builders"
     },
     "table": {
         "column": {
