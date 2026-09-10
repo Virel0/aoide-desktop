@@ -4,7 +4,6 @@ import { CrossfadeSettings } from '/@/renderer/aoide/features/settings/crossfade
 import { AudioSettings } from '/@/renderer/features/settings/components/playback/audio-settings';
 import { AutoDJSettings } from '/@/renderer/features/settings/components/playback/auto-dj-settings';
 import { EqSettings } from '/@/renderer/features/settings/components/playback/eq-settings';
-import { PlayerFilterSettings } from '/@/renderer/features/settings/components/playback/player-filter-settings';
 import { TranscodeSettings } from '/@/renderer/features/settings/components/playback/transcode-settings';
 import { Divider } from '/@/shared/components/divider/divider';
 import { Stack } from '/@/shared/components/stack/stack';
@@ -16,8 +15,6 @@ export const PlaybackTab = memo(() => {
             <EqSettings />
             <Divider />
             <TranscodeSettings />
-            <Divider />
-            <PlayerFilterSettings />
             <Divider />
             {/* Aoide's own, kept in a file of its own so an upstream merge does
                 not have to reconcile it. Beside Auto DJ: one decides how a song

@@ -1,72 +1,6 @@
-import type { PlayerFilter, SettingsState } from './settings.store';
+import type { SettingsState } from './settings.store';
 
 import { sanitizeCss } from '/@/renderer/utils/sanitize';
-
-const PLAYER_FILTER_FIELDS = new Set([
-    'albumArtist',
-    'artist',
-    'duration',
-    'favorite',
-    'genre',
-    'name',
-    'note',
-    'path',
-    'playCount',
-    'rating',
-    'year',
-]);
-
-const PLAYER_FILTER_OPERATORS = new Set([
-    'after',
-    'afterDate',
-    'before',
-    'beforeDate',
-    'contains',
-    'endsWith',
-    'gt',
-    'inTheLast',
-    'inTheRange',
-    'inTheRangeDate',
-    'is',
-    'isNot',
-    'lt',
-    'notContains',
-    'notInTheLast',
-    'regex',
-    'startsWith',
-]);
-
-function isValidPlayerFilter(item: unknown): item is PlayerFilter {
-    if (!item || typeof item !== 'object' || Array.isArray(item)) return false;
-    const o = item as Record<string, unknown>;
-    if (typeof o.id !== 'string') return false;
-    if (typeof o.field !== 'string' || !PLAYER_FILTER_FIELDS.has(o.field)) return false;
-    if (typeof o.operator !== 'string' || !PLAYER_FILTER_OPERATORS.has(o.operator)) return false;
-    if (!isValidPlayerFilterValue(o.value)) return false;
-    if (o.isEnabled !== undefined && typeof o.isEnabled !== 'boolean') return false;
-    return true;
-}
-
-function isValidPlayerFilterValue(value: unknown): boolean {
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-        return true;
-    }
-    if (!Array.isArray(value)) return false;
-    return value.every((v) => typeof v === 'string' || typeof v === 'number');
-}
-
-function parsePlaybackFiltersJson(raw: string): unknown {
-    const t = raw.trim();
-    if (t === '') return undefined;
-    try {
-        const v = JSON.parse(t) as unknown;
-        if (!Array.isArray(v)) return undefined;
-        if (!v.every(isValidPlayerFilter)) return undefined;
-        return v;
-    } catch {
-        return undefined;
-    }
-}
 
 const APP_THEMES = new Set([
     'ayuDark',
@@ -356,12 +290,6 @@ const ENV_SETTING_SPECS: EnvSettingSpec[] = [
         key: 'FS_PLAYBACK_TRANSCODE_BITRATE',
         path: ['playback', 'transcode', 'bitrate'],
         type: 'num',
-    },
-    {
-        key: 'FS_PLAYBACK_FILTERS',
-        path: ['playback', 'filters'],
-        transform: parsePlaybackFiltersJson,
-        type: 'string',
     },
     { key: 'FS_DISCORD_ENABLED', path: ['discord', 'enabled'], type: 'bool' },
     {

@@ -18,7 +18,6 @@ import { QueryBuilder } from '/@/renderer/components/query-builder';
 import { playlistsQueries } from '/@/renderer/features/playlists/api/playlists-api';
 import { convertNDQueryToQueryGroup } from '/@/renderer/features/playlists/utils';
 import { useCurrentServer } from '/@/renderer/store';
-import { useQueryBuilderSettings } from '/@/renderer/store/settings.store';
 import {
     NDSongQueryBooleanOperators,
     NDSongQueryDateOperators,
@@ -172,7 +171,6 @@ export const PlaylistQueryBuilder = forwardRef(
     ) => {
         const { t } = useTranslation();
         const server = useCurrentServer();
-        const queryBuilderSettings = useQueryBuilderSettings();
 
         // Memoize initial filters to avoid recalculation
         const initialFilters = useMemo(
@@ -432,15 +430,13 @@ export const PlaylistQueryBuilder = forwardRef(
             });
         }, []);
 
-        const customFields = useMemo(() => {
-            return queryBuilderSettings.tag
-                .filter((field) => field.value && field.value.trim() !== '')
-                .map((field) => ({
-                    label: field.label,
-                    type: field.type,
-                    value: field.value,
-                }));
-        }, [queryBuilderSettings.tag]);
+        // Navidrome's own extra tags used to be declarable in Settings. This
+        // build signs in to Jellyfin, which has no smart playlists, so nothing
+        // could reach the screen that would have used them.
+        const customFields = useMemo<Array<{ label: string; type: string; value: string }>>(
+            () => [],
+            [],
+        );
 
         const groupedFilters = useMemo(() => {
             type FilterGroup = {

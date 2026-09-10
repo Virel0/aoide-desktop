@@ -3,6 +3,7 @@ import { memo } from 'react';
 import { Fragment } from 'react/jsx-runtime';
 
 import { DiscordSettings } from '/@/renderer/features/settings/components/window/discord-settings';
+import { MediaKeysSettings } from '/@/renderer/features/settings/components/window/media-keys-settings';
 import { PasswordSettings } from '/@/renderer/features/settings/components/window/password-settings';
 import { WindowSettings } from '/@/renderer/features/settings/components/window/window-settings';
 import { Divider } from '/@/shared/components/divider/divider';
@@ -12,6 +13,7 @@ const utils = isElectron() ? window.api.utils : null;
 
 const sections = [
     { component: WindowSettings, key: 'window' },
+    { component: MediaKeysSettings, key: 'media-keys' },
     { component: DiscordSettings, key: 'discord' },
     { component: PasswordSettings, hidden: !utils?.isLinux(), key: 'password' },
 ];

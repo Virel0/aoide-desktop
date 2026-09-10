@@ -628,59 +628,10 @@ const LyricsSettingsSchema = z.object({
     showProvider: z.boolean(),
 });
 
-const PlayerFilterFieldSchema = z.enum([
-    'name',
-    'albumArtist',
-    'artist',
-    'duration',
-    'genre',
-    'year',
-    'releaseYear',
-    'note',
-    'path',
-    'playCount',
-    'favorite',
-    'rating',
-]);
-
-const PlayerFilterOperatorSchema = z.enum([
-    'is',
-    'isNot',
-    'contains',
-    'notContains',
-    'startsWith',
-    'endsWith',
-    'regex',
-    'gt',
-    'lt',
-    'inTheRange',
-    'before',
-    'after',
-    'beforeDate',
-    'afterDate',
-    'inTheRangeDate',
-    'inTheLast',
-    'notInTheLast',
-]);
-
-const PlayerFilterSchema = z.object({
-    field: PlayerFilterFieldSchema,
-    id: z.string(),
-    isEnabled: z.boolean().optional(),
-    operator: PlayerFilterOperatorSchema,
-    value: z.union([
-        z.string(),
-        z.number(),
-        z.boolean(),
-        z.array(z.union([z.string(), z.number()])),
-    ]),
-});
-
 const PlaybackSettingsSchema = z.object({
     audioDeviceId: z.string().nullable().optional(),
     compressor: CompressorSettingsSchema,
     equalizer: EqSettingsSchema,
-    filters: z.array(PlayerFilterSchema),
     mediaSession: z.boolean(),
     transcode: TranscodingConfigSchema,
 });
@@ -696,25 +647,6 @@ const WindowSettingsSchema = z.object({
     tray: z.boolean(),
     windowBarStyle: z.nativeEnum(Platform),
     windowBarTrackinfo: z.boolean(),
-});
-
-const QueryValueInputTypeSchema = z.enum([
-    'boolean',
-    'date',
-    'dateRange',
-    'number',
-    'playlist',
-    'string',
-]);
-
-const QueryBuilderCustomFieldSchema = z.object({
-    label: z.string(),
-    type: QueryValueInputTypeSchema,
-    value: z.string(),
-});
-
-const QueryBuilderSettingsSchema = z.object({
-    tag: z.array(QueryBuilderCustomFieldSchema),
 });
 
 export const AUTO_DJ_MODE = {
@@ -758,14 +690,7 @@ export const ValidationSettingsStateSchema = z.object({
     lyrics: LyricsSettingsSchema,
     lyricsDisplay: z.record(z.string(), LyricsDisplaySettingsSchema),
     playback: PlaybackSettingsSchema,
-    queryBuilder: QueryBuilderSettingsSchema,
-    tab: z.union([
-        z.literal('general'),
-        z.literal('hotkeys'),
-        z.literal('playback'),
-        z.literal('window'),
-        z.string(),
-    ]),
+    tab: z.string(),
     visualizer: VisualizerSettingsSchema,
     window: WindowSettingsSchema,
 });
@@ -958,11 +883,6 @@ export type ItemListSettings = {
     table: DataTableProps;
 };
 
-export type PlayerFilter = z.infer<typeof PlayerFilterSchema>;
-
-export type PlayerFilterField = z.infer<typeof PlayerFilterFieldSchema>;
-
-export type PlayerFilterOperator = z.infer<typeof PlayerFilterOperatorSchema>;
 export interface SettingsSlice extends z.infer<typeof SettingsStateSchema> {
     actions: {
         addCollection: (collection: SavedCollection) => void;
@@ -974,7 +894,6 @@ export interface SettingsSlice extends z.infer<typeof SettingsStateSchema> {
         setGenreBehavior: (target: GenreTarget) => void;
         setHomeItems: (item: SortableItem<HomeItem>[]) => void;
         setList: (type: ItemListKey, data: DeepPartial<ItemListSettings>) => void;
-        setPlaybackFilters: (filters: PlayerFilter[]) => void;
         setPlayerItems: (items: SortableItem<PlayerItem>[]) => void;
         setPlaylistBehavior: (target: PlaylistTarget) => void;
         setSettings: (data: DeepPartial<SettingsState>) => void;
@@ -1970,14 +1889,10 @@ const initialState: SettingsState = {
             enabled: false,
             preamp: 0,
         },
-        filters: [],
         mediaSession: false,
         transcode: {
             enabled: false,
         },
-    },
-    queryBuilder: {
-        tag: [],
     },
     tab: 'general',
     visualizer: {
@@ -2149,11 +2064,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                                 if (listState) {
                                     Object.assign(listState, data);
                                 }
-                            });
-                        },
-                        setPlaybackFilters: (filters: PlayerFilter[]) => {
-                            set((state) => {
-                                state.playback.filters = filters;
                             });
                         },
                         setPlayerItems: (items: SortableItem<PlayerItem>[]) => {
@@ -2344,16 +2254,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                                 ...displaySettings,
                             },
                         };
-                    }
-                }
-
-                if (version <= 18) {
-                    // Add isEnabled property to all existing player filters
-                    if (state.playback?.filters && Array.isArray(state.playback.filters)) {
-                        state.playback.filters = state.playback.filters.map((filter) => ({
-                            ...filter,
-                            isEnabled: true,
-                        }));
                     }
                 }
 
@@ -2818,6 +2718,24 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     delete (state.playback as { scrobble?: unknown }).scrobble;
                 }
 
+                if (version < 46) {
+                    // The queue-filter rule builder is gone. Twelve fields and
+                    // seventeen operators, to keep songs out of the queue —
+                    // which is what "Hidden from Mixes" does in one tap, on
+                    // both devices, from the track itself. The custom query
+                    // tags went with the smart-playlist builder that read them;
+                    // Jellyfin has no smart playlists, so that screen was
+                    // already unreachable here.
+                    delete (state.playback as { filters?: unknown }).filters;
+                    delete (state as { queryBuilder?: unknown }).queryBuilder;
+
+                    // Whoever had Hotkeys open when they last closed Settings
+                    // would reopen it onto a tab strip with nothing selected.
+                    if (state.tab === 'hotkeys') {
+                        state.tab = 'general';
+                    }
+                }
+
                 if (version < 45) {
                     // Lyrics are two rows now, the phone's: whether to look
                     // them up and how far ahead of the music they run. Which
@@ -2850,7 +2768,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                 return persistedState;
             },
             name: 'store_settings',
-            version: 45,
+            version: 46,
         },
     ),
 );
@@ -2902,9 +2820,6 @@ export const useFontSettings = () => useSettingsStore((state) => state.font, sha
 export const useDiscordSettings = () => useSettingsStore((state) => state.discord, shallow);
 
 export const useCssSettings = () => useSettingsStore((state) => state.css, shallow);
-
-export const useQueryBuilderSettings = () =>
-    useSettingsStore((state) => state.queryBuilder, shallow);
 
 const getSettingsStoreVersion = () => useSettingsStore.persist.getOptions().version!;
 

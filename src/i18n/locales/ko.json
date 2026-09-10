@@ -499,14 +499,12 @@
         "setting": {
             "advanced": "고급",
             "generalTab": "일반",
-            "hotkeysTab": "단축키",
             "playbackTab": "재생",
             "windowTab": "윈도우",
             "analytics": "해석학",
             "updates": "업데이트",
             "cache": "은닉처",
             "application": "애플리케이션",
-            "queryBuilder": "쿼리 빌더",
             "theme": "테마",
             "controls": "통제 수단",
             "sidebar": "사이드바",
@@ -515,8 +513,7 @@
             "lyrics": "가사",
             "transcoding": "트랜스코딩",
             "discord": "Discord",
-            "logger": "로거",
-            "playerFilters": "선수 필터"
+            "logger": "로거"
         },
         "sidebar": {
             "myLibrary": "내 라이브러리",

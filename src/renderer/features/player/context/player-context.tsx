@@ -8,7 +8,6 @@ import { queryKeys } from '/@/renderer/api/query-keys';
 import { albumQueries } from '/@/renderer/features/albums/api/album-api';
 import { artistsQueries } from '/@/renderer/features/artists/api/artists-api';
 import {
-    filterSongsByPlayerFilters,
     getAlbumArtistSongsById,
     getAlbumSongsById,
     getGenreSongsById,
@@ -262,8 +261,7 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
             playSongId?: string,
             contextPlaylistId?: null | string,
         ) => {
-            const filters = useSettingsStore.getState().playback.filters;
-            let filteredData = filterSongsByPlayerFilters(data, filters);
+            let filteredData = data;
             const resolvedContextId =
                 contextPlaylistId ??
                 (isReplaceQueueType(type) ? inferPlaylistContextFromUrl() : null);
@@ -366,8 +364,7 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
                     sortedSongs = sortSongsByFetchedOrder(songs, id, itemType);
                 }
 
-                const filters = useSettingsStore.getState().playback.filters;
-                let filteredSongs = filterSongsByPlayerFilters(sortedSongs, filters);
+                let filteredSongs = sortedSongs;
 
                 // Songs from multiple playlists are merged together, so there is no single
                 // playlist to attribute them to: skip tagging (and URL inference) entirely.
