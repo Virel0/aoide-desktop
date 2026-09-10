@@ -363,6 +363,28 @@ handle('aoide:history-finish-play', ({ history }, eventId: string, input: Finish
     history.finishPlay(eventId, input),
 );
 
+/**
+ * How often these tracks were finished, out of the times they were started.
+ *
+ * The whole track list in one call — an album detail page asks about every song
+ * on the record at once, and a per-row crossing of this bridge is the thing the
+ * batched form exists to prevent. Raw counts come back rather than a percentage:
+ * the caller sums them into the album's own figure, and a ratio cannot be summed.
+ */
+handle('aoide:history-finish-rates', ({ history }, jellyfinIds: string[]) =>
+    history.finishRates(jellyfinIds),
+);
+
+/**
+ * The same two counts for everything by one artist, answered from the local
+ * track cache by name — the renderer has albums, not a list of track ids, and
+ * collecting one would be a Jellyfin round trip per album before any number
+ * could be printed.
+ */
+handle('aoide:history-finish-rate-artist', ({ history }, artist: string) =>
+    history.finishRateForArtist(artist),
+);
+
 /*
  * Taste flags. One call per user action; the one list call — which of these
  * candidates are hidden — takes the whole candidate list at once, because a

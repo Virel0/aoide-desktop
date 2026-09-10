@@ -1,3 +1,4 @@
+import type { FinishCounts } from '/@/shared/aoide/finish-rate';
 import type { DatabaseSync } from 'node:sqlite';
 
 import { randomUUID } from 'node:crypto';
@@ -7,6 +8,11 @@ import type { CurationDatabase } from './database';
 
 import { contentKeyFor } from './playlists';
 
+import {
+    countsAsFinishSql,
+    countsAsStartSql,
+    emptyFinishCounts,
+} from '/@/shared/aoide/finish-rate';
 import {
     classify,
     countsAsPlaySql,
@@ -249,6 +255,90 @@ export class PlayHistory {
         });
 
         return 'finished';
+    }
+
+    /**
+     * How much of this artist's listening reached the end, as raw counts.
+     *
+     * Answered in SQL from the artist's *name* rather than from a list of their
+     * track ids, because the renderer has no such list: an artist page shows
+     * albums, and collecting every track id under them would be a round of
+     * Jellyfin lookups per album before a single number could be printed. The
+     * local `tracks` cache already carries the artist beside every id, so one
+     * query over the events does it.
+     *
+     * Matched on either name a track can carry that artist under: `albumArtist`
+     * is what the album-artist page is showing, `artist` is what a track credits,
+     * and a compilation appearance is filed under the second alone. An INNER
+     * join, unlike every other aggregate here — an event whose track this device
+     * has never cached cannot be attributed to anybody, and there is no
+     * duration-free fallback for a name.
+     *
+     * The counts are the sum over every one of that artist's tracks, which is
+     * `finish-rate.ts`'s rule 3 done by `SUM` instead of by hand: the ratio the
+     * caller takes from these is "of the times you started something of theirs",
+     * not the average of their songs' rates.
+     */
+    finishRateForArtist(artist: string): FinishCounts {
+        const row = this.db
+            .prepare(
+                `SELECT SUM(CASE WHEN ${IS_START} THEN 1 ELSE 0 END) AS starts,
+                        SUM(CASE WHEN ${IS_FINISH} THEN 1 ELSE 0 END) AS completed
+                 FROM play_events e
+                 JOIN tracks t ON t.jellyfinId = e.jellyfinId
+                 WHERE t.albumArtist = ? OR t.artist = ?`,
+            )
+            .get(artist, artist) as undefined | { completed: null | number; starts: null | number };
+
+        if (!row) return emptyFinishCounts();
+        return { completed: Number(row.completed ?? 0), starts: Number(row.starts ?? 0) };
+    }
+
+    /**
+     * Starts and finishes for many tracks at once.
+     *
+     * Raw counts, never a ratio, and that is the load-bearing part: an album is
+     * the sum of its tracks and the caller is the one holding the album, so
+     * dividing here would force a second round trip to ask "and what about
+     * together". `finish-rate.ts` owns both the summing and the floor below
+     * which there is no figure; this method owns only the counting.
+     *
+     * Every requested id comes back, zeroed when it has no history, for the same
+     * reason `stats` does it: a list view that fell back to a per-id call for its
+     * misses would make one query per row by accident.
+     *
+     * No join to `tracks` — unlike `stats`, neither half of this rule reads a
+     * duration. `completed` is the stored verdict and `endedAt` is on the event,
+     * so a track this device has never cached is still counted rather than
+     * silently dropped.
+     */
+    finishRates(jellyfinIds: string[]): Record<string, FinishCounts> {
+        const found = new Map<string, FinishCounts>();
+
+        for (let start = 0; start < jellyfinIds.length; start += MAX_PARAMETERS) {
+            const ids = jellyfinIds.slice(start, start + MAX_PARAMETERS);
+            const rows = this.db
+                .prepare(
+                    `SELECT e.jellyfinId AS jellyfinId,
+                            SUM(CASE WHEN ${IS_START} THEN 1 ELSE 0 END) AS starts,
+                            SUM(CASE WHEN ${IS_FINISH} THEN 1 ELSE 0 END) AS completed
+                     FROM play_events e
+                     WHERE e.jellyfinId IN (${placeholders(ids.length)})
+                     GROUP BY e.jellyfinId`,
+                )
+                .all(...ids) as Array<{ completed: number; jellyfinId: string; starts: number }>;
+
+            for (const row of rows) {
+                found.set(row.jellyfinId, {
+                    completed: Number(row.completed),
+                    starts: Number(row.starts),
+                });
+            }
+        }
+
+        const counts: Record<string, FinishCounts> = {};
+        for (const id of jellyfinIds) counts[id] = found.get(id) ?? emptyFinishCounts();
+        return counts;
     }
 
     /**
@@ -540,6 +630,15 @@ export const RECAP_TOP_LIMIT = 10;
  * one drifts silently until it is somebody else's library that fails.
  */
 export const MAX_PARAMETERS = 400;
+
+/**
+ * Reached the end, and was started at all — the two halves of the finish rate,
+ * against `play_events` aliased `e`. Neither reads the track cache, which is
+ * why the queries that use them need no join.
+ */
+const IS_FINISH = countsAsFinishSql('e');
+
+const IS_START = countsAsStartSql('e');
 
 /** Qualifies as a play, against `EVENTS_WITH_TRACK`'s aliases. */
 const QUALIFIES_AS_PLAY = countsAsPlaySql('t', 'e');

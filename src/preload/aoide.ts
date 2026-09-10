@@ -20,6 +20,7 @@ import type {
     SmartSearchOutcome,
 } from '/@/main/features/aoide/smart-search';
 import type { FlaggedTrack, TrackFlagRow } from '/@/main/features/aoide/track-flags';
+import type { FinishCounts } from '/@/shared/aoide/finish-rate';
 import type { SmartRules } from '/@/shared/aoide/smart-rules';
 import type { SyncOp } from '/@/shared/aoide/sync-types';
 import type { TrimPlan } from '/@/shared/aoide/trim-plan';
@@ -94,6 +95,22 @@ export const aoide = {
         /** The track ended or was left. Finishing twice is a no-op. */
         finishPlay: (eventId: string, input: FinishPlayInput): Promise<FinishPlayOutcome> =>
             ipcRenderer.invoke('aoide:history-finish-play', eventId, input),
+
+        /**
+         * Everything by one artist, as one pair of counts. Answered from the
+         * local track cache by name, because an artist page holds albums rather
+         * than track ids.
+         */
+        finishRateForArtist: (artist: string): Promise<FinishCounts> =>
+            ipcRenderer.invoke('aoide:history-finish-rate-artist', artist),
+
+        /**
+         * Starts and finishes per track — raw counts, so a page holding a whole
+         * album can add them up itself instead of asking twice. One call for the
+         * whole list; `finish-rate.ts` turns the counts into the figure.
+         */
+        finishRates: (jellyfinIds: string[]): Promise<Record<string, FinishCounts>> =>
+            ipcRenderer.invoke('aoide:history-finish-rates', jellyfinIds),
 
         /** Plays over `[from, to)`, as the Replay screen shows them. */
         recap: (from: number, to: number): Promise<Recap> =>

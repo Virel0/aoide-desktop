@@ -6,6 +6,7 @@ import { MAX_PARAMETERS, PlayHistory, RECAP_TOP_LIMIT } from './play-history';
 import { contentKeyFor } from './playlists';
 import { TrackFlags } from './track-flags';
 
+import { finishRateOf, MINIMUM_FINISH_SAMPLE } from '/@/shared/aoide/finish-rate';
 import {
     classify,
     COMPLETION_TOLERANCE_MS,
@@ -849,5 +850,234 @@ describe('recording a listen at this desk', () => {
         const kept = begin({ jellyfinId: 'kept', source: 'album' });
         history.finishPlay(kept, { durationMs: duration, endedAt: now + 1, msPlayed: 1 });
         expect(row(kept).source).toBe('album');
+    });
+});
+
+/**
+ * A track cached under names of its own, for the artist aggregate. The general
+ * `cacheTrack` above files everything under one artist on purpose — the play
+ * and skip tests do not care — and these tests care about nothing else.
+ */
+const cacheTrackBy = (
+    jellyfinId: string,
+    artist: string,
+    albumArtist: null | string,
+    durationMs: null | number = 200_000,
+): void => {
+    database.db
+        .prepare(
+            `INSERT INTO tracks (jellyfinId, contentKey, title, artist, album, albumArtist, durationMs, lastSeenAt)
+             VALUES (?, ?, ?, ?, 'An Album', ?, ?, ?)`,
+        )
+        .run(jellyfinId, jellyfinId, jellyfinId, artist, albumArtist, durationMs, now);
+};
+
+/** A listen that reached the end, which is what a finish is. */
+const finished = (jellyfinId: string, durationMs = 200_000, startedAt = now): void =>
+    playedThrough(jellyfinId, durationMs, durationMs, startedAt);
+
+/** A listen that was decided and did not reach the end. */
+const abandoned = (jellyfinId: string, msPlayed: number, durationMs = 200_000): void =>
+    playedThrough(jellyfinId, msPlayed, durationMs);
+
+describe('finish rates', () => {
+    it('counts a decided listen as a start and a completed one as a finish', () => {
+        cacheTrack('t1', 200_000);
+        finished('t1');
+        abandoned('t1', 10_000);
+        abandoned('t1', 150_000);
+
+        expect(history.finishRates(['t1']).t1).toEqual({ completed: 1, starts: 3 });
+    });
+
+    // The figure this feature exists for is not the play count wearing a
+    // different hat. Four minutes of a twelve-minute track is a play by the
+    // shared definition — and it is not a finish, which is the entire point.
+    it('is not the play count: a play that stopped short is a start, not a finish', () => {
+        const twelveMinutes = 12 * 60 * 1_000;
+        cacheTrack('long', twelveMinutes);
+        abandoned('long', 4 * 60 * 1_000, twelveMinutes);
+        abandoned('long', 5 * 60 * 1_000, twelveMinutes);
+        abandoned('long', 6 * 60 * 1_000, twelveMinutes);
+
+        expect(history.playCount('long')).toBe(3);
+        expect(history.finishRates(['long']).long).toEqual({ completed: 0, starts: 3 });
+        expect(finishRateOf([history.finishRates(['long']).long])).toBe(0);
+    });
+
+    // An event opened and never closed describes nothing that happened. Counting
+    // it as a start would file every app crash as a track the listener walked
+    // out on, and it is the long records that get walked out on that way.
+    it('ignores a listen that was never finished', () => {
+        cacheTrack('open', 200_000);
+        finished('open');
+        finished('open');
+        finished('open');
+        insertEvent({ endedAt: null, jellyfinId: 'open', msPlayed: 120_000, startedAt: now });
+
+        expect(history.finishRates(['open']).open).toEqual({ completed: 3, starts: 3 });
+    });
+
+    // A row synced from a client that stamped a verdict without an end time
+    // would otherwise count as a finish and not as a start, and the page would
+    // print a percentage above 100.
+    it('never counts more finishes than starts', () => {
+        cacheTrack('impossible', 200_000);
+        for (let index = 0; index < 3; index += 1) {
+            insertEvent({
+                completed: true,
+                endedAt: null,
+                jellyfinId: 'impossible',
+                msPlayed: 200_000,
+                startedAt: now + index,
+            });
+        }
+
+        const counts = history.finishRates(['impossible']).impossible;
+        expect(counts).toEqual({ completed: 0, starts: 0 });
+        expect(counts.completed).toBeLessThanOrEqual(counts.starts);
+    });
+
+    it('returns zeroed counts for every id it has never seen', () => {
+        expect(history.finishRates(['never', 'also-never'])).toEqual({
+            'also-never': { completed: 0, starts: 0 },
+            never: { completed: 0, starts: 0 },
+        });
+    });
+
+    it('asks nothing of the database for an empty list', () => {
+        expect(history.finishRates([])).toEqual({});
+    });
+
+    it('answers for more ids than one statement can carry parameters for', () => {
+        // Past SQLite's 32,766-parameter cap, so a single un-chunked statement
+        // could not ask this at all. A list that merely fit would leave the
+        // chunking deletable with the test still green.
+        const count = 40_000;
+        expect(count).toBeGreaterThan(32_766);
+        expect(count).toBeGreaterThan(MAX_PARAMETERS);
+
+        const ids = Array.from({ length: count }, (_, index) => `bulk-${index}`);
+        cacheTrack('bulk-39000', 200_000);
+        finished('bulk-39000');
+
+        const counts = history.finishRates(ids);
+        expect(Object.keys(counts)).toHaveLength(count);
+        expect(counts['bulk-39000']).toEqual({ completed: 1, starts: 1 });
+    });
+
+    /**
+     * The rule that makes an album's figure mean what it says.
+     *
+     * A hit started eighty times and finished sixty, beside a closing track
+     * started three times and finished once: 61 of 83, or 73%. The mean of the
+     * two tracks' rates is 54%, because it weighs three listens as heavily as
+     * eighty. The database has to hand back counts, not rates, for the right
+     * answer to be reachable at all.
+     */
+    it('hands back counts an album can sum, which is not the mean of its tracks’ rates', () => {
+        cacheTrack('hit', 200_000);
+        cacheTrack('closer', 200_000);
+
+        for (let index = 0; index < 60; index += 1) finished('hit', 200_000, now + index);
+        for (let index = 0; index < 20; index += 1) abandoned('hit', 10_000);
+        finished('closer');
+        abandoned('closer', 10_000);
+        abandoned('closer', 20_000);
+
+        const counts = history.finishRates(['hit', 'closer']);
+        expect(counts.hit).toEqual({ completed: 60, starts: 80 });
+        expect(counts.closer).toEqual({ completed: 1, starts: 3 });
+
+        const album = finishRateOf([counts.hit, counts.closer]);
+        const meanOfRates = (60 / 80 + 1 / 3) / 2;
+
+        expect(Math.round((album ?? 0) * 100)).toBe(73);
+        expect(Math.round(meanOfRates * 100)).toBe(54);
+        expect(album).not.toBeCloseTo(meanOfRates);
+    });
+
+    // Below the floor the store still reports the counts honestly; it is the
+    // shared rule that declines to turn them into a figure. Keeping the refusal
+    // out of SQL is what lets an album of thinly played tracks still have one.
+    it('reports thin counts and lets the shared rule refuse them', () => {
+        cacheTrack('thin', 200_000);
+        finished('thin');
+        abandoned('thin', 10_000);
+
+        const counts = history.finishRates(['thin']).thin;
+        expect(counts).toEqual({ completed: 1, starts: 2 });
+        expect(counts.starts).toBeLessThan(MINIMUM_FINISH_SAMPLE);
+        expect(finishRateOf([counts])).toBeUndefined();
+    });
+});
+
+describe('finish rates for an artist', () => {
+    it('sums every track filed under the name, however it is credited', () => {
+        // One track credits her as its artist; another is a compilation cut
+        // where she is only the track artist; a third is somebody else's.
+        cacheTrackBy('own-1', 'Her', 'Her');
+        cacheTrackBy('own-2', 'Her', 'Her');
+        cacheTrackBy('compilation', 'Her', 'Various Artists');
+        cacheTrackBy('someone-else', 'Him', 'Him');
+
+        finished('own-1');
+        finished('own-2');
+        abandoned('own-2', 10_000);
+        finished('compilation');
+        abandoned('someone-else', 10_000);
+
+        expect(history.finishRateForArtist('Her')).toEqual({ completed: 3, starts: 4 });
+    });
+
+    it('finds a track by its album artist when the track artist differs', () => {
+        cacheTrackBy('guest', 'Her feat. Him', 'Her');
+        finished('guest');
+        abandoned('guest', 10_000);
+        abandoned('guest', 20_000);
+
+        expect(history.finishRateForArtist('Her')).toEqual({ completed: 1, starts: 3 });
+    });
+
+    it('ignores listens that were never finished, exactly as the per-track form does', () => {
+        cacheTrackBy('theirs', 'Them', 'Them');
+        finished('theirs');
+        insertEvent({ endedAt: null, jellyfinId: 'theirs', msPlayed: 120_000, startedAt: now });
+
+        expect(history.finishRateForArtist('Them')).toEqual({ completed: 1, starts: 1 });
+    });
+
+    // The aggregate is over the artist's whole catalogue, so it is the sum, not
+    // an average of albums or of songs — the same rule the album page applies by
+    // hand, done here by SUM.
+    it('weighs a listen the same wherever it happened', () => {
+        cacheTrackBy('a', 'One', 'One');
+        cacheTrackBy('b', 'One', 'One');
+
+        for (let index = 0; index < 9; index += 1) finished('a', 200_000, now + index);
+        abandoned('a', 10_000);
+        abandoned('b', 10_000);
+
+        expect(history.finishRateForArtist('One')).toEqual({ completed: 9, starts: 11 });
+        expect(finishRateOf([history.finishRateForArtist('One')])).toBeCloseTo(9 / 11);
+    });
+
+    it('says nothing was started for an artist this device has never cached', () => {
+        expect(history.finishRateForArtist('Nobody')).toEqual({ completed: 0, starts: 0 });
+    });
+
+    // The events are real; the track they belong to has never been indexed here,
+    // so nothing can say whose it is. Counting it under the artist being looked
+    // at would be inventing an attribution.
+    it('does not attribute events whose track is not in the cache', () => {
+        finished('uncached-track');
+        finished('uncached-track');
+        finished('uncached-track');
+
+        expect(history.finishRateForArtist('Her')).toEqual({ completed: 0, starts: 0 });
+        expect(history.finishRates(['uncached-track'])['uncached-track']).toEqual({
+            completed: 3,
+            starts: 3,
+        });
     });
 });
