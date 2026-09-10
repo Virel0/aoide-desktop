@@ -213,8 +213,6 @@
         "volumeWidth_description": "Horizontální velikost posuvníku hlasitosti",
         "discordListening": "Zobrazit stav jako „poslouchá“",
         "discordListening_description": "Zobrazit stav jako „Poslouchá“ namísto „Hraje“",
-        "contextMenu": "Nastavení kontextové nabídky (kliknutí pravým)",
-        "contextMenu_description": "Umožňuje skrýt položky, které se zobrazí v nabídce po kliknutí pravým tlačítkem myši na položku. položky, které nejsou zaškrtnuté, se skryjí",
         "customCssEnable": "Povolit vlastní CSS",
         "customCssEnable_description": "Umožnit psaní vlastního CSS",
         "customCssNotice": "Varování: i když provádíme určitou sanitizaci (zakázáním URL() a content:), může používání CSS stále představovat riziko změnami rozhraní",
@@ -949,7 +947,6 @@
         "contextMenu": {
             "addToPlaylist": "$t(action.addToPlaylist)",
             "addToFavorites": "$t(action.addToFavorites)",
-            "setRating": "$t(action.setRating)",
             "moveToTop": "$t(action.moveToTop)",
             "deletePlaylist": "$t(action.deletePlaylist)",
             "moveToBottom": "$t(action.moveToBottom)",

@@ -378,8 +378,6 @@
         "artistConfiguration_description": "Configura quali elementi vengono mostrati, e in quale ordine, nella pagina dell'artista album",
         "buttonSize": "Dimensione del bottone nella barra di riproduzione",
         "clearCacheSuccess": "Cache pulita correttamente",
-        "contextMenu": "Configurazione menu contestuale (clic destro)",
-        "contextMenu_description": "Consente di nascondere gli elementi che vengono visualizzati nel menu quando si fa clic destro su un elemento. Gli elementi non selezionati saranno nascosti",
         "customCssEnable": "Abilita CSS personalizzato",
         "customCssEnable_description": "Consente di scrivere CSS personalizzato",
         "customCssNotice": "Attenzione: sebbene ci sia una certa sanitizzazione (vengono bloccati URL() e content:), l'uso di CSS personalizzato può comunque comportare dei rischi modificando l'interfaccia",
@@ -814,7 +812,6 @@
         "contextMenu": {
             "addToPlaylist": "$t(action.addToPlaylist)",
             "addToFavorites": "$t(action.addToFavorites)",
-            "setRating": "$t(action.setRating)",
             "moveToTop": "$t(action.moveToTop)",
             "deletePlaylist": "$t(action.deletePlaylist)",
             "moveToBottom": "$t(action.moveToBottom)",

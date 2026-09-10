@@ -537,7 +537,6 @@ export const GeneralSettingsSchema = z.object({
     collections: z.array(CollectionSchema),
     combinedLyricsAndVisualizer: z.boolean(),
     confirmQueueChanges: z.boolean(),
-    disabledContextMenu: z.record(z.string(), z.boolean()),
     enableGridMultiSelect: z.boolean(),
     externalLinks: z.boolean(),
     followCurrentSong: z.boolean(),
@@ -1272,7 +1271,6 @@ const initialState: SettingsState = {
         collections: [],
         combinedLyricsAndVisualizer: false,
         confirmQueueChanges: true,
-        disabledContextMenu: {},
         enableGridMultiSelect: false,
         externalLinks: true,
         followCurrentSong: true,
@@ -2823,6 +2821,11 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     );
                 }
 
+                if (version < 42) {
+                    // `disabledContextMenu` never had a reader or a writer.
+                    delete (state.general as { disabledContextMenu?: unknown }).disabledContextMenu;
+                }
+
                 if (version < 41) {
                     // Sharing is gone; the default expiry it stored has nobody
                     // left to ask it.
@@ -2856,7 +2859,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                 return persistedState;
             },
             name: 'store_settings',
-            version: 41,
+            version: 42,
         },
     ),
 );

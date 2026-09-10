@@ -396,11 +396,9 @@
         "volumeWidth_description": "音量滑块的宽度",
         "discordListening": "显示状态为正在监听",
         "discordListening_description": "将状态显示为正在监听，而不是正在播放",
-        "contextMenu_description": "允许您隐藏右键单击项目时显示在菜单中的项目。未选中的项目将被隐藏",
         "customCssEnable_description": "允许编写自定义 CSS",
         "customCss": "自定义 CSS",
         "customCss_description": "自定义css内容。注意：内容和远程URL是不允许的属性。内容预览展示如下。出于安全考虑，您未设置的其它字段也会显示",
-        "contextMenu": "上下文菜单（右键单击）配置",
         "customCssEnable": "启用自定义 CSS",
         "customCssNotice": "警告：虽然预设了一些安全限制（不允许 URL() 和 content:），但使用自定义 css 仍然会因更改界面而带来风险",
         "transcode_description": "可以转码为不同的格式",
@@ -788,7 +786,6 @@
             "title": "命令"
         },
         "contextMenu": {
-            "setRating": "$t(action.setRating)",
             "removeFromPlaylist": "$t(action.removeFromPlaylist)",
             "removeFromFavorites": "$t(action.removeFromFavorites)",
             "play": "$t(player.play)",

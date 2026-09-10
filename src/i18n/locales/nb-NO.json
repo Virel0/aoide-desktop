@@ -397,7 +397,6 @@
             "playSimilarSongs": "$t(player.playSimilarSongs)",
             "removeFromPlaylist": "$t(action.removeFromPlaylist)",
             "removeFromQueue": "$t(action.removeFromQueue)",
-            "setRating": "$t(action.setRating)",
             "addToFavorites": "$t(action.addToFavorites)",
             "moveToNext": "$t(action.moveToNext)",
             "playShuffled": "$t(player.shuffle)",

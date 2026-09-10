@@ -434,7 +434,6 @@
             "removeFromFavorites": "$t(action.removeFromFavorites)",
             "removeFromPlaylist": "$t(action.removeFromPlaylist)",
             "removeFromQueue": "$t(action.removeFromQueue)",
-            "setRating": "$t(action.setRating)",
             "playShuffled": "$t(player.shuffle)",
             "goTo": "이동"
         },

@@ -559,7 +559,6 @@
         "contextMenu": {
             "addToPlaylist": "$t(action.addToPlaylist)",
             "addToFavorites": "$t(action.addToFavorites)",
-            "setRating": "$t(action.setRating)",
             "moveToTop": "$t(action.moveToTop)",
             "deletePlaylist": "$t(action.deletePlaylist)",
             "moveToBottom": "$t(action.moveToBottom)",
@@ -931,8 +930,6 @@
         "hotkey_volumeMute": "Отключить звук",
         "clearCache_description": "Полная очистка Feishin. Помимо очистки кэша Feishin, также будет очищен кэш браузера (сохраненные изображения и другие ресурсы). Данные для входа на сервер и настройки будут сохранены",
         "clearCacheSuccess": "Кэш успешно очищен",
-        "contextMenu": "Настройка контекстного меню (вызывается правой кнопкой мыши)",
-        "contextMenu_description": "Позволяет скрывать элементы, которые отображаются в меню при нажатии правой кнопкой мыши на элементе. Элементы, для которых снята галочка, будут скрыты",
         "customFontPath": "Пользовательский путь к шрифту",
         "customFontPath_description": "Указывает путь к пользовательскому шрифту, который будет использоваться в приложении",
         "externalLinks_description": "Включает отображение внешних ссылок (Last.fm, MusicBrainz) на страницах исполнителя/альбома",

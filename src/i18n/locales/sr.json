@@ -447,7 +447,6 @@
         "contextMenu": {
             "addToPlaylist": "$t(action.addToPlaylist)",
             "addToFavorites": "$t(action.addToFavorites)",
-            "setRating": "$t(action.setRating)",
             "moveToTop": "$t(action.moveToTop)",
             "deletePlaylist": "$t(action.deletePlaylist)",
             "moveToBottom": "$t(action.moveToBottom)",

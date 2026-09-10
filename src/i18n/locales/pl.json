@@ -488,7 +488,6 @@
         "contextMenu": {
             "addToPlaylist": "$t(action.addToPlaylist)",
             "addToFavorites": "$t(action.addToFavorites)",
-            "setRating": "$t(action.setRating)",
             "moveToTop": "$t(action.moveToTop)",
             "deletePlaylist": "$t(action.deletePlaylist)",
             "moveToBottom": "$t(action.moveToBottom)",
@@ -886,8 +885,6 @@
         "discordListening": "Pokazuj status jako słucha",
         "imageAspectRatio_description": "Jeżeli włączone, okładka będzie pokazywana z użyciem jej natywnych proporcji. dla okładek które nie mają proporcji 1:1, pozostałe miejsce będzie puste",
         "volumeWidth_description": "Szerokość paska głośności",
-        "contextMenu_description": "Pozwala ci na ukrycie elementów które są pokazywane w menu po kliknięciu prawym przyciskiem myszy na element. elementy które zostały odznaczone będą ukryte",
-        "contextMenu": "Konfiguracja menu kontekstowego (pod prawym przyciskiem myszy)",
         "transcodeBitrate_description": "Wybiera bitrate do transkodowania. 0 pozwala wybrać to serwerowi",
         "transcodeFormat": "Format do transkodowania",
         "translationTargetLanguage_description": "Ustawia docelowy język używany do tłumaczenia automatycznego",

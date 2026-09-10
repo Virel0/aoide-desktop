@@ -247,8 +247,6 @@
         "clearCacheSuccess": "キャッシュが正常に消去されました",
         "clearQueryCache_description": "Feishin の「ソフトクリア」を実行します。これにより、プレイリストとトラックのメタデータが更新され、保存された歌詞がリセットされます。設定、サーバーの資格情報、キャッシュされた画像は保持されます",
         "clearQueryCache": "Feishin のキャッシュを消去",
-        "contextMenu_description": "アイテムを右クリックした際にメニューに表示される項目を非表示にすることができます。チェックされていない項目は非表示になります",
-        "contextMenu": "コンテキストメニュー (右クリック) の設定",
         "crossfadeStyle": "クロスフェードのスタイル",
         "customCss_description": "カスタム CSS コンテンツ。注: コンテンツとリモート URL は許可されていないプロパティです。コンテンツのプレビューは以下に表示されます。設定していない追加フィールドは、サニタイズ処理により表示されています",
         "customCss": "カスタム CSS",
@@ -947,7 +945,6 @@
         "contextMenu": {
             "addToPlaylist": "$t(action.addToPlaylist)",
             "addToFavorites": "$t(action.addToFavorites)",
-            "setRating": "$t(action.setRating)",
             "moveToTop": "$t(action.moveToTop)",
             "deletePlaylist": "$t(action.deletePlaylist)",
             "moveToBottom": "$t(action.moveToBottom)",

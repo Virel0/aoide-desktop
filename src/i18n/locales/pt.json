@@ -406,7 +406,6 @@
             "removeFromFavorites": "$t(action.removeFromFavorites)",
             "removeFromPlaylist": "$t(action.removeFromPlaylist)",
             "removeFromQueue": "$t(action.removeFromQueue)",
-            "setRating": "$t(action.setRating)",
             "playShuffled": "$t(player.shuffle)",
             "showDetails": "Obter informações",
             "goTo": "Ir para"
@@ -560,8 +559,6 @@
         "clearQueryCache": "Limpar cache do Feishin",
         "clearQueryCache_description": "Uma 'limpeza leve' do Feishin. Isto irá renovar playlists, metadados de faixas, e resetar letras gravadas. As configurações, as credenciais de servidor e o cache de imagens serão mantidos",
         "clearCacheSuccess": "Cache limpo com sucesso",
-        "contextMenu": "Configuração do menu de contexto (clique do botão direito do rato)",
-        "contextMenu_description": "Permite esconder elementos exibidos no menu quando clica num elemento com o botão direito. elementos não selecionados serão escondidos",
         "crossfadeDuration": "Duraçao de crossfade",
         "crossfadeDuration_description": "Define a duração do efeito crossfade",
         "crossfadeStyle_description": "Seleciona qual estilo de crossfade usado no player de áudio",

@@ -213,8 +213,6 @@
         "volumeWidth_description": "La anchura del deslizador de volumen",
         "discordListening_description": "Muestra el estado como Escuchando en lugar de Jugando a",
         "discordListening": "Mostrar estado como escuchando",
-        "contextMenu": "Configuración del menú de contexto (clic derecho)",
-        "contextMenu_description": "Te permite ocultar elementos que son mostrados en el menú cuando haces clic derecho en un elemento. Los elementos que no estén seleccionados se ocultarán",
         "customCssEnable": "Habilitar CSS personalizado",
         "customCssEnable_description": "Permite escribir CSS personalizado",
         "customCss": "CSS personalizado",
@@ -792,7 +790,6 @@
         "contextMenu": {
             "addToPlaylist": "$t(action.addToPlaylist)",
             "addToFavorites": "$t(action.addToFavorites)",
-            "setRating": "$t(action.setRating)",
             "moveToTop": "$t(action.moveToTop)",
             "deletePlaylist": "$t(action.deletePlaylist)",
             "moveToBottom": "$t(action.moveToBottom)",

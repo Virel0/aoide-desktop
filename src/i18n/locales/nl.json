@@ -218,7 +218,6 @@
     },
     "page": {
         "contextMenu": {
-            "setRating": "$t(action.setRating)",
             "addToPlaylist": "$t(action.addToPlaylist)",
             "addToFavorites": "$t(action.addToFavorites)",
             "moveToTop": "$t(action.moveToTop)",
@@ -669,8 +668,6 @@
         "clearCacheSuccess": "Cache succesvol geleegd",
         "clearQueryCache_description": "Een 'zachte schoning' van Feishin. Dit zal afspeellijsten verversen, metadata volgen en opgeslagen songteksten herstellen. Inloggegevens en gecachete afbeeldingen blijven bewaard",
         "clearQueryCache": "Feishin's cache legen",
-        "contextMenu_description": "Maakt het mogelijk om items te verbergen in het menu dat verschijnt bij het rechts klikken op een item. uitgevinkte items worden verborgen",
-        "contextMenu": "Configuratie contextmenu (rechtermuisklik)",
         "crossfadeDuration_description": "Bepaal de duur van het crossfade-effect",
         "crossfadeDuration": "Duur crossfade",
         "crossfadeStyle": "Crossfade-stijl",

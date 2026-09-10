@@ -571,7 +571,6 @@
             "removeFromFavorites": "$t(action.removeFromFavorites)",
             "removeFromPlaylist": "$t(action.removeFromPlaylist)",
             "removeFromQueue": "$t(action.removeFromQueue)",
-            "setRating": "$t(action.setRating)",
             "playShuffled": "$t(player.shuffle)",
             "goTo": "Перейти до",
             "goToAlbum": "Перейти до $t(entity.album, {\"count\": 1})",

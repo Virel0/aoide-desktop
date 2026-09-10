@@ -377,7 +377,6 @@
             "removeFromFavorites": "$t(action.removeFromFavorites)",
             "removeFromPlaylist": "$t(action.removeFromPlaylist)",
             "removeFromQueue": "$t(action.removeFromQueue)",
-            "setRating": "$t(action.setRating)",
             "playShuffled": "$t(player.shuffle)",
             "showDetails": "Pridobi informacije"
         },
@@ -514,8 +513,6 @@
         "clearQueryCache": "Počisti feishinov začasni pomnilnik",
         "clearQueryCache_description": "Osveži sezname predvajanja, metapodatke in ponastavi shranjena besedila. Nastavitve, prijavni podatki za strežnike in slike se ohranijo",
         "clearCacheSuccess": "Začasni pomnilnik uspešno izbrisan",
-        "contextMenu": "Konfiguracija kontekstnega menija (desni klik)",
-        "contextMenu_description": "Omogoči skrivanje vrstic v meniju, prikazanem ob desnem kliku. odznačeni predmeti bodo skriti",
         "crossfadeDuration": "Trajanje prehoda",
         "crossfadeDuration_description": "Nastavi čas trajanja prehoda med pesmimi",
         "crossfadeStyle_description": "Izbira tipa efekta prehoda",
