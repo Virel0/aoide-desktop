@@ -88,7 +88,6 @@
         "reload": "Recarregar",
         "codec": "Codec",
         "preview": "Pré-visualizar",
-        "share": "Compartilhar",
         "close": "Fechar",
         "translation": "Tradução",
         "albumGain": "Ganho do álbum",
@@ -227,14 +226,6 @@
             "title": "Pesquisa de letras",
             "input_artist": "$t(entity.artist, {\"count\": 1})",
             "input_name": "$t(common.name)"
-        },
-        "shareItem": {
-            "createFailed": "Falha ao criar compartilhamento (o compartilhamento está ativado?)",
-            "setExpiration": "Definir expiração",
-            "success": "Link de compartilhamento copiado para a área de transferência (ou clique aqui para abrir)",
-            "allowDownloading": "Permitir downloads",
-            "description": "Descrição",
-            "expireInvalid": "A expiração deve ser uma data futura"
         },
         "queryEditor": {
             "input_optionMatchAny": "Corresponder qualquer um",
@@ -641,7 +632,6 @@
             "playShuffled": "$t(player.shuffle)",
             "createPlaylist": "$t(action.createPlaylist)",
             "download": "Baixar",
-            "shareItem": "Compartilhar item",
             "showDetails": "Obter informações",
             "addToPlaylist": "$t(action.addToPlaylist)",
             "deletePlaylist": "$t(action.deletePlaylist)",

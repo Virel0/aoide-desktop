@@ -138,7 +138,6 @@
         "setting_one": "Indstilling",
         "setting_other": "Indstillinger",
         "slower": "Langsommere",
-        "share": "Del",
         "size": "Størrelse",
         "sort": "Sorter",
         "sortOrder": "Rækkefølge",
@@ -365,14 +364,6 @@
         "saveQueue": {
             "success": "Afspilningskø gemt på serveren"
         },
-        "shareItem": {
-            "allowDownloading": "Tillad download",
-            "description": "Beskrivelse",
-            "setExpiration": "Sæt udløbsdato",
-            "success": "Delingslink kopieret til udklipsholder (eller klik her for at åbne)",
-            "expireInvalid": "Udløbsdatoen skal være i fremtiden",
-            "createFailed": "Kunne ikke oprette deling (er deling aktiveret?)"
-        },
         "shuffleAll": {
             "title": "Afspil tilfældigt",
             "input_genre": "$t(entity.genre, {\"count\": 1})",
@@ -485,7 +476,6 @@
             "removeFromQueue": "$t(action.removeFromQueue)",
             "setRating": "$t(action.setRating)",
             "playShuffled": "$t(player.shuffle)",
-            "shareItem": "Del element",
             "goTo": "Gå til",
             "goToAlbum": "Gå til $t(entity.album, {\"count\": 1})",
             "goToAlbumArtist": "Gå til $t(entity.albumArtist, {\"count\": 1})",

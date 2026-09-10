@@ -87,7 +87,6 @@
             "download": "Descarregar",
             "showDetails": "Informació",
             "numberSelected": "{{count}} seleccionat",
-            "shareItem": "Comparteix l'element",
             "goToAlbumArtist": "Ves a $t(entity.albumArtist, {\"count\": 1})",
             "goToAlbum": "Ves a $t(entity.album, {\"count\": 1})",
             "moveItems": "$t(action.moveItems)",
@@ -271,7 +270,6 @@
         "right": "Dreta",
         "save": "Desar",
         "search": "Cercar",
-        "share": "Compartir",
         "size": "Mida",
         "sortOrder": "Ordenar",
         "tags": "Etiquetes",
@@ -465,16 +463,6 @@
             "input_remoteUrl": "Url públic",
             "input_remoteUrlPlaceholder": "Opcional: url públic per característiques externes",
             "input_passwordNoSSO": "No s'admet l'autenticació de proxy invers (SSO). Només s'admeten les autenticacions amb usuari/contrasenya i amb Subsonic"
-        },
-        "shareItem": {
-            "description": "Descripció",
-            "allowDownloading": "Permetre descàrrega",
-            "setExpiration": "Estableix expiració",
-            "success": "S'ha copiat l'enllaç de compartició al porta-retalls (o feu clic aquí per obrir-lo)",
-            "expireInvalid": "La data d'expiració ha de ser al futur",
-            "createFailed": "No s'ha pogut crear el recurs compartit (està habilitat, l'ús compartit?)",
-            "copyToClipboard": "Copiar al porta-retalls: Ctrl+C, enter",
-            "successMustClick": "Compartició creada correctament. Feu clic aquí per obrir-la"
         },
         "updateServer": {
             "success": "S'ha actualitzat el servidor amb èxit",

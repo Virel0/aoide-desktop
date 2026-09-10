@@ -77,7 +77,6 @@
         "forward": "Eteenpäin",
         "maximize": "Maksimoi",
         "mbid": "MusicBrainz ID",
-        "share": "Jaa",
         "random": "Satunnainen",
         "reload": "Lataa uudelleen",
         "quit": "Poistu",
@@ -326,16 +325,6 @@
             "input_artist": "$t(entity.artist, {\"count\": 1})",
             "input_name": "$t(common.name)",
             "title": "Sanojen haku"
-        },
-        "shareItem": {
-            "createFailed": "Jaon luonti epäonnistui (onko jako päällä?)",
-            "allowDownloading": "Salli lataus",
-            "description": "Kuvaus",
-            "setExpiration": "Aseta vanheneminen",
-            "success": "Jakolinkki kopioitu leikepöydälle (tai klikkaa tästä avataksesi)",
-            "expireInvalid": "Vanhetumisen pitää olla tulevaisuudessa",
-            "copyToClipboard": "Kopioi leikepöydälle: Ctrl+C, enter",
-            "successMustClick": "Jako luotu onnistuneesti. paina tästä avataksesi"
         },
         "queryEditor": {
             "input_optionMatchAny": "Sovita joku",
@@ -649,7 +638,6 @@
             "moveToBottom": "$t(action.moveToBottom)",
             "moveToTop": "$t(action.moveToTop)",
             "removeFromFavorites": "$t(action.removeFromFavorites)",
-            "shareItem": "Jaa kohde",
             "showDetails": "Lisätietoa",
             "addFavorite": "$t(action.addToFavorites)",
             "addLast": "$t(player.addLast)",

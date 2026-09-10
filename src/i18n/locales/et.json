@@ -148,7 +148,6 @@
         "setting_one": "Säte",
         "setting_other": "Sätted",
         "slower": "Aeglasemalt",
-        "share": "Jaga",
         "size": "Suurus",
         "sort": "Järjesta",
         "sortOrder": "Järjestus",
@@ -387,18 +386,6 @@
         "saveQueue": {
             "success": "Esitusjärjekord salvestati serverisse"
         },
-        "shareItem": {
-            "allowDownloading": "Luba allalaadimine",
-            "copyToClipboard": "Kopeeri lõikelauale: Ctrl+C, enter",
-            "description": "Kirjeldus",
-            "setExpiration": "Määra aegumisaeg",
-            "success": "Jagamislink kopeeriti lõikelauale (või klõpsa avamiseks siia)",
-            "successMustClick": "Jagamine on edukalt loodud. Klõpsa avamiseks siia",
-            "expireInvalid": "Aegumisaeg peab olema tulevikus",
-            "createFailed": "Jagamise loomine nurjus (kas jagamine on lubatud?)",
-            "setExpiration_description": "Serveri vaikimisi aegumisaja kasutamiseks jäta tühjaks",
-            "setExpiration_serverDefault": "Serveri vaikeväärtus"
-        },
         "shuffleAll": {
             "title": "Juhuesitus",
             "input_kind_albums": "Albumid",
@@ -525,7 +512,6 @@
             "removeFromQueue": "$t(action.removeFromQueue)",
             "setRating": "$t(action.setRating)",
             "playShuffled": "$t(player.shuffle)",
-            "shareItem": "Jaga üksust",
             "goTo": "Mine >",
             "goToAlbum": "Mine > $t(entity.album, {\"count\": 1})",
             "goToAlbumArtist": "Mine > $t(entity.albumArtist, {\"count\": 1})",
@@ -1179,10 +1165,6 @@
         "exportDiagnostics": "Ekspordi diagnostikaandmed",
         "showFavorites_description": "Määrab, kas lemmikuks märkimise (südame) nupud on liideses nähtavad",
         "showQueueInSidebar_description": "Mängija külgribale lisatakse paneel, mis kuvab esitusjärjekorda",
-        "shareExpiration_description": "Kui pika aja pärast uued jagamislingid vaikimisi aeguvad. Serveri vaikeväärtuse kasutamiseks tühjenda jagamisaknas kuupäev",
-        "shareExpiration": "Jagamislingi vaikimisi aegumine",
-        "shareExpirationUseServerDefault_description": "Uute linkide jagamisel aegumiskuupäeva ei määrata, et server saaks rakendada oma vaikimisi seadistust (nt Navidrome'i DefaultShareExpiration)",
-        "shareExpirationUseServerDefault": "Kasuta serveri vaikimisi aegumisaega",
         "customThemeErrors_description": "Neid teemafaile ei õnnestunud laadida.",
         "customThemeErrors": "Tõrked",
         "customThemeWarnings_description": "Need teemad laaditi, kuid mõned väärtused olid vigased ja neid eirati.",

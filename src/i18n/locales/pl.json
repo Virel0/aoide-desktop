@@ -131,7 +131,6 @@
         "albumGain": "Wzrost albumu",
         "mbid": "ID MusicBrainz",
         "reload": "Przeładuj",
-        "share": "Udostępnij",
         "trackGain": "Gain utworu",
         "trackPeak": "Peak utworu",
         "codec": "Kodek",
@@ -377,18 +376,6 @@
             "success": "$t(entity.playlist, {\"count\": 1}) zaktualizowana pomyślnie",
             "publicJellyfinNote": "Z jakiegoś powodu Jellyfin nie udostępnia informacji na temat publiczności playlisty. Jeżeli chcesz, aby ta pozostała publiczna, mniej wybraną poniższą opcję"
         },
-        "shareItem": {
-            "allowDownloading": "Zezwól na pobieranie",
-            "description": "Opis",
-            "setExpiration": "Ustaw czas wygaśnięcia",
-            "success": "Link do udostępniania skopiowany do schowka (lub kliknij tutaj, aby otworzyć)",
-            "createFailed": "Nie udało się utworzyć linku do udostępniania (czy udostępnianie jest włączone?)",
-            "expireInvalid": "Ustawiony czas wygaśnięcia musi być w przyszłości",
-            "copyToClipboard": "Skopiuj do schowka: Ctrl+C, enter",
-            "successMustClick": "Udostępnianie utworzone pomyślnie, kliknij tutaj żeby otworzyć",
-            "setExpiration_description": "Pozostaw puste, aby użyć domyślnego wygaśnięcia serwera",
-            "setExpiration_serverDefault": "Domyślne serwera"
-        },
         "privateMode": {
             "enabled": "Tryb prywatny włączony, status odtwarzania jest ukryty przed usługami zewnętrznymi",
             "disabled": "Tryb prywatny wyłączony, status odtwarzania jest widoczny dla usług zewnętrznych",
@@ -515,7 +502,6 @@
             "play": "$t(player.play)",
             "numberSelected": "Zaznaczono {{count}}",
             "removeFromQueue": "$t(action.removeFromQueue)",
-            "shareItem": "Udostępnij pozycję",
             "showDetails": "Zobacz informacje",
             "download": "Pobierz",
             "playShuffled": "$t(player.shuffle)",
@@ -1157,11 +1143,7 @@
         "customThemes_description": "Upuść pliki motywów .json do tego folderu, aby dodać niestandardowe motywy. Są one wczytywane automatycznie kiedy zmienisz, dodasz lub usuniesz plik.",
         "customThemes": "Niestandardowe motywy",
         "confirmQueueChanges": "Potwierdź zmiany w kolejce",
-        "confirmQueueChanges_description": "Pytaj o potwierdzenie przed wyczyszczeniem aktualnej kolejki",
-        "shareExpiration_description": "Jak daleko w przyszłości będą domyślnie wygasać nowe linki udostępniania. Wyczyść datę w oknie udostępniania, aby użyć domyślnego czasu z serwera",
-        "shareExpiration": "Domyślne wygasanie udostępniania",
-        "shareExpirationUseServerDefault_description": "Pomiń dodawanie wygaśnięcia podczas tworzenia udostępnień, aby serwer mógł zastosować swoje skonfigurowane domyślne wygasanie (np. Navidrome DefaultShareExpiration)",
-        "shareExpirationUseServerDefault": "Używaj domyślnego wygasania serwera"
+        "confirmQueueChanges_description": "Pytaj o potwierdzenie przed wyczyszczeniem aktualnej kolejki"
     },
     "table": {
         "config": {

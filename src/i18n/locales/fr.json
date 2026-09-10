@@ -188,7 +188,6 @@
         "mbid": "Identifiant MusicBrainz",
         "grouping": "Regroupement",
         "preview": "Aperçu",
-        "share": "Partager",
         "reload": "Recharger",
         "trackGain": "Gain de la piste",
         "trackPeak": "Crête de la piste",
@@ -443,7 +442,6 @@
             "addFavorite": "$t(action.addToFavorites)",
             "play": "$t(player.play)",
             "removeFromQueue": "$t(action.removeFromQueue)",
-            "shareItem": "Partager un élément",
             "playSimilarSongs": "$t(player.playSimilarSongs)",
             "showDetails": "Obtenir des informations",
             "download": "Télécharger",
@@ -1004,16 +1002,6 @@
             "title": "Recherche de paroles",
             "input_name": "$t(common.name)",
             "input_artist": "$t(entity.artist, {\"count\": 1})"
-        },
-        "shareItem": {
-            "allowDownloading": "Autoriser le téléchargement",
-            "description": "Description",
-            "setExpiration": "Définir une expiration",
-            "success": "Lien de partage copié dans le presse-papier (ou cliquez ici pour ouvrir)",
-            "expireInvalid": "L'expiration doit être définie à une date ultérieure",
-            "createFailed": "Échec de la création du lien de partage (le partage est-il activé ?)",
-            "copyToClipboard": "Copier vers le presse-papiers : Ctrl+C, entrer",
-            "successMustClick": "Partage créé avec succès. cliquez ici pour ouvrir"
         },
         "privateMode": {
             "enabled": "Le mode privé est activé, le statut de lecture est maintenant caché des intégrations externes",

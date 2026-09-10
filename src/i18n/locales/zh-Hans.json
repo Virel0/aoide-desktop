@@ -126,7 +126,6 @@
         "trackPeak": "音轨峰值",
         "albumGain": "专辑增益",
         "codec": "编解码器",
-        "share": "分享",
         "preview": "预览",
         "translation": "翻译",
         "additionalParticipants": "其他参与者",
@@ -806,7 +805,6 @@
             "addLast": "$t(player.addLast)",
             "addFavorite": "$t(action.addToFavorites)",
             "showDetails": "获取信息",
-            "shareItem": "分享项目",
             "playSimilarSongs": "$t(player.playSimilarSongs)",
             "download": "下载",
             "playShuffled": "$t(player.shuffle)",
@@ -950,16 +948,6 @@
             "title": "搜索歌词",
             "input_name": "$t(common.name)",
             "input_artist": "$t(entity.artist, {\"count\": 1})"
-        },
-        "shareItem": {
-            "expireInvalid": "过期时间必须是将来的时间",
-            "createFailed": "创建共享失败（是否已启用共享？）",
-            "allowDownloading": "允许下载",
-            "description": "描述",
-            "setExpiration": "设置过期时间",
-            "success": "共享链接已复制到剪贴板（或单击此处打开）",
-            "copyToClipboard": "复制到剪贴板：Ctrl+C，Enter",
-            "successMustClick": "分享创建成功。点击此处打开"
         },
         "privateMode": {
             "enabled": "启用私人模式，播放状态现在对外部集成隐藏",

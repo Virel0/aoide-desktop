@@ -133,7 +133,6 @@
         "codec": "Codec",
         "mbid": "MusicBrainz ID",
         "grouping": "Groepering",
-        "share": "Deel",
         "explicit": "Expliciet",
         "sampleRate": "Sample rate",
         "tags": "Tags",
@@ -236,7 +235,6 @@
             "numberSelected": "{{count}} geselecteerd",
             "removeFromQueue": "$t(action.removeFromQueue)",
             "download": "Download",
-            "shareItem": "Deel item",
             "goToAlbum": "Ga naar $t(entity.album, {\"count\": 1})",
             "goToAlbumArtist": "Ga naar $t(entity.albumArtist, {\"count\": 1})",
             "showDetails": "Haal info op",
@@ -1022,16 +1020,6 @@
         "updateServer": {
             "title": "Update server",
             "success": "Server succesvol geüpdatet"
-        },
-        "shareItem": {
-            "allowDownloading": "Sta downloaden toe",
-            "description": "Beschrijving",
-            "setExpiration": "Stel vervaldatum in",
-            "success": "Deel link gekopiëerd naar klembord (of klik hier om te openen)",
-            "expireInvalid": "Vervaldatum moet in de toekomst zijn",
-            "createFailed": "Kon share niet aanmaken (is delen aangezet?)",
-            "copyToClipboard": "Kopieer naar klembord: Ctrl+C, enter",
-            "successMustClick": "Gedeelde bron succesvol aangemaakt. klik hier om te openen"
         },
         "privateMode": {
             "enabled": "Private modus ingeschakeld, afspeelstatus is nu verborgen voor externe integraties",

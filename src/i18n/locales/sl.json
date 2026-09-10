@@ -111,7 +111,6 @@
         "setting_two": "",
         "setting_few": "",
         "setting_other": "",
-        "share": "Deli",
         "size": "Velikost",
         "sortOrder": "Vrstni red",
         "tags": "Oznake",
@@ -309,14 +308,6 @@
             "input_optionMatchAll": "Ujemanje vseh",
             "input_optionMatchAny": "Ujemanje z najmanj enim"
         },
-        "shareItem": {
-            "allowDownloading": "Dovoli prenašanje",
-            "description": "Opis",
-            "setExpiration": "Nastavi datum poteka veljavnosti",
-            "success": "Deli povezavo v odložišču (ali klikni tukaj za odpiranje)",
-            "expireInvalid": "Datum poteka veljavnosti mora biti v prihodnosti",
-            "createFailed": "Deljenje ni uspelo (je deljenje omogočeno?)"
-        },
         "updateServer": {
             "success": "Strežnik uspešno posodobljen",
             "title": "Posodobi strežnik"
@@ -388,7 +379,6 @@
             "removeFromQueue": "$t(action.removeFromQueue)",
             "setRating": "$t(action.setRating)",
             "playShuffled": "$t(player.shuffle)",
-            "shareItem": "Deli",
             "showDetails": "Pridobi informacije"
         },
         "fullscreenPlayer": {

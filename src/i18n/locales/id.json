@@ -108,7 +108,6 @@
         "saveAs": "Simpan sebagai",
         "search": "Cari",
         "setting_other": "Pengaturan",
-        "share": "Bagikan",
         "size": "Ukuran",
         "sortOrder": "Urutkan",
         "title": "Judul",
@@ -321,16 +320,6 @@
             "resetToDefault": "Reset ke default",
             "clearFilters": "Hapus filter"
         },
-        "shareItem": {
-            "allowDownloading": "Izinkan pengunduhan",
-            "description": "Deskripsi",
-            "setExpiration": "Atur masa berlaku",
-            "success": "Tautan bagikan disalin ke papan klip (atau klik di sini untuk membukanya)",
-            "expireInvalid": "Masa berlaku harus di waktu mendatang",
-            "createFailed": "Gagal membuat bagikanan (apakah fitur berbagi diaktifkan?)",
-            "copyToClipboard": "Salin ke clipboard: Ctrl+C, enter",
-            "successMustClick": "Berbagi berhasil dibuat. klik di sini untuk membuka"
-        },
         "updateServer": {
             "success": "Server berhasil diperbarui",
             "title": "Perbarui server"
@@ -440,7 +429,6 @@
             "removeFromQueue": "$t(action.removeFromQueue)",
             "setRating": "$t(action.setRating)",
             "playShuffled": "$t(player.shuffle)",
-            "shareItem": "Bagikan item",
             "showDetails": "Dapatkan info",
             "moveToTop": "$t(action.moveToTop)",
             "play": "$t(player.play)",

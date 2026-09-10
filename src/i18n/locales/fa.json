@@ -249,7 +249,6 @@
         "trackPeak": "اوج قطعه",
         "translation": "ترجمه",
         "preview": "پیش‌نمایش",
-        "share": "اشتراک‌گذاری",
         "codec": "کدک"
     },
     "error": {
@@ -362,14 +361,6 @@
             "input_optionMatchAny": "همخوانی داشتن هر کدام",
             "input_optionMatchAll": "همخوانی داشتن همه"
         },
-        "shareItem": {
-            "expireInvalid": "انقضا باید در آینده باشد",
-            "description": "بازنمود",
-            "setExpiration": "تنظیم انقضا",
-            "success": "پیوند اشتراک‌گذاری در کلیپ‌بورد کپی شد (یا اینجا را کلیک کنید تا باز شود)",
-            "allowDownloading": "اجازه دادن بارگیری",
-            "createFailed": "ناکامی در ساخت پیوند اشتراک‌گذاری (آیا اشتراک‌گذاری فعال است؟)"
-        },
         "updateServer": {
             "success": "سرویس‌دهنده با موفقیت بروزرسانی شد",
             "title": "بروزرسانی سرویس‌دهنده"
@@ -451,7 +442,6 @@
             "removeFromFavorites": "$t(action.removeFromFavorites)",
             "deselectAll": "$t(action.deselectAll)",
             "download": "بارگیری",
-            "shareItem": "اشتراک‌گذاری آیتم",
             "removeFromPlaylist": "$t(action.removeFromPlaylist)",
             "showDetails": "دریافت داده",
             "playSimilarSongs": "$t(player.playSimilarSongs)",

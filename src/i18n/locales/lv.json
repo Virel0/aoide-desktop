@@ -141,7 +141,6 @@
         "saveAs": "Saglabāt kā",
         "search": "Meklēt",
         "slower": "Lēnāks",
-        "share": "Dalīties",
         "size": "Izmērs",
         "sort": "Kārtot",
         "sortOrder": "Kārtot",
@@ -347,16 +346,6 @@
         "saveQueue": {
             "success": "Saglabāta atskaņošanas rinda serverī"
         },
-        "shareItem": {
-            "allowDownloading": "Atļaut lejupielādi",
-            "copyToClipboard": "Kopēt starplaikā: Ctrl+C, Enter",
-            "description": "Apraksts",
-            "setExpiration": "Iestatiet derīguma termiņu",
-            "success": "Dalieties saites kopija ir kopēta starplaikā (vai noklikšķiniet šeit, lai atvērtu)",
-            "successMustClick": "Dalieties veiksmīgi. Noklikšķiniet šeit, lai atvērtu",
-            "expireInvalid": "Derīguma termiņš jābūt nākotnē",
-            "createFailed": "Neizdevās izveidot koplietošanas saiti (vai koplietošana ir aktivizēta?)"
-        },
         "shuffleAll": {
             "title": "Atskaņot nejaušā secībā",
             "input_kind_albums": "Albumi",
@@ -474,7 +463,6 @@
             "removeFromQueue": "$t(action.removeFromQueue)",
             "setRating": "$t(action.setRating)",
             "playShuffled": "$t(player.shuffle)",
-            "shareItem": "Dalīties ar elementu",
             "goTo": "Pāriet uz",
             "goToAlbum": "Pārejiet uz $t(entity.album, {\"count\": 1})",
             "goToAlbumArtist": "Pāriet uz $t(entity.albumArtist, {\"count\": 1})",

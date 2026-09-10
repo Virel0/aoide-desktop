@@ -115,7 +115,6 @@
         "search": "தேடல்",
         "setting_one": "அமைத்தல்",
         "setting_other": "அமைப்புகள்",
-        "share": "பங்கு",
         "size": "அளவு",
         "sortOrder": "ஒழுங்கு",
         "unknown": "தெரியவில்லை",
@@ -314,16 +313,6 @@
             "resetToDefault": "இயல்புநிலைக்கு மீட்டமைக்கவும்",
             "clearFilters": "தெளிவான வடிகட்டிகள்"
         },
-        "shareItem": {
-            "description": "விவரம்",
-            "setExpiration": "காலாவதியை அமைக்கவும்",
-            "expireInvalid": "காலாவதி எதிர்காலத்தில் இருக்க வேண்டும்",
-            "allowDownloading": "பதிவிறக்க அனுமதிக்கவும்",
-            "success": "இடைநிலைப்பலகைக்கு நகலெடுக்கப்பட்ட இணைப்பைப் பகிரவும் (அல்லது திறக்க இங்கே சொடுக்கு செய்க)",
-            "createFailed": "பங்கை உருவாக்கத் தவறிவிட்டது (பகிர்வு இயக்கப்பட்டதா?)",
-            "copyToClipboard": "இடைநிலைப்பலகைக்கு நகலெடு: Ctrl+C, உள்ளிடவும்",
-            "successMustClick": "பகிர்வு வெற்றிகரமாக உருவாக்கப்பட்டது. திறக்க இங்கே சொடுக்கு செய்யவும்"
-        },
         "createPlaylist": {
             "success": "$t(entity.playlist, {\"count\": 1}) வெற்றிகரமாக உருவாக்கப்பட்டது",
             "title": "$t(entity.playlist, {\"count\": 1}) ஐ உருவாக்கவும்",
@@ -435,7 +424,6 @@
             "addLast": "$t(player.addLast)",
             "moveToNext": "$t(action.moveToNext)",
             "play": "$t(player.play)",
-            "shareItem": "உருப்படியைப் பகிரவும்",
             "showDetails": "தகவலைப் பெறுங்கள்",
             "addToFavorites": "$t(action.addToFavorites)",
             "addToPlaylist": "$t(action.addToPlaylist)",

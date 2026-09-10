@@ -383,7 +383,6 @@
         "setting_one": "Setting",
         "setting_other": "Settings",
         "slower": "Slower",
-        "share": "Share",
         "size": "Size",
         "sort": "Sort",
         "sortOrder": "Order",
@@ -641,18 +640,6 @@
         "saveQueue": {
             "success": "Saved play queue to server"
         },
-        "shareItem": {
-            "allowDownloading": "Allow downloading",
-            "copyToClipboard": "Copy to clipboard: Ctrl+C, enter",
-            "description": "Description",
-            "setExpiration": "Set expiration",
-            "setExpiration_description": "Leave empty to use the server default expiration",
-            "setExpiration_serverDefault": "Server default",
-            "success": "Share link copied to clipboard (or click here to open)",
-            "successMustClick": "Share created successfully. Click here to open",
-            "expireInvalid": "Expiration must be in the future",
-            "createFailed": "Failed to create share (is sharing enabled?)"
-        },
         "shuffleAll": {
             "title": "Play random",
             "input_kind_albums": "Albums",
@@ -772,7 +759,6 @@
             "removeFromQueue": "$t(action.removeFromQueue)",
             "setRating": "$t(action.setRating)",
             "playShuffled": "$t(player.shuffle)",
-            "shareItem": "Share item",
             "goTo": "Go to",
             "goToAlbum": "Go to $t(entity.album, {\"count\": 1})",
             "goToAlbumArtist": "Go to $t(entity.albumArtist, {\"count\": 1})",
@@ -1334,10 +1320,6 @@
         "savePlayQueue": "Save play queue",
         "scrobble_description": "Scrobble plays to your media server",
         "scrobble": "Scrobble",
-        "shareExpiration_description": "How far in the future new share links expire by default. Clear the date in the share dialog to use the server default instead",
-        "shareExpiration": "Default share expiration",
-        "shareExpirationUseServerDefault_description": "Omit an expiration when creating shares so the server can apply its configured default (e.g. Navidrome DefaultShareExpiration)",
-        "shareExpirationUseServerDefault": "Use server default expiration",
         "showSkipButton_description": "Show or hide the skip buttons on the player bar",
         "showSkipButton": "Show skip buttons",
         "showSkipButtons_description": "Show or hide the skip buttons on the player bar",

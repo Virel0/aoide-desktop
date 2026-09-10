@@ -124,7 +124,6 @@
         "setting_one": "Configuração",
         "setting_many": "",
         "setting_other": "",
-        "share": "Partilhar",
         "size": "Tamanho",
         "sortOrder": "Ordem",
         "tags": "Tags",
@@ -325,14 +324,6 @@
             "resetToDefault": "Restaurar à predefinição",
             "clearFilters": "Limpar filtros"
         },
-        "shareItem": {
-            "allowDownloading": "Permitir descargas",
-            "description": "Descrição",
-            "setExpiration": "Definir expiração",
-            "success": "Ligação de compartilhamento copiado para a área de transferência (ou clique aqui para abrir)",
-            "expireInvalid": "A expiração deve ser uma data futura",
-            "createFailed": "Falha ao criar compartilhamento (o compartilhamento está ativado?)"
-        },
         "updateServer": {
             "success": "Servidor atualizado com sucesso",
             "title": "Atualizar servidor"
@@ -417,7 +408,6 @@
             "removeFromQueue": "$t(action.removeFromQueue)",
             "setRating": "$t(action.setRating)",
             "playShuffled": "$t(player.shuffle)",
-            "shareItem": "Partilhar elemento",
             "showDetails": "Obter informações",
             "goTo": "Ir para"
         },

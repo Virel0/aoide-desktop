@@ -491,10 +491,6 @@
         "customThemes": "Temas personalizados",
         "customThemeWarnings_description": "Estos temas se cargaron, pero algunos valores eran inválidos y fueron ignorados.",
         "customThemes_description": "Arrastra los archivos de tema .json en esta carpeta para añadir temas personalizados. Se registran automáticamente cada vez que añades, editas o eliminas un archivo.",
-        "shareExpirationUseServerDefault": "Usar la expiración predeterminada del servidor",
-        "shareExpiration": "Expiración de compartir predeterminada",
-        "shareExpiration_description": "Cuándo expiran en el futuro de forma predeterminada los nuevos enlaces de compartir. Limpiar la fecha en el diálogo de compartir para usar en su lugar la predeterminada del servidor",
-        "shareExpirationUseServerDefault_description": "Omite una expiración cuando se crean enlaces de compartir para que el servidor pueda aplicar la predeterminada configurada (p. ej. Navidrome DefaultShareExpiration)",
         "confirmQueueChanges": "Confirmar cambios en cola",
         "confirmQueueChanges_description": "Pide confirmación antes de descartar la cola actual"
     },
@@ -633,7 +629,6 @@
         "codec": "Códec",
         "close": "Cerrar",
         "reload": "Recargar",
-        "share": "Compartir",
         "trackGain": "Ganancia de pista",
         "preview": "Vista previa",
         "translation": "Traducción",
@@ -811,7 +806,6 @@
             "play": "$t(player.play)",
             "numberSelected": "{{count}} seleccionado",
             "removeFromQueue": "$t(action.removeFromQueue)",
-            "shareItem": "Compartir elemento",
             "showDetails": "Obtener información",
             "playSimilarSongs": "$t(player.playSimilarSongs)",
             "download": "Descargar",
@@ -1055,18 +1049,6 @@
             "removeRuleGroup": "Eliminar regla de grupo",
             "resetToDefault": "Restablecer al valor predeterminado",
             "clearFilters": "Limpiar filtros"
-        },
-        "shareItem": {
-            "createFailed": "No se pudo crear el recurso compartido (¿está habilitado el uso compartido?)",
-            "allowDownloading": "Permitir la descarga",
-            "description": "Descripción",
-            "setExpiration": "Establecer expiración",
-            "success": "Enlace de compartición copiado al portapapeles (o pulsa aquí para abrir)",
-            "expireInvalid": "La expiración debe ser en el futuro",
-            "copyToClipboard": "Copiar al portapapeles: Ctrl+C, enter",
-            "successMustClick": "Compartir creado correctamente. Haz clic aquí para abrir",
-            "setExpiration_description": "Dejar vacío para usar la expiración predeterminada del servidor",
-            "setExpiration_serverDefault": "Predeterminado del servidor"
         },
         "privateMode": {
             "enabled": "Modo privado activado, el estado de reproducción ahora está oculto de integraciones externas",

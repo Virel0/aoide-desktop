@@ -71,7 +71,6 @@
         "forceRestartRequired": "Berreabiarazi aldaketak aplikatzeko... Itxi notifikazioa berreabiarazteko",
         "setting_one": "Ezarpena",
         "setting_other": "Ezarpenak",
-        "share": "Partekatu",
         "action_one": "Ekintza",
         "action_other": "Ekintzak",
         "unknown": "Ezezaguna",
@@ -737,16 +736,6 @@
             "input_name": "$t(common.name)",
             "title": "Letra bilatu"
         },
-        "shareItem": {
-            "description": "Deskripzioa",
-            "setExpiration": "Iraungitze-data ezarri",
-            "success": "Partekatzeko esteka arbelera kopiatu da (edo egin klik hemen irekitzeko)",
-            "expireInvalid": "Iraungitze-data etorkizunean izan behar da",
-            "allowDownloading": "Baimendu deskargatzea",
-            "createFailed": "Partekatzea sortzeak huts egin du (Partekatzea gaituta al dago?)",
-            "copyToClipboard": "Kopiatu arbelean: Ctrl+C, Enter",
-            "successMustClick": "Partekatzea behar bezala sortu da. Egin klik hemen irekitzeko"
-        },
         "deletePlaylist": {
             "success": "$t(entity.playlist, {\"count\": 1}) behar bezala ezabatu da",
             "title": "$t(entity.playlist, {\"count\": 1}) ezabatu",
@@ -857,7 +846,6 @@
             "setRating": "$t(action.setRating)",
             "playShuffled": "$t(player.shuffle)",
             "numberSelected": "{{count}} hautatuta",
-            "shareItem": "Partekatu elementua",
             "goToAlbum": "Joan $t(entity.album, {\"count\": 1})-(e)ra",
             "goToAlbumArtist": "Joan albumera",
             "showDetails": "Informazioa lortu",

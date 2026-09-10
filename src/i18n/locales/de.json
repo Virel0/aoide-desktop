@@ -128,7 +128,6 @@
         "mbid": "MusicBrainz ID",
         "grouping": "Gruppierung",
         "close": "Schließen",
-        "share": "Teilen",
         "translation": "Übersetzung",
         "trackGain": "Track gain",
         "trackPeak": "Track peak",
@@ -308,16 +307,6 @@
             "title": "Songtext suche",
             "input_name": "$t(common.name)",
             "input_artist": "$t(entity.artist, {\"count\": 1})"
-        },
-        "shareItem": {
-            "description": "Beschreibung",
-            "setExpiration": "Ablaufdatum setzen",
-            "expireInvalid": "Ablaufdatum muss in der Zukunft liegen",
-            "allowDownloading": "Herunterladen zulassen",
-            "success": "Link in die zwischenablage kopiert (oder hier klicken, um zu öffnen)",
-            "createFailed": "Fehler beim Teilen (Ist Teilen aktiviert?)",
-            "copyToClipboard": "In zwischenablage kopieren: strg+c, enter",
-            "successMustClick": "Freigabe erfolgreich erstellt. Hier klicken um diese zu öffnen"
         },
         "privateMode": {
             "enabled": "Privater Modus aktiviert, Wiedergabe-Status wird externen Quellen nicht preisgegeben",
@@ -578,7 +567,6 @@
             "download": "Download",
             "playSimilarSongs": "$t(player.playSimilarSongs)",
             "moveToNext": "$t(action.moveToNext)",
-            "shareItem": "Teilen",
             "showDetails": "Informationen",
             "goToAlbum": "Zu $t(entity.album, {\"count\": 1}) gehen",
             "goToAlbumArtist": "Zu $t(entity.albumArtist, {\"count\": 1}) gehen",

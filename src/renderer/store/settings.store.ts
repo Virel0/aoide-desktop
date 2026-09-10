@@ -500,22 +500,6 @@ export enum HomeFeatureStyle {
     SINGLE = 'single',
 }
 
-export enum ShareExpirationUnit {
-    DAY = 'day',
-    HOUR = 'hour',
-    MINUTE = 'minute',
-    MONTH = 'month',
-    SECOND = 'second',
-    WEEK = 'week',
-    YEAR = 'year',
-}
-
-const ShareExpirationSchema = z.object({
-    amount: z.number().int().min(1),
-    unit: z.nativeEnum(ShareExpirationUnit),
-    useServerDefault: z.boolean(),
-});
-
 const AutoSaveSchema = z.object({
     count: z.number().min(0),
     enabled: z.boolean(),
@@ -587,7 +571,6 @@ export const GeneralSettingsSchema = z.object({
     primaryShade: z.number().min(0).max(9),
     qobuz: z.boolean(),
     resume: z.boolean(),
-    shareExpiration: ShareExpirationSchema,
     showFavorites: z.boolean(),
     showLyricsInSidebar: z.boolean(),
     showQueueInSidebar: z.boolean(),
@@ -1331,11 +1314,6 @@ const initialState: SettingsState = {
         primaryShade: 6,
         qobuz: true,
         resume: true,
-        shareExpiration: {
-            amount: 1,
-            unit: ShareExpirationUnit.YEAR,
-            useServerDefault: false,
-        },
         showFavorites: true,
         showLyricsInSidebar: true,
         showQueueInSidebar: true,
@@ -2845,6 +2823,12 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     );
                 }
 
+                if (version < 41) {
+                    // Sharing is gone; the default expiry it stored has nobody
+                    // left to ask it.
+                    delete (state.general as { shareExpiration?: unknown }).shareExpiration;
+                }
+
                 if (version < 40) {
                     // "Show ratings" is gone. Every rating surface was already
                     // gated on the server type behind it, and this build signs
@@ -2872,7 +2856,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                 return persistedState;
             },
             name: 'store_settings',
-            version: 40,
+            version: 41,
         },
     ),
 );

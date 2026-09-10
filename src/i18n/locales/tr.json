@@ -120,7 +120,6 @@
         "search": "Arama",
         "setting_one": "Ayar",
         "setting_other": "Ayarlar",
-        "share": "Paylaş",
         "size": "Boyut",
         "sortOrder": "Sıralama düzeni",
         "tags": "Etiketler",
@@ -332,16 +331,6 @@
             "resetToDefault": "Varsayılan ayarlara dön",
             "clearFilters": "Filtreleri temizle"
         },
-        "shareItem": {
-            "allowDownloading": "İndirmeye izin ver",
-            "description": "Açıklama",
-            "setExpiration": "Sona erme tarihi ayarla",
-            "success": "Paylaşma bağlantısı panoya kopyalandı (veya açmak için buraya tıklayın)",
-            "expireInvalid": "Son kullanma tarihi gelecekte olmalı",
-            "createFailed": "Paylaşım oluşturulamadı (paylaşım etkin mi?)",
-            "copyToClipboard": "Panoya kopyala: Ctrl+C, Enter",
-            "successMustClick": "Paylaşım başarıyla oluşturuldu. Görüntülemek için tıklayın"
-        },
         "updateServer": {
             "success": "Sunucu başarıyla güncellendi",
             "title": "Sunucuyu güncelle"
@@ -404,7 +393,6 @@
             "setRating": "$t(action.setRating)",
             "addFavorite": "$t(action.addToFavorites)",
             "playShuffled": "$t(player.shuffle)",
-            "shareItem": "Öğeyi paylaş",
             "showDetails": "Bilgi al",
             "goToAlbum": "$t(entity.album, {\"count\": 1}) sayfasına git",
             "goToAlbumArtist": "$t(entity.albumArtist, {\"count\": 1}) sayfasına git"

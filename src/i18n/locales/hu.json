@@ -121,7 +121,6 @@
         "translation": "Fordítás",
         "rating": "Értékelés",
         "reload": "Újratöltés",
-        "share": "Megosztás",
         "sortOrder": "Sorrend",
         "saveAndReplace": "Mentés és felülírás",
         "saveAs": "Mentés másként",
@@ -332,14 +331,6 @@
             "resetToDefault": "Alapértelmezettre visszaállítás",
             "clearFilters": "Szűrők törlése"
         },
-        "shareItem": {
-            "allowDownloading": "Letöltés engedélyezése",
-            "description": "Leírás",
-            "setExpiration": "Lejárat beállítása",
-            "success": "Link másolva a vágólapra (vagy kattintson ide a megnyitáshoz)",
-            "expireInvalid": "A lejáratnak a jövőben kell lennie",
-            "createFailed": "A megosztás létrehozása sikertelen (a megosztás engedélyezve van?)"
-        },
         "updateServer": {
             "success": "Szerver sikeresen frissítve",
             "title": "Szerver frissítés"
@@ -445,7 +436,6 @@
             "removeFromQueue": "$t(action.removeFromQueue)",
             "setRating": "$t(action.setRating)",
             "playShuffled": "$t(player.shuffle)",
-            "shareItem": "Megosztás",
             "goToAlbum": "Menj az $t(entity.album, {\"count\": 1})",
             "goToAlbumArtist": "Menj a $t(entity.albumArtist, {\"count\": 1})",
             "showDetails": "Info",

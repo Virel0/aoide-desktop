@@ -150,7 +150,6 @@
         "setting_few": "налаштування",
         "setting_many": "налаштувань",
         "slower": "Повільніше",
-        "share": "Поділитися",
         "size": "Розмір",
         "sort": "Впорядкувати",
         "sortOrder": "Порядок",
@@ -405,16 +404,6 @@
         "saveQueue": {
             "success": "Черга відтворення збережена на сервері"
         },
-        "shareItem": {
-            "allowDownloading": "Дозволити завантаження",
-            "description": "Опис",
-            "setExpiration": "Встановити термін дії",
-            "success": "Посилання для спільного використання скопійовано в буфер обміну (натисніть тут, щоб відкрити)",
-            "expireInvalid": "Термін дії повинен бути в майбутньому",
-            "createFailed": "Не вдалося створити спільний доступ (чи ввімкнено спільний доступ?)",
-            "copyToClipboard": "Скопіювати до буфера обміну: Ctrl+C, enter",
-            "successMustClick": "Посилання успішно створено, натисніть сюди, щоб відкрити"
-        },
         "shuffleAll": {
             "title": "Відтворити випадково",
             "input_genre": "$t(entity.genre, {\"count\": 1})",
@@ -584,7 +573,6 @@
             "removeFromQueue": "$t(action.removeFromQueue)",
             "setRating": "$t(action.setRating)",
             "playShuffled": "$t(player.shuffle)",
-            "shareItem": "Поділитися елементом",
             "goTo": "Перейти до",
             "goToAlbum": "Перейти до $t(entity.album, {\"count\": 1})",
             "goToAlbumArtist": "Перейти до $t(entity.albumArtist, {\"count\": 1})",

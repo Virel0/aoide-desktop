@@ -626,7 +626,6 @@
         "mbid": "ID MusicBrainz",
         "trackGain": "Zisk (gain) skladby",
         "reload": "Znovu načíst",
-        "share": "Sdílet",
         "codec": "Kodek",
         "trackPeak": "Vrchol skladby",
         "preview": "Náhled",
@@ -965,7 +964,6 @@
             "numberSelected": "Vybráno {{count}}",
             "removeFromQueue": "$t(action.removeFromQueue)",
             "showDetails": "Získat informace",
-            "shareItem": "Sdílet položku",
             "playSimilarSongs": "$t(player.playSimilarSongs)",
             "download": "Stáhnout",
             "playShuffled": "$t(player.shuffle)",
@@ -1160,16 +1158,6 @@
             "title": "Upravit $t(entity.playlist, {\"count\": 1})",
             "success": "$t(entity.playlist, {\"count\": 1}) úspěšně aktualizován",
             "publicJellyfinNote": "Jellyfin z nějakého důvodu neukazuje, zda je seznam skladeb veřejný, nebo ne. Pokud si přejete, aby zůstal veřejný, zvolte prosím následující vstup"
-        },
-        "shareItem": {
-            "allowDownloading": "Umožnit stahování",
-            "success": "Odkaz ke sdílení zkopírován do schránky (klikněte sem pro otevření)",
-            "description": "Popis",
-            "expireInvalid": "Čas vypršení musí být v budoucnosti",
-            "setExpiration": "Nastavit vypršení",
-            "createFailed": "Nepodařilo se vytvořit sdílení (je sdílení povoleno?)",
-            "copyToClipboard": "Zkopírovat do schránky: Ctrl+C, enter",
-            "successMustClick": "Sdílení úspěšně vytvořeno. klikněte sem pro otevření"
         },
         "privateMode": {
             "enabled": "Soukromý režim povolen, stav přehrávání je nyní skryt před externími integracemi",

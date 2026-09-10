@@ -142,7 +142,6 @@
         "setting_few": "",
         "setting_many": "",
         "setting_other": "",
-        "share": "نشر",
         "size": "حجم",
         "sortOrder": "الترتيب",
         "tags": "العلامات",
@@ -438,10 +437,6 @@
             "addRuleGroup": "إضافة مجموعة قواعد",
             "removeRuleGroup": "إزالة مجموعة قواعد",
             "resetToDefault": "استعادة الإعدادات الافتراضية"
-        },
-        "shareItem": {
-            "allowDownloading": "السماح بالتحميل",
-            "description": "الوصف"
         },
         "shuffleAll": {
             "title": "تشغيل عشوائي",

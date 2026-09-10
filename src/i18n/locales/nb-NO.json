@@ -104,7 +104,6 @@
         "translation": "Oversettelse",
         "unknown": "Ukjent",
         "preview": "Forhåndsvisning",
-        "share": "Del",
         "quit": "Avslutt",
         "size": "Størrelse",
         "setting_one": "Innstilling",
@@ -333,16 +332,6 @@
             "success": "$t(entity.playlist, {\"count\": 1}) er oppdatert",
             "publicJellyfinNote": "Jellyfin av en grunn kan ikke oppgi om en spilleliste er offentlig eller ikke. Hvis du ønsker at denne skal beholdes offentlig, vennligst ha følgende inndata valgt"
         },
-        "shareItem": {
-            "allowDownloading": "Tillat nedlasting",
-            "description": "Beskrivelse",
-            "createFailed": "Opprettelse av delt ressurs feilet (er deling aktivert?)",
-            "setExpiration": "Angi utløpstid",
-            "success": "Del lenke som er kopiert til utklippstavlen (eller klikk her for å åpne)",
-            "expireInvalid": "Utløpstid må være et fremtidig tidspunkt",
-            "copyToClipboard": "Kopier til kopitavle: Ctrl+C, enter",
-            "successMustClick": "Opprettet deling. trykk her for å åpne"
-        },
         "updateServer": {
             "success": "Vellykket oppdatering av serveren",
             "title": "Oppdater server"
@@ -412,7 +401,6 @@
             "addToFavorites": "$t(action.addToFavorites)",
             "moveToNext": "$t(action.moveToNext)",
             "playShuffled": "$t(player.shuffle)",
-            "shareItem": "Del element",
             "addFavorite": "$t(action.addToFavorites)",
             "deletePlaylist": "$t(action.deletePlaylist)",
             "deselectAll": "$t(action.deselectAll)"

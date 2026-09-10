@@ -111,7 +111,6 @@
         "setting_one": "Nastavenie",
         "setting_few": "",
         "setting_other": "",
-        "share": "Zdieľať",
         "size": "Veľkosť",
         "sortOrder": "Poradie",
         "tags": "Štítky",
@@ -216,14 +215,6 @@
             "title": "Editor dopytov",
             "input_optionMatchAll": "Zhoda na všetkých",
             "input_optionMatchAny": "Zhoda na ľubovoľnom"
-        },
-        "shareItem": {
-            "allowDownloading": "Povoliť sťahovanie",
-            "description": "Popis",
-            "setExpiration": "Nastaviť vypršanie platnosti",
-            "success": "Zdieľať link skopírovaný do schránky (alebo klinutím otvoriť tu)",
-            "expireInvalid": "Vypršanie platnosti musí byť v budúcnosti",
-            "createFailed": "Nepodarilo sa nazdielať (je zdieľanie povolené)"
         },
         "updateServer": {
             "success": "Server bol úspešne aktualizovaný",
@@ -378,7 +369,6 @@
             "removeFromQueue": "$t(action.removeFromQueue)",
             "setRating": "$t(action.setRating)",
             "playShuffled": "$t(player.shuffle)",
-            "shareItem": "Zdieľať položku",
             "showDetails": "Získať informácie",
             "goToAlbum": "Choď na $t(entity.album, {\"count\": 1})",
             "goToAlbumArtist": "Choď na $t(entity.albumArtist, {\"count\": 1})"
