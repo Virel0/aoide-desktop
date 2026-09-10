@@ -64,7 +64,7 @@ export const DiscordSettings = memo(() => {
             ),
             description: t('setting.discordApplicationId', {
                 context: 'description',
-                defaultId: '1165957668758900787',
+                defaultId: '1547687515279069215',
                 discord: 'Discord',
             }),
             isHidden: !isElectron(),

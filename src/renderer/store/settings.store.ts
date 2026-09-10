@@ -1298,7 +1298,7 @@ const initialState: SettingsState = {
         enabled: false,
     },
     discord: {
-        clientId: '1165957668758900787',
+        clientId: '1547687515279069215',
         displayType: DiscordDisplayType.FEISHIN,
         enabled: false,
         linkType: DiscordLinkType.NONE,
@@ -2908,6 +2908,16 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     }
                 }
 
+                if (version < 35) {
+                    // Aoide has a Discord application of its own now. Anyone who
+                    // never touched this field was announcing the upstream project
+                    // by name, because the id is what Discord reads the name from;
+                    // a field somebody edited themselves is left alone.
+                    if (state.discord.clientId === '1165957668758900787') {
+                        state.discord.clientId = '1547687515279069215';
+                    }
+                }
+
                 if (version < 34) {
                     // The MPV backend went. Two of the settings it owned are
                     // the web player's — the sample rate and ReplayGain — so
@@ -2946,7 +2956,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                 return persistedState;
             },
             name: 'store_settings',
-            version: 34,
+            version: 35,
         },
     ),
 );
