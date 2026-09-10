@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import styles from './lyrics-actions.module.css';
 
 import { openLyricSearchModal } from '/@/renderer/features/lyrics/components/lyrics-search-form';
-import { useLyricsSettings, usePlayerSong } from '/@/renderer/store';
+import { usePlayerSong } from '/@/renderer/store';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Button } from '/@/shared/components/button/button';
 import { DropdownMenu } from '/@/shared/components/dropdown-menu/dropdown-menu';
@@ -26,6 +26,7 @@ export type OverlayLayerToggle = {
 };
 
 interface LyricsActionsProps {
+    furiganaOn: boolean;
     hasLyrics: boolean;
     index: number;
     languages: { label: string; value: string }[];
@@ -33,10 +34,12 @@ interface LyricsActionsProps {
     onExportLyrics: () => void;
     onRemoveLyric: () => void;
     onSearchOverride: (params: LyricsOverride) => void;
+    onToggleFurigana: () => void;
     onToggleOverlayLayer?: (key: string) => void;
-    onTranslateLyric?: () => void;
+    onToggleRomaji: () => void;
     onUpdateOffset: (offsetMs: number) => void;
     overlayLayers?: OverlayLayerToggle[];
+    romajiOn: boolean;
     setIndex: (idx: number) => void;
     settingsKey?: string;
     synced?: boolean;
@@ -67,6 +70,7 @@ const getOverlayTooltip = (
 };
 
 export const LyricsActions = ({
+    furiganaOn,
     hasLyrics,
     index,
     languages,
@@ -74,24 +78,23 @@ export const LyricsActions = ({
     onExportLyrics,
     onRemoveLyric,
     onSearchOverride,
+    onToggleFurigana,
     onToggleOverlayLayer,
-    onTranslateLyric,
+    onToggleRomaji,
     onUpdateOffset,
     overlayLayers = [],
+    romajiOn,
     setIndex,
     visibleOverlayKeys = new Set(),
 }: LyricsActionsProps) => {
     const { t } = useTranslation();
     const currentSong = usePlayerSong();
-    const { sources } = useLyricsSettings();
 
     const handleLyricOffset = (e: number | string) => {
         onUpdateOffset(Number(e));
     };
 
     const isActionsDisabled = !currentSong;
-    const isDesktop = isElectron();
-    const hasServerTranslationLayer = overlayLayers.some((layer) => layer.kind === 'translation');
     const hasMultipleLanguages = languages.length > 1;
 
     const selectedLanguage = useMemo(
@@ -118,19 +121,25 @@ export const LyricsActions = ({
         };
     }, [overlayLayers]);
 
-    const hasActiveExtraOverlay = extraOverlayLayers.some((layer) =>
-        visibleOverlayKeys.has(layer.key),
-    );
+    // Furigana and romaji live here rather than in Settings: they are a
+    // property of the lyrics in front of you, the same as every other overlay
+    // in this list, and nobody wants the same answer for every song in a
+    // library. Desktop only — the conversion runs in the main process.
+    const isDesktop = isElectron();
+
+    const hasActiveExtraOverlay =
+        extraOverlayLayers.some((layer) => visibleOverlayKeys.has(layer.key)) ||
+        (isDesktop && (furiganaOn || romajiOn));
+
+    const showLayersPopover =
+        isDesktop || (extraOverlayLayers.length > 0 && !!onToggleOverlayLayer);
 
     const languageTooltip = selectedLanguage
         ? `${t('page.fullscreenPlayer.lyricLanguage')}: ${selectedLanguage.label}`
         : t('page.fullscreenPlayer.lyricLanguage');
 
     const showTopRow =
-        hasLyrics ||
-        hasMultipleLanguages ||
-        quickOverlayLayers.length > 0 ||
-        extraOverlayLayers.length > 0;
+        hasLyrics || hasMultipleLanguages || quickOverlayLayers.length > 0 || showLayersPopover;
 
     const languageMenu = hasMultipleLanguages ? (
         <DropdownMenu position="top">
@@ -185,49 +194,70 @@ export const LyricsActions = ({
         ) : null;
     });
 
-    const extraLayersPopover =
-        extraOverlayLayers.length > 0 && onToggleOverlayLayer ? (
-            <Popover position="top" withArrow>
-                <Popover.Target>
-                    <ActionIcon
-                        aria-label={t('page.fullscreenPlayer.lyricLayers')}
-                        className={hasActiveExtraOverlay ? styles.overlayToggleActive : undefined}
-                        disabled={isActionsDisabled}
-                        icon="list"
-                        iconProps={
-                            hasActiveExtraOverlay
-                                ? { color: 'primary', size: 'lg' }
-                                : { size: 'lg' }
-                        }
-                        size="sm"
-                        tooltip={{
-                            label: t('page.fullscreenPlayer.lyricLayers'),
-                            openDelay: 0,
-                        }}
-                        variant="subtle"
-                    />
-                </Popover.Target>
-                <Popover.Dropdown maw={280} miw={220} onClick={(e) => e.stopPropagation()} p="sm">
-                    <Stack gap="sm">
-                        <Text fw={600} isNoSelect size="sm">
-                            {t('page.fullscreenPlayer.lyricLayers')}
-                        </Text>
-                        {extraOverlayLayers.map((layer) => (
-                            <div className={styles.layerRow} key={layer.key}>
+    const extraLayersPopover = showLayersPopover ? (
+        <Popover position="top" withArrow>
+            <Popover.Target>
+                <ActionIcon
+                    aria-label={t('page.fullscreenPlayer.lyricLayers')}
+                    className={hasActiveExtraOverlay ? styles.overlayToggleActive : undefined}
+                    disabled={isActionsDisabled}
+                    icon="list"
+                    iconProps={
+                        hasActiveExtraOverlay ? { color: 'primary', size: 'lg' } : { size: 'lg' }
+                    }
+                    size="sm"
+                    tooltip={{
+                        label: t('page.fullscreenPlayer.lyricLayers'),
+                        openDelay: 0,
+                    }}
+                    variant="subtle"
+                />
+            </Popover.Target>
+            <Popover.Dropdown maw={280} miw={220} onClick={(e) => e.stopPropagation()} p="sm">
+                <Stack gap="sm">
+                    <Text fw={600} isNoSelect size="sm">
+                        {t('page.fullscreenPlayer.lyricLayers')}
+                    </Text>
+                    {extraOverlayLayers.map((layer) => (
+                        <div className={styles.layerRow} key={layer.key}>
+                            <Text className={styles.layerLabel} isNoSelect size="sm">
+                                {layer.label}
+                            </Text>
+                            <Switch
+                                aria-label={layer.label}
+                                checked={visibleOverlayKeys.has(layer.key)}
+                                onChange={() => onToggleOverlayLayer?.(layer.key)}
+                            />
+                        </div>
+                    ))}
+                    {isDesktop ? (
+                        <>
+                            <div className={styles.layerRow}>
                                 <Text className={styles.layerLabel} isNoSelect size="sm">
-                                    {layer.label}
+                                    {t('setting.enableFurigana')}
                                 </Text>
                                 <Switch
-                                    aria-label={layer.label}
-                                    checked={visibleOverlayKeys.has(layer.key)}
-                                    onChange={() => onToggleOverlayLayer(layer.key)}
+                                    aria-label={t('setting.enableFurigana')}
+                                    checked={furiganaOn}
+                                    onChange={onToggleFurigana}
                                 />
                             </div>
-                        ))}
-                    </Stack>
-                </Popover.Dropdown>
-            </Popover>
-        ) : null;
+                            <div className={styles.layerRow}>
+                                <Text className={styles.layerLabel} isNoSelect size="sm">
+                                    {t('setting.enableRomaji')}
+                                </Text>
+                                <Switch
+                                    aria-label={t('setting.enableRomaji')}
+                                    checked={romajiOn}
+                                    onChange={onToggleRomaji}
+                                />
+                            </div>
+                        </>
+                    ) : null}
+                </Stack>
+            </Popover.Dropdown>
+        </Popover>
+    ) : null;
 
     return (
         <div className={styles.root}>
@@ -249,7 +279,7 @@ export const LyricsActions = ({
                 </Group>
             ) : null}
             <Group className={styles.controlsRow} gap="xs" justify="center">
-                {isDesktop && sources.length ? (
+                {isDesktop ? (
                     <Button
                         disabled={isActionsDisabled}
                         onClick={() =>
@@ -297,7 +327,7 @@ export const LyricsActions = ({
                     }}
                     variant="subtle"
                 />
-                {isDesktop && sources.length ? (
+                {isDesktop ? (
                     <Button
                         disabled={isActionsDisabled}
                         onClick={onRemoveLyric}
@@ -305,16 +335,6 @@ export const LyricsActions = ({
                         variant="subtle"
                     >
                         {hasLyrics ? t('common.clear') : t('common.refresh')}
-                    </Button>
-                ) : null}
-                {isDesktop && sources.length && onTranslateLyric && !hasServerTranslationLayer ? (
-                    <Button
-                        disabled={isActionsDisabled}
-                        onClick={onTranslateLyric}
-                        uppercase
-                        variant="subtle"
-                    >
-                        {t('common.translation')}
                     </Button>
                 ) : null}
             </Group>

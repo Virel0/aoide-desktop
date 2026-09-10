@@ -47,10 +47,6 @@ export const useSyncSettingsToMain = () => {
                 rendererValue: any;
             }> = [
                 {
-                    mainStoreKey: 'lyrics',
-                    rendererValue: settings.lyrics.sources,
-                },
-                {
                     mainStoreKey: 'window_window_bar_style',
                     rendererValue: settings.window.windowBarStyle,
                 },
@@ -91,10 +87,6 @@ export const useSyncSettingsToMain = () => {
                 {
                     mainStoreKey: 'global_media_hotkeys',
                     rendererValue: settings.hotkeys.globalMediaHotkeys,
-                },
-                {
-                    mainStoreKey: 'enableNeteaseTranslation',
-                    rendererValue: settings.lyrics.enableNeteaseTranslation,
                 },
                 {
                     mainStoreKey: 'local_font_path',

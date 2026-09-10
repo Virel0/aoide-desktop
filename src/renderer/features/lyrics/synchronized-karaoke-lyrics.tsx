@@ -40,7 +40,6 @@ export interface SynchronizedKaraokeLyricsProps extends Omit<FullLyricsMetadata,
     settingsKey?: string;
     style?: React.CSSProperties;
     syncedRomajiLyrics?: null | SyncedRomajiLyrics;
-    translatedLyrics?: null | string;
     translationLyrics?: null | SynchronizedLyricsData;
 }
 
@@ -62,7 +61,6 @@ export const SynchronizedKaraokeLyrics = ({
     source,
     style,
     syncedRomajiLyrics,
-    translatedLyrics,
     translationLyrics,
 }: SynchronizedKaraokeLyricsProps) => {
     const {
@@ -393,12 +391,7 @@ export const SynchronizedKaraokeLyrics = ({
                         idx,
                         lineLevelRomaji,
                     );
-                    const translationText = getOverlayText(
-                        translationLyrics,
-                        lineStartMs,
-                        idx,
-                        translatedLyrics?.split('\n')[idx],
-                    );
+                    const translationText = getOverlayText(translationLyrics, lineStartMs, idx);
                     const extraOverlays = extraOverlayLyrics?.map((overlayLyrics) => ({
                         cueLines: getOverlayCueLinesForLine(overlayLyrics, lineStartMs, idx),
                         text: getOverlayText(overlayLyrics, lineStartMs, idx),

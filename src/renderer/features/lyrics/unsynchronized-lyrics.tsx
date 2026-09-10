@@ -13,7 +13,6 @@ export interface UnsynchronizedLyricsProps extends Omit<FullLyricsMetadata, 'lyr
     preview?: boolean;
     romajiLyrics?: null | string;
     settingsKey?: string;
-    translatedLyrics?: null | string;
 }
 
 const PREVIEW_FONT_SIZE = 20;
@@ -27,7 +26,6 @@ export const UnsynchronizedLyrics = ({
     romajiLyrics,
     settingsKey = 'default',
     source,
-    translatedLyrics,
 }: UnsynchronizedLyricsProps) => {
     const lyricsSettings = useLyricsSettings();
     const displaySettings = useLyricsDisplaySettings(settingsKey);
@@ -47,10 +45,6 @@ export const UnsynchronizedLyrics = ({
     const lines = useMemo(() => {
         return lyrics.split('\n');
     }, [lyrics]);
-
-    const translatedLines = useMemo(() => {
-        return translatedLyrics ? translatedLyrics.split('\n') : [];
-    }, [translatedLyrics]);
 
     const romajiLines = useMemo(() => {
         return romajiLyrics ? romajiLyrics.split('\n') : [];
@@ -90,7 +84,6 @@ export const UnsynchronizedLyrics = ({
                         key={idx}
                         romajiText={romajiLines[idx]}
                         text={text}
-                        translatedText={translatedLines[idx]}
                     />
                 ))}
             </LyricsScrollContent>

@@ -50,7 +50,7 @@ import { mergeOverridingColumns } from '/@/renderer/store/utils';
 import { FontValueSchema } from '/@/renderer/types/fonts';
 import { sanitizeCss } from '/@/renderer/utils/sanitize';
 import { AppTheme } from '/@/shared/themes/app-theme-types';
-import { LibraryItem, LyricSource, SavedCollection } from '/@/shared/types/domain-types';
+import { LibraryItem, SavedCollection } from '/@/shared/types/domain-types';
 import {
     FontType,
     ItemListKey,
@@ -618,21 +618,14 @@ const LyricsDisplaySettingsSchema = z.object({
 const LyricsSettingsSchema = z.object({
     alignment: z.enum(['center', 'left', 'right']),
     delayMs: z.number(),
-    enableAutoTranslation: z.boolean(),
-    enableFurigana: z.boolean().optional(),
-    enableNeteaseTranslation: z.boolean(),
-    enableRomaji: z.boolean().optional(),
+    enableFurigana: z.boolean(),
+    enableRomaji: z.boolean(),
     fetch: z.boolean(),
     follow: z.boolean(),
     followScrollAlignment: z.number(),
     lineLeadTimeMs: z.number(),
-    preferLocalLyrics: z.boolean(),
     showMatch: z.boolean(),
     showProvider: z.boolean(),
-    sources: z.array(z.nativeEnum(LyricSource)),
-    translationApiKey: z.string(),
-    translationApiProvider: z.string().nullable(),
-    translationTargetLanguage: z.string().nullable(),
 });
 
 const PlayerFilterFieldSchema = z.enum([
@@ -1927,21 +1920,14 @@ const initialState: SettingsState = {
     lyrics: {
         alignment: 'center',
         delayMs: 0,
-        enableAutoTranslation: false,
         enableFurigana: false,
-        enableNeteaseTranslation: false,
         enableRomaji: false,
         fetch: true,
         follow: true,
         followScrollAlignment: 0,
         lineLeadTimeMs: 800,
-        preferLocalLyrics: true,
         showMatch: true,
         showProvider: true,
-        sources: [LyricSource.NETEASE, LyricSource.LRCLIB],
-        translationApiKey: '',
-        translationApiProvider: '',
-        translationTargetLanguage: 'en',
     },
     lyricsDisplay: {
         default: {
@@ -2832,10 +2818,39 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     delete (state.playback as { scrobble?: unknown }).scrobble;
                 }
 
+                if (version < 45) {
+                    // Lyrics are two rows now, the phone's: whether to look
+                    // them up and how far ahead of the music they run. Which
+                    // provider to ask is not a decision anybody has the
+                    // information to make — every source is asked and the first
+                    // answer wins — and a file's own lyrics were always going
+                    // to be the right ones, so both of those go. The rest was a
+                    // machine-translation panel with an API key of its own; a
+                    // library that ships translated lyrics still shows them.
+                    for (const key of [
+                        'enableAutoTranslation',
+                        'enableNeteaseTranslation',
+                        'preferLocalLyrics',
+                        'sources',
+                        'translationApiKey',
+                        'translationApiProvider',
+                        'translationTargetLanguage',
+                    ] as const) {
+                        delete (state.lyrics as Record<string, unknown>)[key];
+                    }
+
+                    // Furigana and romaji are properties of the lyrics on
+                    // screen rather than of the app, and they moved to the
+                    // lyrics view's own overlay controls. An older store may
+                    // not have them at all, since both were optional.
+                    state.lyrics.enableFurigana ??= initialState.lyrics.enableFurigana;
+                    state.lyrics.enableRomaji ??= initialState.lyrics.enableRomaji;
+                }
+
                 return persistedState;
             },
             name: 'store_settings',
-            version: 44,
+            version: 45,
         },
     ),
 );

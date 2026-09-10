@@ -34,7 +34,6 @@ export interface SynchronizedLyricsProps extends Omit<FullLyricsMetadata, 'lyric
     romajiLyrics?: null | SynchronizedLyricsData;
     settingsKey?: string;
     style?: React.CSSProperties;
-    translatedLyrics?: null | string;
     translationLyrics?: null | SynchronizedLyricsData;
 }
 
@@ -53,7 +52,6 @@ export const SynchronizedLyrics = ({
     settingsKey = 'default',
     source,
     style,
-    translatedLyrics,
     translationLyrics,
 }: SynchronizedLyricsProps) => {
     const {
@@ -292,12 +290,7 @@ export const SynchronizedLyrics = ({
                         idx,
                         romajiLyrics?.[idx] ? getLyricLineText(romajiLyrics[idx]) : undefined,
                     );
-                    const translationText = getOverlayText(
-                        translationLyrics,
-                        lineStartMs,
-                        idx,
-                        translatedLyrics?.split('\n')[idx],
-                    );
+                    const translationText = getOverlayText(translationLyrics, lineStartMs, idx);
 
                     return (
                         <LyricLine

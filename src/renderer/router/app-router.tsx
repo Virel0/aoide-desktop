@@ -96,18 +96,6 @@ const FavoritesRoute = lazy(() => import('/@/renderer/features/favorites/routes/
 
 const SettingsRoute = lazy(() => import('/@/renderer/features/settings/routes/settings-route'));
 
-const LazyLyricsSettingsContextModal = lazy(() =>
-    import('/@/renderer/features/lyrics/components/lyrics-settings-modal').then((module) => ({
-        default: module.LyricsSettingsContextModal,
-    })),
-);
-
-const LyricsSettingsContextModal = (props: any) => (
-    <Suspense fallback={<Spinner container />}>
-        <LazyLyricsSettingsContextModal {...props} />
-    </Suspense>
-);
-
 const LazyAddToPlaylistContextModal = lazy(() =>
     import('/@/renderer/features/playlists/components/add-to-playlist-context-modal').then(
         (module) => ({
@@ -165,7 +153,6 @@ const VisualizerSettingsContextModal = (props: any) => (
 const appRouterModals = {
     addToPlaylist: AddToPlaylistContextModal,
     base: BaseContextModal,
-    lyricsSettings: LyricsSettingsContextModal,
     saveAndReplace: SaveAndReplaceContextModal,
     settings: SettingsContextModal,
     shuffleAll: ShuffleAllContextModal,

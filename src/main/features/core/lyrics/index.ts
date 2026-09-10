@@ -1,6 +1,5 @@
 import { ipcMain } from 'electron';
 
-import { store } from '../settings';
 import {
     convertFurigana,
     convertFuriganaFragment,
@@ -89,6 +88,21 @@ const GET_FETCHERS: Record<LyricSource, GetFetcher> = {
     [LyricSource.SIMPMUSIC]: getSimpMusic,
 };
 
+/**
+ * Every provider, in the order their answers are preferred.
+ *
+ * There used to be a multi-select for this. Nobody has the information to make
+ * that choice — which of four lyric sites happens to hold a given B-side is not
+ * knowable in advance — and the cost of asking all four is four requests that
+ * settle in parallel and the first usable answer winning.
+ */
+const ALL_SOURCES: LyricSource[] = [
+    LyricSource.LRCLIB,
+    LyricSource.NETEASE,
+    LyricSource.GENIUS,
+    LyricSource.SIMPMUSIC,
+];
+
 const MAX_CACHED_ITEMS = 10;
 
 const lyricCache = new Map<string, CachedLyrics>();
@@ -96,7 +110,7 @@ const lyricCache = new Map<string, CachedLyrics>();
 const searchAllSources = async (
     params: LyricSearchQuery,
 ): Promise<InternetProviderLyricSearchResponse[]> => {
-    const sources = store.get('lyrics', []) as LyricSource[];
+    const sources = ALL_SOURCES;
 
     const searchPromises = sources.map((source) =>
         SEARCH_FETCHERS[source](params).then((searchResults) => ({ searchResults, source })),
@@ -118,7 +132,7 @@ const searchAllSources = async (
 };
 
 const getRemoteLyrics = async (song: Song) => {
-    const sources = store.get('lyrics', []) as LyricSource[];
+    const sources = ALL_SOURCES;
 
     const cached = lyricCache.get(song.id.toString());
 

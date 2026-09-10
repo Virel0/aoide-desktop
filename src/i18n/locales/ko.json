@@ -43,7 +43,6 @@
         "expandAllFolders": "모든 폴더 확장"
     },
     "common": {
-        "translation": "번역",
         "resetToDefault": "기본 설정으로 되돌리기",
         "right": "오른쪽",
         "save": "저장",
@@ -514,7 +513,6 @@
             "exportImport": "가져오기/내보내기",
             "audio": "오디오",
             "lyrics": "가사",
-            "lyricsDisplay": "가사 표시",
             "transcoding": "트랜스코딩",
             "discord": "Discord",
             "logger": "로거",
