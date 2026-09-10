@@ -138,7 +138,9 @@ const AoideSidebarRow = ({
                     {coverUrl ? (
                         <img alt="" className={styles.rowCover} src={coverUrl} />
                     ) : (
-                        <Icon color={isActive ? 'primary' : 'muted'} icon={icon} size="sm" />
+                        <div className={styles.rowIcon}>
+                            <Icon color={isActive ? 'primary' : 'muted'} icon={icon} size="md" />
+                        </div>
                     )}
                     <Text className={styles.name} fw={500} size="md">
                         {label}

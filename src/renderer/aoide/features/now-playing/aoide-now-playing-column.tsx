@@ -2,6 +2,7 @@ import { forwardRef, Ref, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import styles from './aoide-now-playing-column.module.css';
+import { parseNowPlayingTab, useNowPlayingTab, useNowPlayingTabStore } from './use-now-playing-tab';
 
 import { AoideNowPlayingLyrics } from '/@/renderer/aoide/features/now-playing/aoide-now-playing-lyrics';
 import { ItemImage, useItemImageUrl } from '/@/renderer/components/item-image/item-image';
@@ -22,8 +23,6 @@ interface AoideNowPlayingColumnProps {
     startResizing: (direction: 'left' | 'right' | 'top', mouseEvent?: MouseEvent) => void;
 }
 
-type Tab = 'lyrics' | 'queue';
-
 /**
  * The phone's Now Playing as a column that stays open beside the page.
  *
@@ -41,7 +40,8 @@ export const AoideNowPlayingColumn = forwardRef(
     ({ isResizing, startResizing }: AoideNowPlayingColumnProps, ref: Ref<HTMLDivElement>) => {
         const { t } = useTranslation();
         const song = usePlayerSong();
-        const [tab, setTab] = useState<Tab>('lyrics');
+        const tab = useNowPlayingTab();
+        const setTab = useNowPlayingTabStore((state) => state.setTab);
 
         const tableRef = useRef<ItemListHandle | null>(null);
         const [search, setSearch] = useState<string | undefined>(undefined);
@@ -113,7 +113,7 @@ export const AoideNowPlayingColumn = forwardRef(
                             { label: t('aoide.nowPlaying.queue'), value: 'queue' },
                         ]}
                         fullWidth
-                        onChange={(value) => setTab(value as Tab)}
+                        onChange={(value) => setTab(parseNowPlayingTab(value))}
                         value={tab}
                     />
                 </div>
