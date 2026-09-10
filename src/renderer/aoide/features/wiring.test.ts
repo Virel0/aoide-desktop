@@ -1422,3 +1422,58 @@ describe('the finish rate, surfaced where you browse', () => {
         expect(hook).not.toMatch(/reduce\(/);
     });
 });
+
+describe('the queue store keeps the manual lane', () => {
+    const source = readFileSync(join(import.meta.dirname, '../../store/player.store.ts'), 'utf8');
+
+    // The behavioural fix, and the reason for the whole feature: Play Last used
+    // to append. During a twenty-track album that meant hearing the song in an
+    // hour. Both halves are asserted — that it inserts through the lane, and
+    // that the old append is gone — because leaving the old line in place while
+    // adding the new one is the shape this has to rule out.
+    it('sends Play Last to the end of the lane rather than the end of the queue', () => {
+        expect(source).toContain("insertManualEntries(state, newUniqueIds, 'last')");
+        expect(source).not.toMatch(
+            /state\.queue\.default = \[\.\.\.state\.queue\.default, \.\.\.newUniqueIds\]/,
+        );
+    });
+
+    it('sends Play Next to the front of the lane', () => {
+        expect(source).toContain("insertManualEntries(state, newUniqueIds, 'next')");
+    });
+
+    // Only what the listener chose. An album track marked manual would put the
+    // rest of the album inside "Next Up".
+    it('marks only Play Next and Play Last as chosen by hand', () => {
+        expect(source).toMatch(/const isManualPlay =\s*\n\s*playType === Play\.LAST \|\|/);
+        expect(source).toContain('toQueueSong(item, isManualPlay)');
+    });
+
+    it('carries the unplayed lane into a new context, on both ways of starting one', () => {
+        // Read before the queue is replaced, restored after.
+        expect(source.match(/const keptLane = unplayedLane\(state\);/g)).toHaveLength(2);
+        expect(source.match(/restoreLane\(\s*state,\s*keptLane,/g)).toHaveLength(2);
+    });
+
+    it('leaves the lane in place when shuffle is switched on or re-rolled', () => {
+        expect(source.match(/shuffledOrderKeepingLane\(/g)?.length).toBeGreaterThanOrEqual(4);
+        expect(source).toContain('shuffleAfterLane(');
+        // The old regeneration scattered the lane along with everything else.
+        expect(source).not.toMatch(
+            /state\.queue\.shuffled = generateShuffledIndexes\(\s*state\.queue\.default\.length,?\s*\)/,
+        );
+    });
+
+    // Refreshing a song's metadata rebuilds its queue entry from a plain Song,
+    // which is exactly where a flag gets dropped without anyone noticing.
+    it('keeps the flag when a queue entry is rebuilt', () => {
+        expect(source).toContain('_manual: song._manual');
+    });
+
+    // The sidecar stores queue payloads verbatim and the phone does not read a
+    // lane flag off the wire, so the flag stays on this device.
+    it('never puts the flag on the wire', () => {
+        const save = readFileSync(join(import.meta.dirname, 'queue/use-queue-handoff.ts'), 'utf8');
+        expect(save).not.toContain('_manual');
+    });
+});

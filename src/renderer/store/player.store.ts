@@ -6,6 +6,14 @@ import { immer } from 'zustand/middleware/immer';
 import { useShallow } from 'zustand/react/shallow';
 import { createWithEqualityFn } from 'zustand/traditional';
 
+import {
+    laneAfterCurrent,
+    playbackOrderKeepingLane,
+    playLast,
+    playNext,
+    QueueOrder,
+    shuffleAfterLane,
+} from '/@/renderer/aoide/features/queue/manual-lane';
 import { eventEmitter } from '/@/renderer/events/event-emitter';
 import { useRadioStore as useRadioPlayerStore } from '/@/renderer/features/radio/hooks/use-radio-player';
 import { createSelectors } from '/@/renderer/lib/zustand';
@@ -88,6 +96,18 @@ interface GroupedQueue {
     groups: { count: number; name: string }[];
     items: QueueSong[];
 }
+
+/**
+ * Everything the manual lane needs to read off the store: the two orders, the
+ * playhead, and whether a given entry was queued by hand.
+ *
+ * Written as a structural type rather than `PlayerState` because these run
+ * against an immer draft.
+ */
+type QueueDraft = {
+    player: { index: number; shuffle: PlayerShuffle };
+    queue: { default: string[]; shuffled: number[]; songs: Record<string, QueueSong> };
+};
 
 interface State {
     hydrated: boolean;
@@ -185,18 +205,12 @@ function addIndexesToShuffled(
     return [...beforeCurrent, ...shuffleInPlace(toShuffle)];
 }
 
-// Helper function to adjust shuffled indexes when items are inserted
-function adjustShuffledIndexesForInsertion(
-    shuffled: number[],
-    insertPosition: number,
-    insertCount: number,
-): number[] {
-    return shuffled.map((idx) => {
-        if (idx >= insertPosition) {
-            return idx + insertCount;
-        }
-        return idx;
-    });
+/** Write both orders back, leaving the permutation alone when shuffle is off. */
+function applyQueueOrder(state: QueueDraft, next: QueueOrder): void {
+    state.queue.default = next.order;
+    if (isShuffleEnabled(state)) {
+        state.queue.shuffled = next.shuffled;
+    }
 }
 
 // Calculates the next index based on repeat mode and current position
@@ -225,6 +239,14 @@ function calculateNextIndex(
             return { nextIndex: currentIndex + 1, shouldStop: false };
         }
     }
+}
+
+/** The entry playing now, in whichever order playback is following. */
+function currentEntryId(state: QueueDraft): string | undefined {
+    const position = isShuffleEnabled(state)
+        ? mapShuffledToQueueIndex(state.player.index, state.queue.shuffled)
+        : state.player.index;
+    return state.queue.default[position];
 }
 
 function emitPlayerPlayEvent(
@@ -317,14 +339,87 @@ function generateShuffledIndexes(length: number): number[] {
     return shuffleInPlace(indexes);
 }
 
-// Helper function to regenerate shuffled indexes if shuffle is enabled
-function regenerateShuffledIndexesIfNeeded(state: {
-    player: { shuffle: PlayerShuffle };
-    queue: { default: string[]; shuffled: number[] };
-}): void {
-    if (isShuffleEnabled(state)) {
-        state.queue.shuffled = generateShuffledIndexes(state.queue.default.length);
+/**
+ * Play Next and Play Last. They differ only in where in the lane they land —
+ * the front, or the back of what was already queued by hand and still ahead of
+ * the album picking up again.
+ */
+function insertManualEntries(state: QueueDraft, ids: string[], where: 'last' | 'next'): void {
+    const queue = laneQueue(state);
+    const next =
+        where === 'next'
+            ? playNext(queue, ids, state.player.index)
+            : playLast(queue, ids, state.player.index, isManualEntry(state));
+
+    applyQueueOrder(state, next);
+}
+
+function isManualEntry(state: QueueDraft): (uniqueId: string) => boolean {
+    return (uniqueId) => state.queue.songs[uniqueId]?._manual === true;
+}
+
+/** The two orders as the lane sees them. Shuffle off means there is no permutation. */
+function laneQueue(state: QueueDraft): QueueOrder {
+    return {
+        order: state.queue.default,
+        shuffled: isShuffleEnabled(state) ? state.queue.shuffled : [],
+    };
+}
+
+/**
+ * Rebuild the playback order after the queue itself was rearranged.
+ *
+ * `currentUniqueId` is read *before* the rearrangement, because the old
+ * permutation points at where entries used to be. Keeping the current track
+ * first is what makes a re-shuffle a re-shuffle rather than a skip, and it is
+ * also the only way the lane can be kept: a lane is defined relative to a
+ * playhead.
+ */
+function regenerateShuffledIndexesIfNeeded(state: QueueDraft, currentUniqueId?: string): void {
+    if (state.player.shuffle !== PlayerShuffle.TRACK) return;
+
+    const position = currentUniqueId ? state.queue.default.indexOf(currentUniqueId) : -1;
+    state.queue.shuffled = shuffledOrderKeepingLane(state, position);
+    if (position >= 0) {
+        state.player.index = 0;
     }
+}
+
+/** Put a lane read by ``unplayedLane`` back, directly after the new current track. */
+function restoreLane(state: QueueDraft, ids: string[], playbackPosition: number): void {
+    if (ids.length === 0) return;
+    applyQueueOrder(state, playNext(laneQueue(state), ids, playbackPosition));
+}
+
+/**
+ * A playback order over the whole queue with the current track first and its
+ * lane behind it, everything else shuffled.
+ *
+ * The lane is not shuffled: somebody who queued three songs and then hit
+ * shuffle meant "surprise me afterwards", not "scatter the three things I just
+ * chose".
+ */
+function shuffledOrderKeepingLane(state: QueueDraft, currentQueuePosition: number): number[] {
+    const indexes = Array.from({ length: state.queue.default.length }, (_, index) => index);
+    const isManual = isManualEntry(state);
+
+    return playbackOrderKeepingLane(
+        indexes,
+        currentQueuePosition,
+        (index) => isManual(state.queue.default[index]),
+        shuffleInPlace,
+    );
+}
+
+/**
+ * What the listener queued by hand and has not heard yet.
+ *
+ * Read before a new context replaces the queue: picking a new album is a
+ * statement about the album, not a decision to throw away the three songs they
+ * lined up a minute ago.
+ */
+function unplayedLane(state: QueueDraft): string[] {
+    return laneAfterCurrent(laneQueue(state), state.player.index, isManualEntry(state));
 }
 
 const initialState: State = {
@@ -356,7 +451,15 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
         subscribeWithSelector(
             immer((set, get) => ({
                 addToQueueByType: (items, playType, playSongId) => {
-                    const newItems = items.map(toQueueSong);
+                    // Play Next and Play Last are the listener choosing; Play Now
+                    // and Shuffle are a context starting. Only the first two join
+                    // the lane.
+                    const isManualPlay =
+                        playType === Play.LAST ||
+                        playType === Play.LAST_SHUFFLE ||
+                        playType === Play.NEXT ||
+                        playType === Play.NEXT_SHUFFLE;
+                    const newItems = items.map((item) => toQueueSong(item, isManualPlay));
                     const newUniqueIds = newItems.map((item) => item._uniqueId);
 
                     // Find the target song's uniqueId if playSongId is provided
@@ -371,22 +474,10 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                                     state.queue.songs[item._uniqueId] = item;
                                 });
 
-                                const oldQueueLength = state.queue.default.length;
-                                state.queue.default = [...state.queue.default, ...newUniqueIds];
-
-                                if (isShuffleEnabled(state)) {
-                                    // New items will be at indexes starting from oldQueueLength
-                                    const newIndexes = Array.from(
-                                        { length: newUniqueIds.length },
-                                        (_, i) => oldQueueLength + i,
-                                    );
-                                    // Shuffle the new indexes and add to the end of shuffled array
-                                    const shuffledNewIndexes = shuffleInPlace([...newIndexes]);
-                                    state.queue.shuffled = [
-                                        ...state.queue.shuffled,
-                                        ...shuffledNewIndexes,
-                                    ];
-                                }
+                                // The back of the lane, not the back of the queue:
+                                // asking for a song during a twenty-track album
+                                // used to mean hearing it in an hour.
+                                insertManualEntries(state, newUniqueIds, 'last');
                             });
                             break;
                         }
@@ -396,113 +487,34 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                                     state.queue.songs[item._uniqueId] = item;
                                 });
 
-                                // Shuffle the new items before appending
+                                // Shuffled among themselves, then kept in that
+                                // order in both the queue and playback: the lane
+                                // shows what it plays.
                                 const shuffledIds = shuffleInPlace([...newUniqueIds]);
-
-                                const oldQueueLength = state.queue.default.length;
-                                state.queue.default = [...state.queue.default, ...shuffledIds];
-
-                                if (state.player.shuffle === PlayerShuffle.TRACK) {
-                                    // New items will be at indexes starting from oldQueueLength
-                                    const newIndexes = Array.from(
-                                        { length: shuffledIds.length },
-                                        (_, i) => oldQueueLength + i,
-                                    );
-                                    // Shuffle the new indexes and add to the end of shuffled array
-                                    const shuffledNewIndexes = shuffleInPlace([...newIndexes]);
-                                    state.queue.shuffled = [
-                                        ...state.queue.shuffled,
-                                        ...shuffledNewIndexes,
-                                    ];
-                                }
+                                insertManualEntries(state, shuffledIds, 'last');
                             });
                             break;
                         }
                         case Play.NEXT: {
                             set((state) => {
-                                const currentShuffledIndex = state.player.index;
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
                                 });
 
-                                const insertPosition =
-                                    state.player.shuffle === PlayerShuffle.TRACK
-                                        ? state.queue.shuffled[currentShuffledIndex] + 1
-                                        : currentShuffledIndex + 1;
-
-                                state.queue.default = [
-                                    ...state.queue.default.slice(0, insertPosition),
-                                    ...newUniqueIds,
-                                    ...state.queue.default.slice(insertPosition),
-                                ];
-
-                                if (isShuffleEnabled(state)) {
-                                    // Adjust existing indexes that are >= insertPosition
-                                    const adjustedShuffled = adjustShuffledIndexesForInsertion(
-                                        state.queue.shuffled,
-                                        insertPosition,
-                                        newUniqueIds.length,
-                                    );
-
-                                    // New items will be at indexes starting from insertPosition
-                                    const newIndexes = Array.from(
-                                        { length: newUniqueIds.length },
-                                        (_, i) => insertPosition + i,
-                                    );
-
-                                    // Shuffle the new indexes and add directly after current shuffled index
-                                    const shuffledNewIndexes = shuffleInPlace([...newIndexes]);
-                                    state.queue.shuffled = [
-                                        ...adjustedShuffled.slice(0, currentShuffledIndex + 1),
-                                        ...shuffledNewIndexes,
-                                        ...adjustedShuffled.slice(currentShuffledIndex + 1),
-                                    ];
-                                }
+                                // The front of the lane, ahead of anything queued
+                                // earlier.
+                                insertManualEntries(state, newUniqueIds, 'next');
                             });
                             break;
                         }
                         case Play.NEXT_SHUFFLE: {
                             set((state) => {
-                                const currentShuffledIndex = state.player.index;
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
                                 });
 
-                                // Shuffle the new items before inserting
                                 const shuffledIds = shuffleInPlace([...newUniqueIds]);
-
-                                const insertPosition = isShuffleEnabled(state)
-                                    ? state.queue.shuffled[currentShuffledIndex] + 1
-                                    : currentShuffledIndex + 1;
-
-                                state.queue.default = [
-                                    ...state.queue.default.slice(0, insertPosition),
-                                    ...shuffledIds,
-                                    ...state.queue.default.slice(insertPosition),
-                                ];
-
-                                if (isShuffleEnabled(state)) {
-                                    // Adjust existing indexes that are >= insertPosition
-                                    const adjustedShuffled = adjustShuffledIndexesForInsertion(
-                                        state.queue.shuffled,
-                                        insertPosition,
-                                        shuffledIds.length,
-                                    );
-
-                                    // New items will be at indexes starting from insertPosition
-                                    const newIndexes = Array.from(
-                                        { length: shuffledIds.length },
-                                        (_, i) => insertPosition + i,
-                                    );
-
-                                    // Shuffle the new indexes and add directly after current shuffled index
-                                    const shuffledNewIndexes = shuffleInPlace([...newIndexes]);
-                                    state.queue.shuffled = [
-                                        ...adjustedShuffled.slice(0, currentShuffledIndex + 1),
-                                        ...shuffledNewIndexes,
-                                        ...adjustedShuffled.slice(currentShuffledIndex + 1),
-                                    ];
-                                }
+                                insertManualEntries(state, shuffledIds, 'next');
                             });
                             break;
                         }
@@ -512,6 +524,10 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                             }
 
                             set((state) => {
+                                // Read before the queue goes: what they queued by
+                                // hand outlives the thing that was playing.
+                                const keptLane = unplayedLane(state);
+
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
                                 });
@@ -559,6 +575,19 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                                         );
                                     }
                                 }
+
+                                // Back in directly after whatever the new context
+                                // starts on. A lane that evaporates the moment
+                                // somebody starts something else is a lane nobody
+                                // can rely on.
+                                const startsOn = targetSongUniqueId
+                                    ? Math.max(0, newUniqueIds.indexOf(targetSongUniqueId))
+                                    : 0;
+                                restoreLane(
+                                    state,
+                                    keptLane,
+                                    isShuffleEnabled(state) ? 0 : startsOn,
+                                );
                             });
 
                             emitPlayerPlayEvent(targetSongUniqueId, set, get);
@@ -570,6 +599,8 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                             }
 
                             set((state) => {
+                                const keptLane = unplayedLane(state);
+
                                 newItems.forEach((item) => {
                                     state.queue.songs[item._uniqueId] = item;
                                 });
@@ -586,6 +617,8 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
 
                                 // Always maintain shuffled array when using Play.SHUFFLE
                                 state.queue.shuffled = generateShuffledIndexes(shuffledIds.length);
+
+                                restoreLane(state, keptLane, 0);
                             });
 
                             emitPlayerPlayEvent(targetSongUniqueId, set, get);
@@ -594,7 +627,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                     }
                 },
                 addToQueueByUniqueId: (items, uniqueId, edge, playSongId) => {
-                    const newItems = items.map(toQueueSong);
+                    const newItems = items.map((item) => toQueueSong(item));
                     const newUniqueIds = newItems.map((item) => item._uniqueId);
 
                     // Find the target song's uniqueId if playSongId is provided
@@ -1413,7 +1446,10 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
 
                         // Add new songs to songs object
                         items.forEach((item) => {
-                            state.queue.songs[item._uniqueId] = item;
+                            // Moving something to play next is the listener
+                            // choosing it, so it joins the lane rather than
+                            // splitting it in two.
+                            state.queue.songs[item._uniqueId] = { ...item, _manual: true };
                         });
 
                         const currentIndex = state.player.index;
@@ -1462,7 +1498,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                     });
                 },
                 setQueue: (items, index, position) => {
-                    const newItems = items.map(toQueueSong);
+                    const newItems = items.map((item) => toQueueSong(item));
                     const newUniqueIds = newItems.map((item) => item._uniqueId);
 
                     set((state) => {
@@ -1513,20 +1549,19 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                         state.player.shuffle = shuffle;
 
                         if (willBeShuffled) {
-                            state.queue.shuffled = generateShuffledIndexes(
-                                state.queue.default.length,
+                            // The same order `toggleShuffle` builds, for the same
+                            // reason: the song playing keeps playing and the lane
+                            // stays in front of the shuffle.
+                            const hasCurrent =
+                                currentIndex >= 0 && currentIndex < state.queue.default.length;
+
+                            state.queue.shuffled = shuffledOrderKeepingLane(
+                                state,
+                                hasCurrent ? currentIndex : -1,
                             );
 
-                            // Convert current index to shuffled position if there's a current song
-                            if (currentIndex >= 0 && currentIndex < state.queue.default.length) {
-                                // Find the shuffled position that corresponds to the current queue position
-                                const shuffledPosition = findShuffledPositionForQueueIndex(
-                                    currentIndex,
-                                    state.queue.shuffled,
-                                );
-                                if (shuffledPosition !== undefined) {
-                                    state.player.index = shuffledPosition;
-                                }
+                            if (hasCurrent) {
+                                state.player.index = 0;
                             }
                         } else {
                             // When disabling shuffle, convert shuffled position back to queue position
@@ -1563,11 +1598,9 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                 },
                 shuffle: () => {
                     set((state) => {
-                        if (state.player.shuffle === PlayerShuffle.TRACK) {
-                            state.queue.shuffled = generateShuffledIndexes(
-                                state.queue.default.length,
-                            );
-                        }
+                        // A re-shuffle: the track playing keeps playing, its lane
+                        // stays in front of the shuffle, and the rest is re-rolled.
+                        regenerateShuffledIndexesIfNeeded(state, currentEntryId(state));
                     });
                 },
                 shuffleAll: () => {
@@ -1585,20 +1618,28 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
 
                             if (currentQueueIndex !== -1) {
                                 const beforeItems = state.queue.default.slice(0, currentQueueIndex);
-                                const afterItems = state.queue.default.slice(currentQueueIndex + 1);
+                                const fromCurrent = state.queue.default.slice(currentQueueIndex);
 
                                 const shuffledBefore = shuffleInPlace([...beforeItems]);
-                                const shuffledAfter = shuffleInPlace([...afterItems]);
 
                                 state.queue.default = [
                                     ...shuffledBefore,
-                                    currentUniqueId,
-                                    ...shuffledAfter,
+                                    // The current track and its lane stay put; only
+                                    // what comes after them is shuffled.
+                                    ...shuffleAfterLane(
+                                        [...fromCurrent],
+                                        0,
+                                        isManualEntry(state),
+                                        shuffleInPlace,
+                                    ),
                                 ];
-                            } else {
-                                // Current song not in default queue, just shuffle everything
-                                state.queue.default = shuffleInPlace([...state.queue.default]);
+
+                                regenerateShuffledIndexesIfNeeded(state, currentUniqueId);
+                                return;
                             }
+
+                            // Current song not in default queue, just shuffle everything
+                            state.queue.default = shuffleInPlace([...state.queue.default]);
                         } else {
                             // No current song, shuffle everything
                             state.queue.default = shuffleInPlace([...state.queue.default]);
@@ -1610,6 +1651,9 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                 },
                 shuffleSelected: (items: QueueSong[]) => {
                     set((state) => {
+                        // Read before the rearrangement: the old permutation
+                        // points at where entries used to be.
+                        const playing = currentEntryId(state);
                         const itemUniqueIds = items.map((item) => item._uniqueId);
 
                         // Find positions of selected items in the default queue
@@ -1639,7 +1683,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                         state.queue.default = newDefaultQueue;
 
                         // Regenerate shuffled indexes if shuffle is enabled
-                        regenerateShuffledIndexesIfNeeded(state);
+                        regenerateShuffledIndexesIfNeeded(state, playing);
                     });
                 },
                 toggleRepeat: () => {
@@ -1673,17 +1717,12 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                                 currentIndex >= 0 &&
                                 currentIndex < combinedLength
                             ) {
-                                // Get the current queue position (actual index in combined queue)
-                                const currentQueuePosition = currentIndex;
-
-                                // Create shuffled indexes with current track first
-                                const remainingIndexes = Array.from(
-                                    { length: combinedLength },
-                                    (_, i) => i,
-                                ).filter((idx) => idx !== currentQueuePosition);
-                                const shuffledRemaining = shuffleInPlace([...remainingIndexes]);
-
-                                state.queue.shuffled = [currentQueuePosition, ...shuffledRemaining];
+                                // Current track first, then the lane, then the
+                                // rest at random.
+                                state.queue.shuffled = shuffledOrderKeepingLane(
+                                    state,
+                                    currentIndex,
+                                );
 
                                 // Set player index to 0 since current track is now first in shuffled array
                                 state.player.index = 0;
@@ -1829,7 +1868,7 @@ export type AddToQueueByUniqueId = {
 export type AddToQueueType = AddToQueueByPlayType | AddToQueueByUniqueId;
 
 export async function addToQueueByData(type: AddToQueueType, data: Song[]) {
-    const items = data.map(toQueueSong);
+    const items = data.map((item) => toQueueSong(item));
 
     if (typeof type === 'string') {
         usePlayerStoreBase.getState().addToQueueByType(items, type);
@@ -2176,6 +2215,9 @@ export const updateQueueSong = (songId: string, updatedSong: Song) => {
                 state.queue.songs[song._uniqueId] = {
                     ...updatedSong,
                     _contextPlaylistId: song._contextPlaylistId,
+                    // Kept deliberately: refreshing a song's metadata must not
+                    // quietly evict it from the lane.
+                    _manual: song._manual,
                     _uniqueId: uniqueId,
                 };
             }
@@ -2356,11 +2398,21 @@ function recalculatePlayerIndex(state: any, queue: string[]) {
     state.player.index = Math.max(0, index);
 }
 
-function toQueueSong(item: Song): QueueSong {
-    return {
+/**
+ * `manual` marks the entry as one the listener put here themselves, with Play
+ * Next or Play Last. It decides the lane, and it stays on this device.
+ */
+function toQueueSong(item: Song, manual = false): QueueSong {
+    const entry: QueueSong = {
         ...item,
         _uniqueId: nanoid(),
     };
+
+    if (manual) {
+        entry._manual = true;
+    }
+
+    return entry;
 }
 
 // We need to use a unique id so that the equalityFn can work if attempting to set the same timestamp

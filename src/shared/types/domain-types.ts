@@ -74,6 +74,13 @@ export interface QueueData {
 
 export type QueueSong = Song & {
     _contextPlaylistId?: null | string;
+    /**
+     * Put here on purpose, by Play Next or Play Last, rather than arriving as
+     * part of whatever album or playlist is running. Absent means it arrived
+     * with a context. Local to this device: it never travels in `queue_state`,
+     * because the phone does not read a lane flag off the wire.
+     */
+    _manual?: boolean;
     _uniqueId: string;
 };
 
