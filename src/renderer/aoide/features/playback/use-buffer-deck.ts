@@ -83,6 +83,15 @@ const PAUSE_FADE_SECONDS = 0.3;
 /** How often the deck looks at its own clock while it is the player. */
 const TICK_MS = 250;
 
+/**
+ * How long a pause has to last before the decoded audio is let go.
+ *
+ * A minute: long enough that answering the door and coming back is not a
+ * hand-back, short enough that a session left paused overnight is not a hundred
+ * megabytes of a record nobody is listening to.
+ */
+const IDLE_RELEASE_MS = 60_000;
+
 const deckVolume = (volume: number, muted: boolean): number =>
     muted ? 0 : convertToLogVolume(Math.max(0, Math.min(100, volume)) / 100);
 
@@ -442,6 +451,40 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
         const interval = setInterval(tick, TICK_MS);
         return () => clearInterval(interval);
     }, [advanceBoundary, engaged, mediaElementFor, relinquish, setTimestamp]);
+
+    // A hundred megabytes of decoded audio is worth holding for a record that
+    // is playing and worth nothing at all for one that is paused. After a
+    // minute of pause the record goes back to the element and the buffer is
+    // let go: the element is parked at the same position, nothing is sounding
+    // while it happens, and pressing play afterwards simply plays. The join
+    // after that one is taken the ordinary way, which is inaudible — the cost
+    // of this is a boundary somewhere later being approximate rather than
+    // exact, and the return is the process not sitting on the memory all
+    // evening.
+    useEffect(() => {
+        if (!engaged) return undefined;
+
+        let idle: ReturnType<typeof setTimeout> | undefined;
+        const clear = () => {
+            if (idle) clearTimeout(idle);
+            idle = undefined;
+        };
+
+        const check = (status: PlayerStatus) => {
+            if (status === PlayerStatus.PLAYING) {
+                clear();
+            } else if (!idle) {
+                idle = setTimeout(() => relinquish({ resume: false }), IDLE_RELEASE_MS);
+            }
+        };
+
+        check(usePlayerStoreBase.getState().player.status);
+        const unsubscribe = usePlayerStoreBase.subscribe((state) => check(state.player.status));
+        return () => {
+            unsubscribe();
+            clear();
+        };
+    }, [engaged, relinquish]);
 
     // A current track that is not the one the deck is playing means the queue
     // moved under it: a skip, a jump, a track dragged to the front.

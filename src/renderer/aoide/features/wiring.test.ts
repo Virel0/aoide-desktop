@@ -1083,6 +1083,27 @@ describe('the exact join: a buffer deck takes the boundary, or the elements keep
     const deck = sourceOf('playback/buffer-deck.ts');
     const trimPlayers = sourceOf('playback/use-trim-players.ts');
 
+    // A decoded track is around a hundred megabytes. Holding one for a record
+    // nobody is listening to is the difference somebody watched their process
+    // manager and asked about.
+    it('gives the decoded audio back after a pause', () => {
+        expect(hook).toContain('const IDLE_RELEASE_MS = 60_000');
+        expect(hook).toContain('setTimeout(() => relinquish({ resume: false }), IDLE_RELEASE_MS)');
+        // Cancelled the moment playing resumes, or a pause and a play would
+        // hand the record back for no reason.
+        expect(hook).toContain('if (status === PlayerStatus.PLAYING) {');
+        expect(hook).toContain('usePlayerStoreBase.subscribe((state) => check(state.player.status))');
+    });
+
+    it('decodes the next track close to the boundary, not a whole track ahead', () => {
+        // Two decoded tracks at once is the peak, and this is how long it
+        // lasts. Thirty seconds of it on a three-minute track was a sixth of
+        // every record spent holding the next one.
+        expect(sourceOf('playback/gapless-schedule.ts')).toContain(
+            'export const DECODE_LEAD_SECONDS = 12;',
+        );
+    });
+
     // The whole feature is one ref: while it is set, every other handover in
     // the web player has to keep its hands off the elements.
     it('the web player hands the deck the boundary and stands down while it has it', () => {

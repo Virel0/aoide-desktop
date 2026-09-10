@@ -109,8 +109,12 @@ export const CHANNELS_ASSUMED = 2;
  * short enough that the buffer is not held for most of a track it is not
  * playing yet. Nothing is decoded outside this window, which is what keeps the
  * deck to two tracks.
+ *
+ * Was thirty seconds, which held a second decoded track for a quarter of every
+ * short one. A decoded track is around a hundred megabytes, and somebody
+ * watching the process saw the difference.
  */
-export const DECODE_LEAD_SECONDS = 30;
+export const DECODE_LEAD_SECONDS = 12;
 
 /**
  * The most one decoded track may weigh, 192 MiB — nine and a half minutes of
