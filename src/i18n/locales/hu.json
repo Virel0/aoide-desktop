@@ -3,7 +3,6 @@
         "moveToNext": "Ugrás a következőre",
         "deletePlaylist": "$t(entity.playlist, {\"count\": 1}) törlése",
         "removeFromFavorites": "Eltávolítás innen $t(entity.favorite, {\"count\": 2})",
-        "setRating": "Értékelés",
         "viewPlaylists": "$t(entity.playlist, {\"count\": 2}) megtekintése",
         "openIn": {
             "lastfm": "Megnyitás Last.fm-ben",

@@ -20,7 +20,6 @@
         "refresh": "$t(common.refresh)",
         "removeFromFavorites": "Fjern fra $t(entity.favorite, {\"count\": 2})",
         "moveToNext": "Flytt til neste",
-        "setRating": "Angi vurdering",
         "removeFromQueue": "Fjern fra kø",
         "removeFromPlaylist": "Fjern fra $t(entity.playlist, {\"count\": 1})",
         "viewPlaylists": "Vise $t(entity.playlist, {\"count\": 2})",

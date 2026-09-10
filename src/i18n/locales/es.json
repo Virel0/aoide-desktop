@@ -345,8 +345,6 @@
         "imageResolution_optionSidebar": "Barra lateral",
         "imageResolution_optionHeader": "Cabecera",
         "imageResolution_optionFullScreenPlayer": "Reproductor a pantalla completa",
-        "showRatings_description": "Controla si la característica de calificación de estrellas aparece en la interfaz",
-        "showRatings": "Mostrar calificación de estrellas",
         "combinedLyricsAndVisualizer_description": "Combina letras y visualizador en el mismo panel",
         "combinedLyricsAndVisualizer": "Combinar letras y visualizador en la barra lateral del reproductor",
         "artistReleaseTypeConfiguration": "Configuración de tipo de lanzamiento de artista",
@@ -515,7 +513,6 @@
         "removeFromQueue": "Eliminar de la cola",
         "deselectAll": "Desmarcar todo",
         "moveToBottom": "Mover al final",
-        "setRating": "Establecer calificación",
         "toggleSmartPlaylistEditor": "Cambiar editor $t(entity.smartPlaylist)",
         "removeFromFavorites": "Eliminar de $t(entity.favorite, {\"count\": 2})",
         "openIn": {

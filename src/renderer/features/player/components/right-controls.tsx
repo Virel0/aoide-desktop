@@ -34,7 +34,6 @@ import {
     useSetFullScreenPlayerStore,
     useSettingsStoreActions,
     useShowFavorites,
-    useShowRatings,
     useSidebarRightExpanded,
     useSideQueueType,
     useVolumeWheelStep,
@@ -84,12 +83,11 @@ const calculateVolumeDown = (volume: number, volumeWheelStep: number) => {
 };
 
 export const RightControls = () => {
-    const showRatings = useShowRatings();
     const showFavorites = useShowFavorites();
     return (
         <Flex align="flex-end" direction="column" h="100%" px="1rem" py="0.5rem">
             <Group h="calc(100% / 3)">
-                {showRatings && <RatingButton />}
+                <RatingButton />
                 <AoideActivityButton />
                 <AutoDJButton />
             </Group>

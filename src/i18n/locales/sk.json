@@ -15,7 +15,6 @@
         "removeFromFavorites": "Odstrániť z $t(entity.favorite, {\"count\": 2})",
         "removeFromPlaylist": "Odstrániť z $t(entity.playlist, {\"count\": 1})",
         "removeFromQueue": "Odstrániť z fronty",
-        "setRating": "Ohodnotiť",
         "toggleSmartPlaylistEditor": "Prepnúť $t(entity.smartPlaylist) editor",
         "viewPlaylists": "Zobraziť $t(entity.playlist, {\"count\": 2})",
         "openIn": {

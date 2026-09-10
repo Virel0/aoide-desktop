@@ -14,7 +14,6 @@
         "removeFromQueue": "Ta bort från kö",
         "deselectAll": "Avmarkera alla",
         "moveToBottom": "Flytta till botten",
-        "setRating": "Sätt betyg",
         "toggleSmartPlaylistEditor": "Växla $t(entity.smartPlaylist) redigerare",
         "removeFromFavorites": "Ta bort från $t(entity.favorite, {\"count\": 2})",
         "downloadStarted": "Startade nedladdning av {{count}} objekt",

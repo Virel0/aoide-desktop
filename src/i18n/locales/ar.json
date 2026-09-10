@@ -15,7 +15,6 @@
         "removeFromFavorites": "حذف من $t(entity.favorite, {\"count\": 2})",
         "removeFromPlaylist": "حذف من $t(entity.playlist, {\"count\": 1})",
         "removeFromQueue": "حذف من قائمة التشغيل",
-        "setRating": "تحديد التقييم",
         "toggleSmartPlaylistEditor": "إظهار / إخفاء وضع التعديل لـ $t(entity.smartPlaylist)",
         "viewPlaylists": "عرض $t(entity.playlist, {\"count\": 2})",
         "openIn": {

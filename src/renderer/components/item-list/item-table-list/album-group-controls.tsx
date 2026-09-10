@@ -9,7 +9,7 @@ import { useSetRating } from '/@/renderer/features/shared/hooks/use-set-rating';
 import { useIsMutatingCreateFavorite } from '/@/renderer/features/shared/mutations/create-favorite-mutation';
 import { useIsMutatingDeleteFavorite } from '/@/renderer/features/shared/mutations/delete-favorite-mutation';
 import { useIsMutatingRating } from '/@/renderer/features/shared/mutations/set-rating-mutation';
-import { useShowFavorites, useShowRatings } from '/@/renderer/store';
+import { useShowFavorites } from '/@/renderer/store';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Rating } from '/@/shared/components/rating/rating';
 import { LibraryItem, ServerType } from '/@/shared/types/domain-types';
@@ -34,7 +34,6 @@ interface AlbumGroupControlsProps {
 }
 
 export const AlbumGroupControls = ({ albumId, serverId, serverType }: AlbumGroupControlsProps) => {
-    const showRatingsSetting = useShowRatings();
     const showFavorites = useShowFavorites();
     const detailQuery = useAlbumGroupAlbum(albumId, serverId);
     const setFavorite = useSetFavorite();
@@ -46,7 +45,7 @@ export const AlbumGroupControls = ({ albumId, serverId, serverType }: AlbumGroup
     const isMutatingRating = useIsMutatingRating();
 
     const album = detailQuery.data;
-    const showRating = showRatingsSetting && isRatingSupported(serverType ?? album?._serverType);
+    const showRating = isRatingSupported(serverType ?? album?._serverType);
 
     const handleFavorite = useCallback(
         (event: React.MouseEvent<HTMLButtonElement>) => {

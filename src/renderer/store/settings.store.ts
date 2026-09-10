@@ -591,7 +591,6 @@ export const GeneralSettingsSchema = z.object({
     showFavorites: z.boolean(),
     showLyricsInSidebar: z.boolean(),
     showQueueInSidebar: z.boolean(),
-    showRatings: z.boolean(),
     showVisualizerInSidebar: z.boolean(),
     sidebarCollapsedNavigation: z.boolean(),
     sidebarCollapseShared: z.boolean(),
@@ -1340,7 +1339,6 @@ const initialState: SettingsState = {
         showFavorites: true,
         showLyricsInSidebar: true,
         showQueueInSidebar: true,
-        showRatings: true,
         showVisualizerInSidebar: true,
         sidebarCollapsedNavigation: true,
         sidebarCollapseShared: false,
@@ -2847,6 +2845,13 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     );
                 }
 
+                if (version < 40) {
+                    // "Show ratings" is gone. Every rating surface was already
+                    // gated on the server type behind it, and this build signs
+                    // in to Jellyfin, which has no star ratings at all.
+                    delete (state.general as { showRatings?: boolean }).showRatings;
+                }
+
                 if (version < 39) {
                     // The 0.5x-2x control is gone, and with it the two settings
                     // that only meant anything while the rate was not 1.
@@ -2867,7 +2872,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                 return persistedState;
             },
             name: 'store_settings',
-            version: 39,
+            version: 40,
         },
     ),
 );
@@ -3053,8 +3058,6 @@ export const useSidebarCollapsedNavigation = () =>
 
 export const usePlayerbarOpenDrawer = () =>
     useSettingsStore((state) => state.general.playerbarOpenDrawer, shallow);
-
-export const useShowRatings = () => useSettingsStore((state) => state.general.showRatings, shallow);
 
 export const useShowFavorites = () =>
     useSettingsStore((state) => state.general.showFavorites, shallow);

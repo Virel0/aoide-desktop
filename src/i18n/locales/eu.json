@@ -10,7 +10,6 @@
         "removeFromFavorites": "Kendu gogokoetatik",
         "removeFromPlaylist": "Kendu $t(entity.playlist, {\"count\": 1})-(e)tik",
         "removeFromQueue": "Kendu ilaratik",
-        "setRating": "Ezarri balorazioa",
         "toggleSmartPlaylistEditor": "Txandakatu $t(entity.smartPlaylist) editorea",
         "viewPlaylists": "Ikusi $t(entity.playlist, {\"count\": 2})",
         "openIn": {
@@ -602,8 +601,6 @@
         "artistReleaseTypeConfiguration_description": "Konfiguratu zein argitalpen mota erakusten diren, eta zein ordenatan, albumaren artistaren orrian",
         "useThemeAccentColor": "Erabili gaiaren azentu-kolorea",
         "useThemeAccentColor_description": "Erabili hautatutako gaian definitutako kolore nagusia azentu-kolore pertsonalizatuaren ordez",
-        "showRatings": "Erakutsi izarren balorazioak",
-        "showRatings_description": "Izarren balorazioen funtzioa interfazean agertzen den ala ez kontrolatzen du",
         "imageResolution": "Irudiaren erresoluzioa",
         "imageResolution_description": "Aplikazioan erabilitako irudien erresoluzioa. 0 balioa erabiliz gero, jatorrizko irudiaren erresoluzioa erabiliko da lehenespenez",
         "followCurrentSong_description": "Automatikoki korritu erreprodukzio-ilara uneko abestira",

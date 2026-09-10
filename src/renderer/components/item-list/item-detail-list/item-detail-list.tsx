@@ -67,7 +67,7 @@ import { useIsMutatingDeleteFavorite } from '/@/renderer/features/shared/mutatio
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
 import { useDragDrop } from '/@/renderer/hooks/use-drag-drop';
 import { AppRoute } from '/@/renderer/router/routes';
-import { useSettingsStore, useShowFavorites, useShowRatings } from '/@/renderer/store';
+import { useSettingsStore, useShowFavorites } from '/@/renderer/store';
 import { formatDurationString, formatPartialIsoDateUTC } from '/@/renderer/utils';
 import { SEPARATOR_STRING } from '/@/shared/api/utils';
 import { ExplicitIndicator } from '/@/shared/components/explicit-indicator/explicit-indicator';
@@ -425,7 +425,6 @@ interface MetadataSectionProps {
 const MetadataSection = memo(
     ({ controls, internalState, item }: MetadataSectionProps) => {
         const { t } = useTranslation();
-        const showRatings = useShowRatings();
         const showFavorites = useShowFavorites();
         const [isImageHovered, setIsImageHovered] = useState(false);
         const [isMetadataHovered, setIsMetadataHovered] = useState(false);
@@ -487,7 +486,7 @@ const MetadataSection = memo(
 
         const isFavorite = item.userFavorite ?? false;
         const userRating = item.userRating ?? null;
-        const hasRating = showRatings && userRating !== null && userRating > 0;
+        const hasRating = userRating !== null && userRating > 0;
 
         const metadataExtra = useMemo(() => {
             const parts: Array<{ content: React.ReactNode; key: string }> = [];

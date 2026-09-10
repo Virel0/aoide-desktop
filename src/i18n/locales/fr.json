@@ -68,7 +68,6 @@
         "removeFromQueue": "Retirer de la file d'attente",
         "deselectAll": "Désélectionner tout",
         "moveToBottom": "Déplacer en bas",
-        "setRating": "Noter",
         "toggleSmartPlaylistEditor": "Basculer l'éditeur de $t(entity.smartPlaylist)",
         "removeFromFavorites": "Retirer des $t(entity.favorite, {\"count\": 2})",
         "openIn": {
@@ -827,8 +826,6 @@
         "imageResolution_optionSidebar": "Barre latérale",
         "imageResolution_optionHeader": "En-tête",
         "imageResolution_optionFullScreenPlayer": "Lecteur en plein écran",
-        "showRatings_description": "Contrôle si la notation à étoiles s'affiche dans l'interface",
-        "showRatings": "Affiche la notation à étoiles",
         "combinedLyricsAndVisualizer_description": "Combine les paroles et le visualisateur dans le même panneau",
         "combinedLyricsAndVisualizer": "Combine les paroles et le visualisateur dans la barre latérale",
         "analyticsEnable": "Envoyer des métriques d'utilisation",

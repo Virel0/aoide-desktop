@@ -23,7 +23,7 @@ import { useSetFavorite } from '/@/renderer/features/shared/hooks/use-set-favori
 import { useSetRating } from '/@/renderer/features/shared/hooks/use-set-rating';
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
 import { AppRoute } from '/@/renderer/router/routes';
-import { useCurrentServer, useShowFavorites, useShowRatings } from '/@/renderer/store';
+import { useCurrentServer, useShowFavorites } from '/@/renderer/store';
 import { useArtistRadioCount, usePlayButtonBehavior } from '/@/renderer/store/settings.store';
 import { formatDurationString, formatPartialIsoDateUTC, formatSizeString } from '/@/renderer/utils';
 import { normalizeReleaseTypes } from '/@/renderer/utils/normalize-release-types';
@@ -38,7 +38,6 @@ export const AlbumDetailHeader = forwardRef<HTMLDivElement>((_props, ref) => {
     const { albumId } = useParams() as { albumId: string };
     const { t } = useTranslation();
     const server = useCurrentServer();
-    const showRatings = useShowRatings();
     const showFavorites = useShowFavorites();
     const queryClient = useQueryClient();
     const albumRadioCount = useArtistRadioCount();
@@ -47,9 +46,8 @@ export const AlbumDetailHeader = forwardRef<HTMLDivElement>((_props, ref) => {
     );
 
     const showRating =
-        showRatings &&
-        (detailQuery?.data?._serverType === ServerType.NAVIDROME ||
-            detailQuery?.data?._serverType === ServerType.SUBSONIC);
+        detailQuery?.data?._serverType === ServerType.NAVIDROME ||
+        detailQuery?.data?._serverType === ServerType.SUBSONIC;
 
     const { addToQueueByData, addToQueueByFetch } = usePlayer();
     const playButtonBehavior = usePlayButtonBehavior();

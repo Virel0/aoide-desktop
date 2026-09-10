@@ -35,7 +35,6 @@ import {
     usePlayerSong,
     useSetFullScreenPlayerStore,
     useShowFavorites,
-    useShowRatings,
 } from '/@/renderer/store';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Text } from '/@/shared/components/text/text';
@@ -380,7 +379,6 @@ export const MobileFullscreenPlayer = () => {
     const server = useCurrentServer();
 
     const setFavorite = useSetFavorite();
-    const showRatingsSetting = useShowRatings();
     const showFavorites = useShowFavorites();
     const setRating = useSetRating();
 
@@ -440,7 +438,6 @@ export const MobileFullscreenPlayer = () => {
     const isLyricsState = activeTab === 'lyrics';
     const isSongDefined = Boolean(currentSong?.id);
     const showRating =
-        showRatingsSetting &&
         isSongDefined &&
         (server?.type === ServerType.NAVIDROME || server?.type === ServerType.SUBSONIC);
 

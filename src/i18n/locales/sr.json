@@ -182,7 +182,6 @@
         "removeFromQueue": "Ukloni iz liste",
         "deselectAll": "Deselektuj sve",
         "moveToBottom": "Idi na dno",
-        "setRating": "Oceni",
         "toggleSmartPlaylistEditor": "Pokreni $t(entity.smartPlaylist) editor",
         "removeFromFavorites": "Ukloni iz $t(entity.favorite, {\"count\": 2})",
         "openIn": {

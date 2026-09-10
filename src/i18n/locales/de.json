@@ -14,7 +14,6 @@
         "viewPlaylists": "$t(entity.playlist, {\"count\": 2}) anzeigen",
         "refresh": "$t(common.refresh)",
         "removeFromQueue": "Aus Wiedergabeliste entfernen",
-        "setRating": "Bewertung setzen",
         "toggleSmartPlaylistEditor": "Editor für $t(entity.smartPlaylist) ein-/ausblenden",
         "removeFromFavorites": "Aus $t(entity.favorite, {\"count\": 2}) entfernen",
         "openIn": {
@@ -1022,8 +1021,6 @@
         "passwordStore": "Passwort/geheimnis speicher",
         "audioFadeOnStatusChange_description": "Ermöglicht Ein- und Ausblenden, wenn sich der Wiedergabe-/Pause-Status ändert",
         "audioFadeOnStatusChange": "Audio ein-/ausblenden bei statusveränderung",
-        "showRatings_description": "Aktiviere die Anzeige einer Bewertung in Sternen",
-        "showRatings": "Zeige sternebewertungen",
         "blurExplicitImages": "Explizite bilder unkenntlich machen",
         "blurExplicitImages_description": "Album- und Song-Cover, die als explizit gekennzeichnet sind, werden unscharf dargestellt",
         "enableGridMultiSelect": "Raster-mehrfachauswahl aktivieren",

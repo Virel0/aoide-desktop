@@ -16,7 +16,6 @@
         "createPlaylist": "Utwórz $t(entity.playlist, {\"count\": 1})",
         "deletePlaylist": "Usuń $t(entity.playlist, {\"count\": 1})",
         "moveToBottom": "Przesuń na dół",
-        "setRating": "Oceń",
         "openIn": {
             "lastfm": "Otwórz w Last.fm",
             "musicbrainz": "Otwórz w MusicBrainz",
@@ -1015,8 +1014,6 @@
         "combinedLyricsAndVisualizer": "Połącz tekst i wizualizacje w pasku bocznym odtwarzacza",
         "artistReleaseTypeConfiguration": "Konfiguracja typu wydań wykonawcy",
         "artistReleaseTypeConfiguration_description": "Skonfiguruj jakie typy wydań są pokazywane i w jakiej kolejności na stronie albumów wykonawcy",
-        "showRatings_description": "Kontroluje czy funkcja oceniania gwiazdkami jest pokazywana w interfejsie",
-        "showRatings": "Pokaż ocenianie gwiazdkami",
         "hotkey_listNavigateToPage": "Lista nawigacja do strony elementu",
         "hotkey_listPlayDefault": "Lista odtwarzaj",
         "hotkey_listPlayLast": "Lista odtwarzaj ostatnie",

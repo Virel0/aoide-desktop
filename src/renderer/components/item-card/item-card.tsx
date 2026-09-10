@@ -19,7 +19,7 @@ import { ItemControls } from '/@/renderer/components/item-list/types';
 import { JoinedArtists } from '/@/renderer/features/albums/components/joined-artists';
 import { useDragDrop } from '/@/renderer/hooks/use-drag-drop';
 import { AppRoute } from '/@/renderer/router/routes';
-import { useShowFavorites, useShowRatings } from '/@/renderer/store';
+import { useShowFavorites } from '/@/renderer/store';
 import {
     formatDateAbsolute,
     formatDateRelative,
@@ -89,7 +89,6 @@ export const ItemCard = ({
     type = 'poster',
     withControls,
 }: ItemCardProps) => {
-    const showRatings = useShowRatings();
     const showFavorites = useShowFavorites();
     const imageUrl = getImageUrl(data);
     const rows = providedRows || [];
@@ -112,7 +111,7 @@ export const ItemCard = ({
                     itemType={itemType}
                     rows={rows}
                     showFavorite={showFavorites}
-                    showRating={showRatings}
+                    showRating
                     withControls={withControls}
                 />
             );
@@ -133,7 +132,7 @@ export const ItemCard = ({
                     itemType={itemType}
                     rows={rows}
                     showFavorite={showFavorites}
-                    showRating={showRatings}
+                    showRating
                     withControls={withControls}
                 />
             );
@@ -154,7 +153,7 @@ export const ItemCard = ({
                     itemType={itemType}
                     rows={rows}
                     showFavorite={showFavorites}
-                    showRating={showRatings}
+                    showRating
                     withControls={withControls}
                 />
             );

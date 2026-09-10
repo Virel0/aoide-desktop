@@ -15,7 +15,6 @@
         "removeFromFavorites": "Remover de $t(entity.favorite, {\"count\": 2})",
         "removeFromPlaylist": "Remover da $t(entity.playlist, {\"count\": 1})",
         "removeFromQueue": "Remover da fila",
-        "setRating": "Definir classificação",
         "toggleSmartPlaylistEditor": "Alternar editor $t(entity.smartPlaylist)",
         "viewPlaylists": "Ver $t(entity.playlist, {\"count\": 2})",
         "openIn": {
@@ -661,8 +660,6 @@
         "playerbarWaveformAlign_optionTop": "Topo",
         "playerbarWaveformAlign_optionCenter": "Centro",
         "playerbarWaveformAlign_optionBottom": "Fundo",
-        "showRatings_description": "Exibir ou ocultar as avaliações por estrelas",
-        "showRatings": "Exibir avaliações por estrelas",
         "replayGainClipping_description": "Evitar clipping causado pelo {{ReplayGain}} reduzindo automaticamente o ganho",
         "replayGainClipping": "Clipping do {{ReplayGain}}",
         "replayGainFallback": "Fallback do {{ReplayGain}}",

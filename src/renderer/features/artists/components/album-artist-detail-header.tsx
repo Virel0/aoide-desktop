@@ -20,7 +20,7 @@ import {
 import { useSetFavorite } from '/@/renderer/features/shared/hooks/use-set-favorite';
 import { useSetRating } from '/@/renderer/features/shared/hooks/use-set-rating';
 import { AppRoute } from '/@/renderer/router/routes';
-import { useAppStore, useCurrentServer, useShowFavorites, useShowRatings } from '/@/renderer/store';
+import { useAppStore, useCurrentServer, useShowFavorites } from '/@/renderer/store';
 import { useArtistReleaseTypeItems, usePlayButtonBehavior } from '/@/renderer/store/settings.store';
 import { formatDurationString } from '/@/renderer/utils';
 import { hasFeature, SEPARATOR_STRING, sortAlbumList } from '/@/shared/api/utils';
@@ -105,7 +105,6 @@ export const AlbumArtistDetailHeader = forwardRef<HTMLDivElement, AlbumArtistDet
         };
         const routeId = (artistId || albumArtistId) as string;
         const server = useCurrentServer();
-        const showRatings = useShowRatings();
         const showFavorites = useShowFavorites();
         const { t } = useTranslation();
         const detailQuery = useSuspenseQuery(
@@ -242,7 +241,7 @@ export const AlbumArtistDetailHeader = forwardRef<HTMLDivElement, AlbumArtistDet
             type: 'header',
         });
 
-        const showRating = showRatings && detailQuery?.data?._serverType === ServerType.NAVIDROME;
+        const showRating = detailQuery?.data?._serverType === ServerType.NAVIDROME;
 
         const canUploadArtistImage =
             hasFeature(server, ServerFeature.ARTIST_IMAGE_UPLOAD) &&

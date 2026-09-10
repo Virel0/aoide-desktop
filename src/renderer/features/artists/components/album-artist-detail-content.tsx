@@ -54,7 +54,6 @@ import {
     useCurrentServerId,
     usePlayerSong,
     useShowFavorites,
-    useShowRatings,
 } from '/@/renderer/store';
 import {
     useArtistItems,
@@ -627,16 +626,13 @@ const AlbumArtistMetadataFavoriteSongs = ({
     const player = usePlayer();
     const serverId = useCurrentServerId();
     const server = useCurrentServer();
-    const showRatings = useShowRatings();
     const showFavorites = useShowFavorites();
     const showFavoriteAndRatingSegmentControl =
-        server?.type !== ServerType.JELLYFIN && showFavorites && showRatings;
+        server?.type !== ServerType.JELLYFIN && showFavorites;
 
     let favoriteSongsQueryTypeFilter = favoriteSongsQueryType;
-    if (showRatings && !showFavorites) {
+    if (!showFavorites) {
         favoriteSongsQueryTypeFilter = 'rating';
-    } else if (!showRatings && showFavorites) {
-        favoriteSongsQueryTypeFilter = 'favorite';
     }
 
     const favoriteSongsQuery = useQuery({

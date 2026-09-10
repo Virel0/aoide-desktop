@@ -27,7 +27,6 @@
         "removeFromFavorites": "Видалити з $t(entity.favorite, {\"count\": 2})",
         "removeFromPlaylist": "Видалити з $t(entity.playlist, {\"count\": 1})",
         "removeFromQueue": "Видалити з черги",
-        "setRating": "Встановити рейтинг",
         "toggleSmartPlaylistEditor": "Перемикати редактор $t(entity.smartPlaylist)",
         "viewPlaylists": "Показати $t(entity.playlist, {\"count\": 2})",
         "viewMore": "Переглянути більше",

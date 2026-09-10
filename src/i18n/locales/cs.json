@@ -347,8 +347,6 @@
         "imageResolution_optionFullScreenPlayer": "Přehrávač na celé obrazovce",
         "combinedLyricsAndVisualizer_description": "Spojit texty a vizualizér do jednoho panelu",
         "combinedLyricsAndVisualizer": "Spojit texty a vizualizér v postranní liště přehrávače",
-        "showRatings_description": "Ovládá, zda se funkce hodnocení pomocí hvězdiček objeví v rozhraní",
-        "showRatings": "Zobrazit hodnocení pomocí hvězdiček",
         "artistReleaseTypeConfiguration": "Nastavení typu vydání umělce",
         "artistReleaseTypeConfiguration_description": "Nastavit, jaké typy vydání a v jakém pořadí jsou zobrazeny na stránce umělce alba",
         "hotkey_listNavigateToPage": "Navigace na stránku položky v seznamu",
@@ -509,7 +507,6 @@
         "removeFromQueue": "Odebrat z fronty",
         "deselectAll": "Zrušit výběr všeho",
         "moveToBottom": "Přesunout dolů",
-        "setRating": "Nastavit hodnocení",
         "toggleSmartPlaylistEditor": "Přepnout editor $t(entity.smartPlaylist)",
         "removeFromFavorites": "Odebrat z $t(entity.favorite, {\"count\": 2})",
         "openIn": {

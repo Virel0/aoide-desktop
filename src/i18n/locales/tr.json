@@ -5,7 +5,6 @@
         "removeFromFavorites": "$t(entity.favorite, {\"count\": 2})lerden kaldır",
         "removeFromPlaylist": "$t(entity.playlist, {\"count\": 1}) listesinden kaldır",
         "removeFromQueue": "Sıradan kaldır",
-        "setRating": "Oyla",
         "viewPlaylists": "$t(entity.playlist, {\"count\": 2}) listesini görüntüle",
         "openIn": {
             "lastfm": "Last.fm'de aç",

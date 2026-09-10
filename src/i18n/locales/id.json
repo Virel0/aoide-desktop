@@ -12,7 +12,6 @@
         "moveToNext": "Pindah ke berikutnya",
         "refresh": "$t(common.refresh)",
         "removeFromQueue": "Hapus dari antrean",
-        "setRating": "Setel penilaian",
         "viewPlaylists": "Lihat $t(entity.playlist, {\"count\": 2})",
         "openIn": {
             "lastfm": "Buka di Last.fm",
@@ -914,8 +913,6 @@
         "preferLocalLyrics": "Utamakan lirik lokal",
         "showLyricsInSidebar_description": "Panel akan ditambahkan pada antrean putar terlampir yang menampilkan lirik",
         "showLyricsInSidebar": "Tampilkan lirik di bilah samping pemutar",
-        "showRatings_description": "Mengontrol apakah fitur penilaian bintang muncul di antarmuka",
-        "showRatings": "Tampilkan penilaian bintang",
         "enableGridMultiSelect": "Aktifkan pilihan multi kisi",
         "enableGridMultiSelect_description": "Saat diaktifkan, memungkinkan memilih beberapa item pada tampilan kisi. saat dinonaktifkan, mengklik gambar item kisi akan menavigasi ke halaman item",
         "showVisualizerInSidebar_description": "Panel akan ditambahkan pada bilah samping pemutar yang menampilkan visualizer",

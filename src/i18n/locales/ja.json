@@ -322,7 +322,6 @@
         "imageResolution_description": "アプリ内で使用される画像の解像度。値を 0 に設定すると、デフォルトでネイティブ画像解像度が適用されます",
         "showLyricsInSidebar_description": "添付の再生キューに歌詞を表示するパネルが追加されます",
         "showLyricsInSidebar": "サイドバーのプレーヤーに歌詞を表示",
-        "showRatings": "星評価を表示",
         "imageResolution_optionSidebar": "サイドバー",
         "imageResolution_optionHeader": "ヘッダー",
         "imageResolution_optionFullScreenPlayer": "全画面プレーヤー",
@@ -331,7 +330,6 @@
         "playerbarSliderType_optionSlider": "スライダー",
         "playerbarSliderType_optionWaveform": "波形",
         "playerbarWaveformAlign": "波形アライメント",
-        "showRatings_description": "インターフェースに星評価機能を表示するかどうかを制御します",
         "showVisualizerInSidebar": "サイドバーのプレーヤーにビジュアライザーを表示",
         "combinedLyricsAndVisualizer": "サイドバーのプレーヤーに歌詞とビジュアライザーを統合",
         "audioFadeOnStatusChange_description": "再生 / 一時停止の状態が変わったときにフェードアウトとフェードインを有効にします",
@@ -513,7 +511,6 @@
         "removeFromQueue": "キューから削除",
         "deselectAll": "すべて選択解除",
         "moveToBottom": "一番下へ移動",
-        "setRating": "評価を設定",
         "toggleSmartPlaylistEditor": "$t(entity.smartPlaylist) エディターを切り替え",
         "removeFromFavorites": "$t(entity.favorite, {\"count\": 2})から削除",
         "openIn": {
