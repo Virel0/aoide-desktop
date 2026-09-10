@@ -20,6 +20,13 @@
 export interface AudioAnalysis {
     bpm: null | number;
     bpmConfidence: null | number;
+    /**
+     * The fraction of twenty-second windows whose own tempo agreed with `bpm`
+     * — what confidence cannot say, since a track ramping 105 to 145 reports a
+     * confident 135. Null from a sidecar older than 1.12.0.0, or a track too
+     * short to measure. Only the mixer reads it; see `mix-transition.ts`.
+     */
+    bpmStability: null | number;
     loudnessLufs: null | number;
     truePeakDbfs: null | number;
 }

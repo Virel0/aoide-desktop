@@ -179,6 +179,7 @@ const readAnalysis = (value: unknown): AudioAnalysis | null | undefined => {
     const analysis: AudioAnalysis = {
         bpm: numberOrNull(row.bpm),
         bpmConfidence: numberOrNull(row.bpmConfidence),
+        bpmStability: numberOrNull(row.bpmStability),
         loudnessLufs: numberOrNull(row.loudnessLufs),
         truePeakDbfs: numberOrNull(row.truePeakDbfs),
     };

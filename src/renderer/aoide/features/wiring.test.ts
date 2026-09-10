@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { RESUME_GRID_LIMIT } from './home/recent-contexts';
 import { INACTIVE_LINE_OPACITY } from './now-playing/now-playing-column';
+import { DEFAULT_AOIDE_ALBUM_LOCK, DEFAULT_AOIDE_AUTOMIX } from './playback/automix';
 import { DEFAULT_AOIDE_LOUDNESS_NORMALISATION } from './playback/loudness-normalisation';
 import { syncOutcome } from './sync/sync-report';
 import { FOCUS_SYNC_MIN_INTERVAL_MS } from './sync/sync-schedule';
@@ -1277,6 +1278,82 @@ describe('loudness normalisation: both backends consult the gain module, the set
         expect(store).not.toMatch(/\btoast\b\s*[.(]/);
         expect(store).not.toMatch(/import .*toast/);
         expect(store).toContain('if (answer.absent) {');
+    });
+});
+
+describe('AutoMix decides the handover, and only when it is on', () => {
+    const hook = sourceOf('playback/use-mix-transition.ts');
+    const store = sourceOf('playback/audio-analysis-store.ts');
+    const webPlayer = readFileSync(
+        join(import.meta.dirname, '../../features/player/audio-player/web-player.tsx'),
+        'utf8',
+    );
+    const settings = readFileSync(
+        join(import.meta.dirname, '../../store/settings.store.ts'),
+        'utf8',
+    );
+    const playbackTab = readFileSync(
+        join(import.meta.dirname, '../../features/settings/components/playback/playback-tab.tsx'),
+        'utf8',
+    );
+
+    // The whole promise of a default-off feature: someone who set Feishin's own
+    // crossfade to nine seconds and never heard of AutoMix is owed those nine
+    // seconds. The planner has no answer meaning "leave it as it was", so the
+    // hook answers null instead and the player falls through to its own switch.
+    it('a mixer that is off is a player that behaves as it always has', () => {
+        expect(hook).toContain('if (!automix || !outgoing || !incoming) return null;');
+        expect(webPlayer.match(/if \(mix\) \{/g)).toHaveLength(2);
+        expect(webPlayer.match(/switch \(transitionType\) \{/g)).toHaveLength(2);
+    });
+
+    it('the two defaults are the phone’s', () => {
+        expect(DEFAULT_AOIDE_AUTOMIX).toBe(false);
+        expect(DEFAULT_AOIDE_ALBUM_LOCK).toBe(true);
+    });
+
+    // Every length comes from the shared planner; the player carries it out and
+    // decides nothing, so the two apps cannot drift apart in the wiring.
+    it('the player asks the shared planner and invents no lengths of its own', () => {
+        expect(hook).toContain('planTransition({');
+        expect(webPlayer).toContain('const mix = useMixTransition(currentSong, nextSong);');
+        expect(webPlayer).toContain('crossfadeDuration: mix.overlapSeconds,');
+        expect(webPlayer).toContain('crossfadeStyle: CrossfadeStyle.EQUAL_POWER,');
+    });
+
+    // An album run is Feishin's own gapless pre-start, and a cut is the player
+    // doing nothing — the behaviour it already falls back to everywhere else.
+    it('a run is gapless and a cut is nothing but a tidy-up', () => {
+        expect(webPlayer).toContain("case 'gapless':");
+        expect(webPlayer).toContain('gaplessHandler({');
+        expect(webPlayer).toContain("case 'cut':");
+        expect(webPlayer).toContain('if (isTransitioning) {');
+    });
+
+    // One cache, one request. The tempo arrives through a second door onto the
+    // store the leveller already fills, gated by its own setting, so turning
+    // levelling off does not stop the mixer deciding and vice versa.
+    it('the tempo comes from the cache the leveller fills, never a fetch of its own', () => {
+        expect(store).toContain('export const useMixAnalysis =');
+        expect(store).toContain('const enabled = useAoideAutomixEnabled();');
+        expect(store).toContain('return useAnalysisWhen(trackId, enabled);');
+        expect(hook).toContain('useMixAnalysis(');
+        expect(hook).not.toMatch(/fetch\(|audioAnalysis\(|SidecarClient/);
+    });
+
+    it('the settings exist, are defaulted, and sit beside Auto DJ', () => {
+        expect(settings).toContain('aoideAutomix: AoideAutomixSchema');
+        expect(settings).toContain('aoideAlbumLock: AoideAlbumLockSchema');
+        expect(settings).toContain('aoideAutomix: DEFAULT_AOIDE_AUTOMIX');
+        expect(settings).toContain('aoideAlbumLock: DEFAULT_AOIDE_ALBUM_LOCK');
+        expect(playbackTab).toContain('<AutomixSettings />');
+        expect(playbackTab).toContain('<AutoDJSettings />');
+        expect(sourceOf('settings/automix-settings.tsx')).toContain(
+            'aoideAutomix: e.currentTarget.checked',
+        );
+        expect(sourceOf('settings/automix-settings.tsx')).toContain(
+            'aoideAlbumLock: e.currentTarget.checked',
+        );
     });
 });
 

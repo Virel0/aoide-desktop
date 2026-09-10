@@ -526,7 +526,13 @@ describe('soundBounds', () => {
 });
 
 describe('audioAnalysis', () => {
-    const ROW = { bpm: 128, bpmConfidence: 0.82, loudnessLufs: -9.7, truePeakDbfs: -0.3 };
+    const ROW = {
+        bpm: 128,
+        bpmConfidence: 0.82,
+        bpmStability: 0.94,
+        loudnessLufs: -9.7,
+        truePeakDbfs: -0.3,
+    };
 
     it('asks by id and keeps measurements, "nothing to report" and "pending" apart', async () => {
         const { calls, impl } = stubFetch([
@@ -609,8 +615,22 @@ describe('audioAnalysis', () => {
         const answer = await client(impl).audioAnalysis(['loudOnly', 'tempoOnly', 'text', 'p']);
 
         expect(answer.analysis).toEqual({
-            loudOnly: { bpm: null, bpmConfidence: null, loudnessLufs: -12.5, truePeakDbfs: null },
-            tempoOnly: { bpm: 96, bpmConfidence: 0.6, loudnessLufs: null, truePeakDbfs: null },
+            loudOnly: {
+                bpm: null,
+                bpmConfidence: null,
+                bpmStability: null,
+                loudnessLufs: -12.5,
+                truePeakDbfs: null,
+            },
+            // A sidecar older than 1.12.0.0 reports no stability at all, which
+            // is not the same as an unsteady track and must not read as one.
+            tempoOnly: {
+                bpm: 96,
+                bpmConfidence: 0.6,
+                bpmStability: null,
+                loudnessLufs: null,
+                truePeakDbfs: null,
+            },
             // Nothing readable in the row says the same thing as null.
             text: null,
         });
@@ -625,7 +645,13 @@ describe('audioAnalysis', () => {
         const answer = await client(impl).audioAnalysis(['bad', 'good']);
 
         expect(answer.analysis).toEqual({
-            good: { bpm: null, bpmConfidence: null, loudnessLufs: -8, truePeakDbfs: null },
+            good: {
+                bpm: null,
+                bpmConfidence: null,
+                bpmStability: null,
+                loudnessLufs: -8,
+                truePeakDbfs: null,
+            },
         });
     });
 
@@ -700,7 +726,13 @@ describe('audioAnalysis against the sidecar’s own documented payload', () => {
     // `null` is the one most likely to be dropped on the floor.
     const PAYLOAD = {
         analysis: {
-            '3b1c': { bpm: 128.0, bpmConfidence: 0.82, loudnessLufs: -9.7, truePeakDbfs: -0.3 },
+            '3b1c': {
+                bpm: 128.0,
+                bpmConfidence: 0.82,
+                bpmStability: 0.82,
+                loudnessLufs: -9.7,
+                truePeakDbfs: -0.3,
+            },
             a71f: { bpm: null, bpmConfidence: null, loudnessLufs: -14.2, truePeakDbfs: -1.1 },
             c904: null,
         },
@@ -723,9 +755,17 @@ describe('audioAnalysis against the sidecar’s own documented payload', () => {
             '9c0e',
         ]);
 
-        expect(answer.analysis['3b1c']).toMatchObject({ bpm: 128, loudnessLufs: -9.7 });
+        expect(answer.analysis['3b1c']).toMatchObject({
+            bpm: 128,
+            bpmStability: 0.82,
+            loudnessLufs: -9.7,
+        });
         // Loudness without a usable tempo: the common case for ambient.
-        expect(answer.analysis.a71f).toMatchObject({ bpm: null, loudnessLufs: -14.2 });
+        expect(answer.analysis.a71f).toMatchObject({
+            bpm: null,
+            bpmStability: null,
+            loudnessLufs: -14.2,
+        });
         // Present as a key, null as a value. If this vanishes the client asks
         // about the track forever.
         expect('c904' in answer.analysis).toBe(true);

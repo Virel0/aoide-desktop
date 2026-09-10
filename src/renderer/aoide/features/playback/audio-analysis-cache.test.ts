@@ -12,7 +12,13 @@ import {
     takeToAsk,
 } from './audio-analysis-cache';
 
-const ANALYSIS = { bpm: 128, bpmConfidence: 0.82, loudnessLufs: -9.7, truePeakDbfs: -0.3 };
+const ANALYSIS = {
+    bpm: 128,
+    bpmConfidence: 0.82,
+    bpmStability: 0.9,
+    loudnessLufs: -9.7,
+    truePeakDbfs: -0.3,
+};
 
 describe('needsAsking', () => {
     it('asks for a track it has never heard of', () => {

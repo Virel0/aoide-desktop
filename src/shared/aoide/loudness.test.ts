@@ -13,6 +13,7 @@ import {
 const analysis = (over: Partial<AudioAnalysis> = {}): AudioAnalysis => ({
     bpm: null,
     bpmConfidence: null,
+    bpmStability: null,
     loudnessLufs: null,
     truePeakDbfs: null,
     ...over,

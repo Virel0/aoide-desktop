@@ -12,6 +12,7 @@ import {
     takeToAsk,
 } from './audio-analysis-cache';
 
+import { useAoideAutomixEnabled } from '/@/renderer/aoide/features/playback/use-automix';
 import { useAoideLoudnessNormalisationEnabled } from '/@/renderer/aoide/features/playback/use-loudness-normalisation';
 import { useSidecarTransport } from '/@/renderer/aoide/features/sync/use-sidecar-transport';
 import { SidecarClient } from '/@/renderer/aoide/sync/sidecar-client';
@@ -86,17 +87,24 @@ export class AudioAnalysisStore {
 export const audioAnalysisStore = new AudioAnalysisStore();
 
 /**
- * A track's measurements, asked for if need be, kept fresh while it is on
- * screen.
+ * A track's measurements while `enabled`, asked for if need be, kept fresh
+ * while it is on screen.
  *
- * Undefined until known, and always undefined with normalisation switched
- * off — a player reading undefined applies no gain, so the setting gates every
- * consumer at once. The interval re-asks a `pending` track after a minute;
+ * Undefined until known, and always undefined while the gate is shut — a
+ * consumer reading undefined does nothing, so one switch turns off everything
+ * downstream of it. The interval re-asks a `pending` track after a minute;
  * `ensure` is a no-op for anything already answered, so the tick costs a map
  * lookup for everything else.
+ *
+ * Two features read this row for different halves of it and are switched on
+ * separately, so the gate is a parameter rather than a setting read in here.
+ * The cache underneath is still one cache and one request: whichever of them
+ * asks first, the other finds the answer already there.
  */
-export const useAudioAnalysis = (trackId: string | undefined): AudioAnalysis | null | undefined => {
-    const enabled = useAoideLoudnessNormalisationEnabled();
+const useAnalysisWhen = (
+    trackId: string | undefined,
+    enabled: boolean,
+): AudioAnalysis | null | undefined => {
     const client = useSidecarTransport();
     const wanted = enabled ? trackId : undefined;
 
@@ -114,4 +122,22 @@ export const useAudioAnalysis = (trackId: string | undefined): AudioAnalysis | n
     }, [client, wanted]);
 
     return analysis;
+};
+
+/** The loudness half: what the levellers read, gated by their own setting. */
+export const useAudioAnalysis = (trackId: string | undefined): AudioAnalysis | null | undefined => {
+    const enabled = useAoideLoudnessNormalisationEnabled();
+    return useAnalysisWhen(trackId, enabled);
+};
+
+/**
+ * The tempo half: what AutoMix reads, gated by its own setting.
+ *
+ * A separate door onto the same cache, because someone who wants their songs
+ * mixed has not thereby asked for them to be levelled, and someone who turned
+ * levelling off has not asked the mixer to stop deciding.
+ */
+export const useMixAnalysis = (trackId: string | undefined): AudioAnalysis | null | undefined => {
+    const enabled = useAoideAutomixEnabled();
+    return useAnalysisWhen(trackId, enabled);
 };

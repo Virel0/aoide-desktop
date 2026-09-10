@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useLoudnessGain } from '/@/renderer/aoide/features/playback/use-loudness-gain';
+import { useMixTransition } from '/@/renderer/aoide/features/playback/use-mix-transition';
 import { useTrimPlayers } from '/@/renderer/aoide/features/playback/use-trim-players';
 import { eventEmitter } from '/@/renderer/events/event-emitter';
 import {
@@ -27,6 +28,7 @@ import {
     usePlayerStoreBase,
     usePlayerVolume,
 } from '/@/renderer/store';
+import { MixTransition } from '/@/shared/aoide/mix-transition';
 import { toast } from '/@/shared/components/toast/toast';
 import { QueueSong } from '/@/shared/types/domain-types';
 import { CrossfadeStyle, PlayerRepeat, PlayerStatus, PlayerStyle } from '/@/shared/types/types';
@@ -37,7 +39,7 @@ const PLAY_PAUSE_FADE_INTERVAL = 10;
 export function WebPlayer() {
     const playerRef = useRef<null | WebPlayerEngineHandle>(null);
     const { t } = useTranslation();
-    const { num, player1, player2, status } = usePlayerData();
+    const { currentSong, nextSong, num, player1, player2, status } = usePlayerData();
     const repeat = usePlayerRepeat();
     const repeatOneProgressRef = useRef({ player1: 0, player2: 0 });
     const { mediaAutoNext, mediaPause, setTimestamp } = usePlayerActions();
@@ -53,6 +55,9 @@ export function WebPlayer() {
     // gain node — the same node ReplayGain uses, so the two multiply.
     const loudness1 = useLoudnessGain(player1);
     const loudness2 = useLoudnessGain(player2);
+    // Aoide's AutoMix: one plan for the handover in front of us, or null when
+    // the mixer is off and Feishin's own transition settings still decide.
+    const mix = useMixTransition(currentSong, nextSong);
 
     const [localPlayerStatus, setLocalPlayerStatus] = useState<PlayerStatus>(status);
     const [isTransitioning, setIsTransitioning] = useState<boolean | string>(false);
@@ -148,6 +153,23 @@ export function WebPlayer() {
                 return;
             }
 
+            if (mix) {
+                automixHandler({
+                    currentPlayer: playerRef.current.player1(),
+                    currentPlayerNum: num,
+                    currentTime: e.playedSeconds,
+                    duration: trim.end1 ?? getDuration(playerRef.current.player1().ref),
+                    hasNextSong: Boolean(player2),
+                    isTransitioning,
+                    mix,
+                    nextPlayer: playerRef.current.player2(),
+                    playerNum: 1,
+                    setIsTransitioning,
+                    volume,
+                });
+                return;
+            }
+
             switch (transitionType) {
                 case PlayerStyle.CROSSFADE:
                     crossfadeHandler({
@@ -183,6 +205,7 @@ export function WebPlayer() {
             crossfadeStyle,
             handleRepeatOne,
             isTransitioning,
+            mix,
             num,
             player2,
             repeat,
@@ -210,6 +233,23 @@ export function WebPlayer() {
             }
 
             if (usePlayerStoreBase.getState().player.status !== PlayerStatus.PLAYING) {
+                return;
+            }
+
+            if (mix) {
+                automixHandler({
+                    currentPlayer: playerRef.current.player2(),
+                    currentPlayerNum: num,
+                    currentTime: e.playedSeconds,
+                    duration: trim.end2 ?? getDuration(playerRef.current.player2().ref),
+                    hasNextSong: Boolean(player1),
+                    isTransitioning,
+                    mix,
+                    nextPlayer: playerRef.current.player1(),
+                    playerNum: 2,
+                    setIsTransitioning,
+                    volume,
+                });
                 return;
             }
 
@@ -248,6 +288,7 @@ export function WebPlayer() {
             crossfadeStyle,
             handleRepeatOne,
             isTransitioning,
+            mix,
             num,
             player1,
             repeat,
@@ -593,6 +634,103 @@ export function WebPlayer() {
             volume={volume}
         />
     );
+}
+
+/**
+ * The handover AutoMix planned, carried out with the machinery Feishin already
+ * has.
+ *
+ * Nothing here decides anything: `planTransition` did, on numbers that can move
+ * under it — a tempo arriving from the sidecar, a queue edited mid-song — and
+ * this is re-consulted on every progress sample, so it cannot go stale.
+ *
+ * A blend is the existing crossfade over the planned length. A gapless
+ * handover is the existing pre-start, which is what an album run gets so a
+ * record that segues still does. A cut is the player doing nothing at all: the
+ * element reaches its end, `onEnded` advances the queue, and the next track
+ * starts — which is the behaviour every other part of this player already
+ * falls back to, so a plan that gives up is never worse than not having the
+ * feature.
+ */
+function automixHandler(args: {
+    currentPlayer: {
+        ref: null | ReactPlayer;
+        setVolume: (volume: number) => void;
+    };
+    currentPlayerNum: number;
+    currentTime: number;
+    duration: number;
+    hasNextSong: boolean;
+    isTransitioning: boolean | string;
+    mix: MixTransition;
+    nextPlayer: {
+        ref: null | ReactPlayer;
+        setVolume: (volume: number) => void;
+    };
+    playerNum: number;
+    setIsTransitioning: Dispatch<boolean | string>;
+    volume: number;
+}) {
+    const {
+        currentPlayer,
+        currentPlayerNum,
+        currentTime,
+        duration,
+        hasNextSong,
+        isTransitioning,
+        mix,
+        nextPlayer,
+        playerNum,
+        setIsTransitioning,
+        volume,
+    } = args;
+
+    switch (mix.kind) {
+        case 'blend':
+            crossfadeHandler({
+                crossfadeDuration: mix.overlapSeconds,
+                // Equal power, not whichever curve the person picked for their
+                // own crossfade: the planner's lengths were chosen against a
+                // fade that holds a constant level across the handover, and an
+                // exponential eight seconds is a different transition wearing
+                // the same number.
+                crossfadeStyle: CrossfadeStyle.EQUAL_POWER,
+                currentPlayer,
+                currentPlayerNum,
+                currentTime,
+                duration,
+                hasNextSong,
+                isTransitioning,
+                nextPlayer,
+                playerNum,
+                setIsTransitioning,
+                volume,
+            });
+            return;
+        case 'cut':
+            // The only work a cut has is undoing a blend the queue moved out
+            // from under — the same tidy-up the crossfade does when it runs out
+            // of songs to fade into. Left alone otherwise, so a cut never
+            // touches a volume the play/pause fade is in the middle of riding.
+            if (isTransitioning) {
+                currentPlayer.setVolume(volume);
+                nextPlayer.setVolume(0);
+                nextPlayer.ref?.getInternalPlayer()?.pause();
+                setIsTransitioning(false);
+            }
+            return;
+        case 'gapless':
+            gaplessHandler({
+                currentTime,
+                duration,
+                hasNextSong,
+                isFlac: false,
+                isTransitioning,
+                nextPlayer,
+                setIsTransitioning,
+            });
+            return;
+    }
 }
 
 function crossfadeHandler(args: {

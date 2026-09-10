@@ -94,5 +94,9 @@ export const useTrimPlayers = ({ num, player1, player2, playerRef }: TrimPlayers
         [act, plan2],
     );
 
-    return { onProgress1, onProgress2 };
+    // Where each slot's track actually stops, for whoever has to line something
+    // up with the end of it. Null when the track plays to its own end, which is
+    // every track with trimming switched off — the caller then has the
+    // element's own duration and nothing to correct.
+    return { end1: plan1?.endSec ?? null, end2: plan2?.endSec ?? null, onProgress1, onProgress2 };
 };
