@@ -693,3 +693,43 @@ describe('match', () => {
         expect(fetchImpl).not.toHaveBeenCalled();
     });
 });
+
+describe('audioAnalysis against the sidecar’s own documented payload', () => {
+    // Pasted from the sidecar's client-integration contract. Parsing is where a
+    // client and a server quietly disagree, and the entry that is literally
+    // `null` is the one most likely to be dropped on the floor.
+    const PAYLOAD = {
+        analysis: {
+            '3b1c': { bpm: 128.0, bpmConfidence: 0.82, loudnessLufs: -9.7, truePeakDbfs: -0.3 },
+            a71f: { bpm: null, bpmConfidence: null, loudnessLufs: -14.2, truePeakDbfs: -1.1 },
+            c904: null,
+        },
+        pending: ['9c0e'],
+    };
+
+    it('keeps the measured-with-nothing-to-report entry rather than dropping it', async () => {
+        const fetchImpl = vi.fn(
+            async () =>
+                new Response(JSON.stringify(PAYLOAD), {
+                    headers: { 'Content-Type': 'application/json' },
+                    status: 200,
+                }),
+        );
+
+        const answer = await client(fetchImpl as unknown as typeof fetch).audioAnalysis([
+            '3b1c',
+            'a71f',
+            'c904',
+            '9c0e',
+        ]);
+
+        expect(answer.analysis['3b1c']).toMatchObject({ bpm: 128, loudnessLufs: -9.7 });
+        // Loudness without a usable tempo: the common case for ambient.
+        expect(answer.analysis.a71f).toMatchObject({ bpm: null, loudnessLufs: -14.2 });
+        // Present as a key, null as a value. If this vanishes the client asks
+        // about the track forever.
+        expect('c904' in answer.analysis).toBe(true);
+        expect(answer.analysis.c904).toBeNull();
+        expect(answer.pending).toEqual(['9c0e']);
+    });
+});
