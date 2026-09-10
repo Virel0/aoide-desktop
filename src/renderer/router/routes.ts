@@ -34,7 +34,6 @@ export enum AppRoute {
     PLAYING = '/playing',
     PLAYLISTS = '/playlists',
     PLAYLISTS_DETAIL_SONGS = '/playlists/:playlistId/songs',
-    RADIO = '/radio',
     SEARCH = '/search/:itemType',
     SERVERS = '/servers',
     SETTINGS = '/settings',

@@ -15,7 +15,6 @@ import {
     shuffleAfterLane,
 } from '/@/renderer/aoide/features/queue/manual-lane';
 import { eventEmitter } from '/@/renderer/events/event-emitter';
-import { useRadioStore as useRadioPlayerStore } from '/@/renderer/features/radio/hooks/use-radio-player';
 import { createSelectors } from '/@/renderer/lib/zustand';
 import { useSettingsStore } from '/@/renderer/store/settings.store';
 import {
@@ -519,10 +518,6 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                             break;
                         }
                         case Play.NOW: {
-                            if (useRadioPlayerStore.getState().currentStreamUrl) {
-                                useRadioPlayerStore.getState().actions.stop();
-                            }
-
                             set((state) => {
                                 // Read before the queue goes: what they queued by
                                 // hand outlives the thing that was playing.
@@ -594,10 +589,6 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                             break;
                         }
                         case Play.SHUFFLE: {
-                            if (useRadioPlayerStore.getState().currentStreamUrl) {
-                                useRadioPlayerStore.getState().actions.stop();
-                            }
-
                             set((state) => {
                                 const keptLane = unplayedLane(state);
 

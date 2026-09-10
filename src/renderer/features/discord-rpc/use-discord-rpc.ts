@@ -7,10 +7,6 @@ import { api } from '/@/renderer/api';
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
 import { usePlayerEvents } from '/@/renderer/features/player/audio-player/hooks/use-player-events';
 import {
-    useIsRadioActive,
-    useRadioPlayer,
-} from '/@/renderer/features/radio/hooks/use-radio-player';
-import {
     DiscordDisplayType,
     DiscordLinkType,
     useAppStore,
@@ -49,9 +45,6 @@ export const useDiscordRpc = () => {
     const lastfmApiKey = useLastfmApiKey();
     const privateMode = useAppStore((state) => state.privateMode);
     const [lastUniqueId, setlastUniqueId] = useState('');
-
-    const isRadioActive = useIsRadioActive();
-    const { isPlaying: isRadioPlaying, metadata: radioMetadata, stationName } = useRadioPlayer();
 
     const currentSong = usePlayerSong();
     const imageUrl = useItemImageUrl({
@@ -94,17 +87,14 @@ export const useDiscordRpc = () => {
             const song = current[0];
             const trackChanged = song ? lastUniqueId !== song._uniqueId : false;
 
-            const isPlayingRadio = isRadioActive && isRadioPlaying;
-            const hasTrackOrRadio = Boolean(current[0]) || isPlayingRadio;
-
             if (
-                !hasTrackOrRadio || // No track and not playing radio
+                !current[0] || // No track
                 current[2] === PlayerStatus.STOPPED || // Stopped (stop button or queue end)
                 (current[2] === PlayerStatus.PAUSED && !discordSettings.showPaused) // Paused with show paused setting disabled
             ) {
                 let reason: string;
-                if (!hasTrackOrRadio) {
-                    reason = current[0] ? 'no_track' : 'no_track_or_radio';
+                if (!current[0]) {
+                    reason = 'no_track';
                 } else if (current[2] === PlayerStatus.STOPPED) {
                     reason = 'stopped';
                 } else {
@@ -117,53 +107,6 @@ export const useDiscordRpc = () => {
                     trigger,
                 });
                 return discordRpc?.clearActivity();
-            }
-
-            if (isPlayingRadio) {
-                const title = radioMetadata?.title || stationName || 'Radio';
-                const artist = radioMetadata?.artist || stationName || '';
-
-                const activity: SetActivity = {
-                    details: truncate(title),
-                    instance: false,
-                    largeImageKey: 'icon',
-                    largeImageText: truncate(stationName || 'Radio'),
-                    smallImageKey:
-                        current[2] === PlayerStatus.PLAYING
-                            ? discordSettings.showStateIcon
-                                ? 'playing'
-                                : undefined
-                            : 'paused',
-                    smallImageText:
-                        current[2] === PlayerStatus.PLAYING
-                            ? discordSettings.showStateIcon
-                                ? sentenceCase(current[2])
-                                : undefined
-                            : sentenceCase(current[2]),
-                    state: truncate(artist),
-                    statusDisplayType: DiscordStatusDisplayType.STATE,
-                    type: discordSettings.showAsListening ? 2 : 0,
-                };
-
-                const isConnected = await discordRpc?.isConnected();
-                if (!isConnected) {
-                    logger.info('Discord RPC was initialized', {
-                        clientId: discordSettings.clientId,
-                    });
-                    previousEnabledRef.current = true;
-                    await discordRpc?.initialize(discordSettings.clientId);
-                }
-
-                logger.debug('Activity was set for Discord RPC', {
-                    currentStatus: current[2],
-                    reason: 'radio',
-                    showAsListening: discordSettings.showAsListening,
-                    stationName: stationName || 'Radio',
-                    title,
-                    trigger,
-                });
-                discordRpc?.setActivity(activity);
-                return;
             }
 
             if (!song) {
@@ -344,11 +287,6 @@ export const useDiscordRpc = () => {
             discordSettings.linkType,
             lastUniqueId,
             currentSong?._uniqueId,
-            isRadioActive,
-            isRadioPlaying,
-            radioMetadata?.artist,
-            radioMetadata?.title,
-            stationName,
         ],
     );
 

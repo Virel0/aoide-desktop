@@ -12,7 +12,6 @@ import {
     GenreListSort,
     LibraryItem,
     PlaylistListSort,
-    RadioListSort,
     ServerType,
     SongListSort,
     SortOrder,
@@ -929,47 +928,6 @@ const PLAYLIST_LIST_FILTERS: Partial<
     ],
 };
 
-const RADIO_LIST_FILTERS: Partial<
-    Record<ServerType, Array<{ defaultOrder: SortOrder; name: string; value: string }>>
-> = {
-    [ServerType.JELLYFIN]: [
-        {
-            defaultOrder: SortOrder.ASC,
-            name: i18n.t('filter.id'),
-            value: RadioListSort.ID,
-        },
-        {
-            defaultOrder: SortOrder.ASC,
-            name: i18n.t('filter.name'),
-            value: RadioListSort.NAME,
-        },
-    ],
-    [ServerType.NAVIDROME]: [
-        {
-            defaultOrder: SortOrder.ASC,
-            name: i18n.t('filter.id'),
-            value: RadioListSort.ID,
-        },
-        {
-            defaultOrder: SortOrder.ASC,
-            name: i18n.t('filter.name'),
-            value: RadioListSort.NAME,
-        },
-    ],
-    [ServerType.SUBSONIC]: [
-        {
-            defaultOrder: SortOrder.ASC,
-            name: i18n.t('filter.id'),
-            value: RadioListSort.ID,
-        },
-        {
-            defaultOrder: SortOrder.ASC,
-            name: i18n.t('filter.name'),
-            value: RadioListSort.NAME,
-        },
-    ],
-};
-
 const FILTERS: Partial<Record<LibraryItem, any>> = {
     [LibraryItem.ALBUM]: ALBUM_LIST_FILTERS,
     [LibraryItem.ALBUM_ARTIST]: ALBUM_ARTIST_LIST_FILTERS,
@@ -978,6 +936,5 @@ const FILTERS: Partial<Record<LibraryItem, any>> = {
     [LibraryItem.GENRE]: GENRE_LIST_FILTERS,
     [LibraryItem.PLAYLIST]: PLAYLIST_LIST_FILTERS,
     [LibraryItem.PLAYLIST_SONG]: PLAYLIST_SONG_LIST_FILTERS,
-    [LibraryItem.RADIO_STATION]: RADIO_LIST_FILTERS,
     [LibraryItem.SONG]: SONG_LIST_FILTERS,
 };

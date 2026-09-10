@@ -15,8 +15,6 @@ import {
     RiPlayLine,
     RiPlayListFill,
     RiPlayListLine,
-    RiRadioFill,
-    RiRadioLine,
     RiSearchFill,
     RiSearchLine,
     RiSettings2Fill,
@@ -69,9 +67,6 @@ export const SidebarIcon = ({ active, route, size }: SidebarIconProps) => {
             case AppRoute.PLAYLISTS:
                 if (isActive) return <RiPlayListFill size={size} />;
                 return <RiPlayListLine size={size} />;
-            case AppRoute.RADIO:
-                if (isActive) return <RiRadioFill size={size} />;
-                return <RiRadioLine size={size} />;
             case AppRoute.SETTINGS:
                 if (isActive) return <RiSettings2Fill size={size} />;
                 return <RiSettings2Line size={size} />;

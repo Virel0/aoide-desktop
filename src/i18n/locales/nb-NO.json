@@ -31,8 +31,6 @@
         "addOrRemoveFromSelection": "Legg til eller fjern fra utvalg",
         "moveUp": "Flytt opp",
         "moveDown": "Flytt ned",
-        "createRadioStation": "Opprett $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Slett $t(entity.radioStation, {\"count\": 1})",
         "holdToMoveToTop": "Hold nede for å flytte til toppen",
         "holdToMoveToBottom": "Hold nede for å flytte til bunnen",
         "moveItems": "Flytt elementer",
@@ -208,11 +206,7 @@
         "artist_one": "Artist",
         "artist_other": "Artister",
         "song_one": "Sang",
-        "song_other": "Sanger",
-        "radioStation_one": "Radiostasjon",
-        "radioStation_other": "Radiostasjoner",
-        "radioStationWithCount_one": "{{count}} radiostasjon",
-        "radioStationWithCount_other": "{{count}} radiostasjoner"
+        "song_other": "Sanger"
     },
     "error": {
         "apiRouteError": "Kan ikke behandle forespørselen",
@@ -370,13 +364,6 @@
         "largeFetchConfirmation": {
             "title": "Legg til elementer i køen",
             "description": "Denne handlingen vil legge alle elementene til den gjeldende filtervisningen"
-        },
-        "createRadioStation": {
-            "success": "Vellykket opprettelse av radiostasjon",
-            "title": "Opprett radiostasjon",
-            "input_homepageUrl": "Hjemmesidelenke",
-            "input_name": "Navn",
-            "input_streamUrl": "Strømmelenke"
         },
         "saveQueue": {
             "success": "Lagre spillekø på tjener"

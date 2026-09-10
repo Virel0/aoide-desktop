@@ -27,8 +27,6 @@
         "moveToBottom": "Pindah ke bawah",
         "addOrRemoveFromSelection": "Tambahkan atau hapus dari pilihan",
         "selectRangeOfItems": "Pilih rentang item",
-        "createRadioStation": "Buat $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Hapus $t(entity.radioStation, {\"count\": 1})",
         "selectAll": "Pilih semua",
         "downloadStarted": "Memulai unduhan {{count}} item",
         "moveUp": "Pindahkan ke atas",
@@ -185,9 +183,7 @@
         "smartPlaylist": "Cerdas $t(entity.playlist, {\"count\": 1})",
         "track_other": "Pista",
         "song_other": "Lagu",
-        "trackWithCount_other": "{{count}} pista",
-        "radioStation_other": "Stasiun Radio",
-        "radioStationWithCount_other": "{{count}} stasiun radio"
+        "trackWithCount_other": "{{count}} pista"
     },
     "error": {
         "apiRouteError": "Tidak dapat mengarahkan permintaan",
@@ -348,13 +344,6 @@
             "title": "Tambahkan item ke antrean",
             "description": "Tindakan ini akan menambahkan semua item dalam tampilan terfilter saat ini"
         },
-        "createRadioStation": {
-            "success": "Stasiun radio berhasil dibuat",
-            "title": "Buat stasiun radio",
-            "input_homepageUrl": "Url beranda",
-            "input_name": "Nama",
-            "input_streamUrl": "Url streaming"
-        },
         "lyricsExport": {
             "export": "Ekspor lirik",
             "input_synced": "Ekspor lirik tersinkron",
@@ -378,9 +367,6 @@
             "enabled": "Mode pribadi diaktifkan, status pemutaran kini disembunyikan dari integrasi eksternal",
             "disabled": "Mode pribadi dinonaktifkan, status pemutaran kini terlihat oleh integrasi eksternal yang diaktifkan",
             "title": "Mode pribadi"
-        },
-        "editRadioStation": {
-            "success": "Stasiun radio berhasil diperbarui"
         }
     },
     "page": {
@@ -566,16 +552,12 @@
             "tracks": "Pista",
             "collections": "Koleksi",
             "favorites": "Favorit",
-            "radio": "Stasiun Radio",
             "myLibrary": "Pustaka saya"
         },
         "trackList": {
             "artistTracks": "Lagu oleh {{artist}}",
             "genreTracks": "\"{{genre}}\" $t(entity.track, {\"count\": 2})",
             "title": "$t(entity.track, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "Stasiun radio"
         },
         "favorites": {
             "title": "$t(entity.favorite, {\"count\": 2})"

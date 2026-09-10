@@ -36,8 +36,6 @@
         "holdToMoveToTop": "Hosszan nyomva felülre mozgat",
         "holdToMoveToBottom": "Hosszan nyomva lejjebb mozgat",
         "selectAll": "Összes kijelölése",
-        "deleteRadioStation": "$t(entity.radioStation, {\"count\": 1}) törlése",
-        "createRadioStation": "$t(entity.radioStation, {\"count\": 1}) létrehozása",
         "openApplicationDirectory": "App könyvtár megnyitása",
         "addOrRemoveFromSelection": "Hozzáadás vagy eltávolítás a kiválasztásból",
         "selectRangeOfItems": "Válaszd ki a tartományt"
@@ -201,11 +199,7 @@
         "play_one": "{{count}} lejátszás",
         "play_other": "{{count}} lejátszások",
         "trackWithCount_one": "{{count}} sáv",
-        "trackWithCount_other": "{{count}} sávok",
-        "radioStation_one": "Rádióállomás",
-        "radioStation_other": "Rádióállomások",
-        "radioStationWithCount_one": "{{count}} rádióállomás",
-        "radioStationWithCount_other": "{{count}} rádióállomások"
+        "trackWithCount_other": "{{count}} sávok"
     },
     "error": {
         "apiRouteError": "A kérést nem sikerült célba juttatni",
@@ -374,13 +368,6 @@
             "input_played": "Csak szűrt zenék",
             "input_played_optionUnplayed": "Csak a még nem lejátszottak",
             "input_played_optionPlayed": "Csak a játszottak számok"
-        },
-        "createRadioStation": {
-            "success": "Rádió állomás sikeresen létrehozva",
-            "title": "Rádió állomás létrehozása",
-            "input_homepageUrl": "Oldal url",
-            "input_name": "Név",
-            "input_streamUrl": "Stream url"
         },
         "saveQueue": {
             "success": "Mentett lejátszási műsorlista a szerverre"
@@ -564,8 +551,7 @@
             "settings": "Beállítások",
             "shared": "Megosztott Lejátszási listák",
             "tracks": "Sávok",
-            "favorites": "Kedvelések",
-            "radio": "Rádióállomások"
+            "favorites": "Kedvelések"
         },
         "trackList": {
             "artistTracks": "Dalok tőle {{artist}}",
@@ -577,9 +563,6 @@
         },
         "folderList": {
             "title": "$t(entity.folder, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "Rádió állomások"
         }
     },
     "player": {

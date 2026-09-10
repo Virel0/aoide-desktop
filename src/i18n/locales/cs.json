@@ -543,8 +543,6 @@
         "moveDown": "Posunout dolů",
         "holdToMoveToTop": "Podržte pro přesunutí nahoru",
         "holdToMoveToBottom": "Podržte pro přesunutí dolů",
-        "createRadioStation": "Vytvořit $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Odstranit $t(entity.radioStation, {\"count\": 1})",
         "openApplicationDirectory": "Otevřít adresář aplikace",
         "addOrRemoveFromSelection": "Přidat nebo odebrat z výběru",
         "selectRangeOfItems": "Vyberte rozsah položek",
@@ -902,7 +900,6 @@
             "shared": "Sdílené playlisty",
             "myLibrary": "Moje knihovna",
             "favorites": "Oblíbené",
-            "radio": "Stanice rádia",
             "collections": "Sbírky"
         },
         "fullscreenPlayer": {
@@ -1129,9 +1126,6 @@
         "folderList": {
             "title": "$t(entity.folder, {\"count\": 2})"
         },
-        "radioList": {
-            "title": "Stanice rádia"
-        },
         "windowBar": {
             "paused": "(Pozastaveno) ",
             "privateMode": "(Soukromý režim)"
@@ -1249,20 +1243,10 @@
         "saveQueue": {
             "success": "Fronta přehrávání uložena na server"
         },
-        "createRadioStation": {
-            "success": "Stanice rádia úspěšně vytvořena",
-            "title": "Vytvořit stanici rádia",
-            "input_homepageUrl": "Adresa domovské stránky",
-            "input_name": "Název",
-            "input_streamUrl": "Adresa streamu"
-        },
         "lyricsExport": {
             "export": "Exportovat texty",
             "input_synced": "Exportovat synchronizované texty",
             "input_offset": "$t(setting.lyricOffset)"
-        },
-        "editRadioStation": {
-            "success": "Stanice rádia úspěšně upravena"
         },
         "createPrefilledPlaylist": {
             "title": "Vytvořit $t(entity.playlist, {\"count\": 1}) z vybraných skladeb"
@@ -1320,13 +1304,7 @@
         "play_other": "{{count}} přehrání",
         "song_one": "Skladba",
         "song_few": "Skladby",
-        "song_other": "Skladby",
-        "radioStation_one": "Stanice rádia",
-        "radioStation_few": "Stanice rádia",
-        "radioStation_other": "Stanice rádia",
-        "radioStationWithCount_one": "{{count}} stanice rádia",
-        "radioStationWithCount_few": "{{count}} stanice rádia",
-        "radioStationWithCount_other": "{{count}} stanic rádia"
+        "song_other": "Skladby"
     },
     "dragDropZone": {
         "error_oneFileOnly": "Vyberte prosím pouze 1 soubor",

@@ -244,9 +244,7 @@
         "expandAllFolders": "Expand all folders",
         "createPlaylist": "Create $t(entity.playlist, {\"count\": 1})",
         "createPlaylistFromQueue": "Create $t(entity.playlist, {\"count\": 1}) from queue",
-        "createRadioStation": "Create $t(entity.radioStation, {\"count\": 1})",
         "deletePlaylist": "Delete $t(entity.playlist, {\"count\": 1})",
-        "deleteRadioStation": "Delete $t(entity.radioStation, {\"count\": 1})",
         "selectAll": "Select all",
         "deselectAll": "Deselect all",
         "downloadStarted": "Started download of {{count}} items",
@@ -422,10 +420,6 @@
         "albumArtistCount_other": "{{count}} album artists",
         "albumWithCount_one": "{{count}} album",
         "albumWithCount_other": "{{count}} albums",
-        "radioStation_one": "Radio Station",
-        "radioStation_other": "Radio Stations",
-        "radioStationWithCount_one": "{{count}} radio station",
-        "radioStationWithCount_other": "{{count}} radio stations",
         "artist_one": "Artist",
         "artist_other": "Artists",
         "artistWithCount_one": "{{count}} artist",
@@ -621,16 +615,6 @@
         "createPrefilledPlaylist": {
             "title": "Create $t(entity.playlist, {\"count\": 1}) from selected songs"
         },
-        "createRadioStation": {
-            "success": "Radio station created successfully",
-            "title": "Create radio station",
-            "input_homepageUrl": "Homepage URL",
-            "input_name": "Name",
-            "input_streamUrl": "Stream URL"
-        },
-        "editRadioStation": {
-            "success": "Radio station updated successfully"
-        },
         "deletePlaylist": {
             "input_confirm": "Type the name of the $t(entity.playlist, {\"count\": 1}) to confirm",
             "success": "$t(entity.playlist, {\"count\": 1}) deleted successfully",
@@ -731,9 +715,6 @@
             "artistAlbums": "Albums by {{artist}}",
             "genreAlbums": "\"{{genre}}\" $t(entity.album, {\"count\": 2})",
             "title": "$t(entity.album, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "Radio stations"
         },
         "releasenotes": {
             "commitsSinceStable": "Commits since {{stable}}",
@@ -946,7 +927,6 @@
             "folders": "Folders",
             "genres": "Genres",
             "home": "Home",
-            "radio": "Radio Stations",
             "myLibrary": "My Library",
             "nowPlaying": "Now Playing",
             "playlists": "Playlists",

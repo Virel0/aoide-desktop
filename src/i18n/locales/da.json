@@ -8,8 +8,6 @@
         "selectRangeOfItems": "Markér et udvalg af elementer",
         "clearQueue": "Ryd kø",
         "createPlaylist": "Opret $t(entity.playlist, {\"count\": 1})",
-        "createRadioStation": "Opret $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Slet $t(entity.radioStation, {\"count\": 1})",
         "deselectAll": "Fjern markering",
         "downloadStarted": "Download af {{count}} elementer startet",
         "editPlaylist": "Rediger $t(entity.playlist, {\"count\": 1})",
@@ -170,10 +168,6 @@
         "albumArtistCount_other": "{{count}} albumkunstnere",
         "albumWithCount_one": "{{count}} album",
         "albumWithCount_other": "{{count}} albummer",
-        "radioStation_one": "Radiostation",
-        "radioStation_other": "Radiostationer",
-        "radioStationWithCount_one": "{{count}} radiostation",
-        "radioStationWithCount_other": "{{count}} radiostationer",
         "artist_one": "Kunstner",
         "artist_other": "Kunstnere",
         "artistWithCount_one": "{{count}} kunstner",
@@ -344,13 +338,6 @@
             "success": "$t(entity.playlist, {\"count\": 1}) oprettet",
             "title": "Opret $t(entity.playlist, {\"count\": 1})"
         },
-        "createRadioStation": {
-            "success": "Radiostation oprettet",
-            "title": "Opret radiostation",
-            "input_homepageUrl": "Hjemmeside-url",
-            "input_name": "Navn",
-            "input_streamUrl": "Stream-url"
-        },
         "deletePlaylist": {
             "input_confirm": "Skriv navnet på $t(entity.playlist, {\"count\": 1}) for at bekræfte",
             "success": "$t(entity.playlist, {\"count\": 1}) slettet",
@@ -442,9 +429,6 @@
             "artistAlbums": "Album af {{artist}}",
             "genreAlbums": "\"{{genre}}\"-$t(entity.album, {\"count\": 2})",
             "title": "$t(entity.album, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "Radiostationer"
         },
         "releasenotes": {
             "commitsSinceStable": "Commits siden {{stable}}",
@@ -609,7 +593,6 @@
             "folders": "Mapper",
             "genres": "Genrer",
             "home": "Hjem",
-            "radio": "Radiostationer",
             "myLibrary": "Mit bibliotek",
             "nowPlaying": "Spiller nu",
             "playlists": "Playlister",

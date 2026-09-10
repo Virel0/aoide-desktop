@@ -33,8 +33,6 @@
         "viewMore": "Mehr zeigen",
         "moveUp": "Nach oben bewegen",
         "moveDown": "Nach unten bewegen",
-        "createRadioStation": "$t(entity.radioStation, {\"count\": 1}) erstellen",
-        "deleteRadioStation": "$t(entity.radioStation, {\"count\": 1}) löschen",
         "selectAll": "Alle auswählen",
         "openApplicationDirectory": "Anwendungsverzeichnis öffnen",
         "addOrRemoveFromSelection": "Zur auswahl hinzufügen oder entfernen",
@@ -349,20 +347,10 @@
         "saveQueue": {
             "success": "Wiedergabeliste auf Server gespeichert"
         },
-        "createRadioStation": {
-            "success": "Radiosender erfolgreich erstellt",
-            "title": "Radiosender erstellen",
-            "input_homepageUrl": "Homepage URL",
-            "input_name": "Name",
-            "input_streamUrl": "Stream URL"
-        },
         "lyricsExport": {
             "input_offset": "$t(setting.lyricOffset)",
             "export": "Liedtext exportieren",
             "input_synced": "Synchronisierte songtexte exportieren"
-        },
-        "editRadioStation": {
-            "success": "Radiosender erfolgreich aktualisiert"
         }
     },
     "entity": {
@@ -400,11 +388,7 @@
         "play_one": "{{count}} wiedergabe",
         "play_other": "{{count}} wiedergaben",
         "song_one": "Lied",
-        "song_other": "Lieder",
-        "radioStation_one": "Radiosender",
-        "radioStation_other": "Radiosender",
-        "radioStationWithCount_one": "{{count}} radiosender",
-        "radioStationWithCount_other": "{{count}} radiosender"
+        "song_other": "Lieder"
     },
     "table": {
         "config": {
@@ -621,7 +605,6 @@
             "shared": "Geteilte Wiedergabelisten",
             "myLibrary": "Meine bibliothek",
             "favorites": "Favoriten",
-            "radio": "Radiosender",
             "collections": "Sammlungen"
         },
         "setting": {
@@ -708,9 +691,6 @@
         },
         "playlist": {
             "reorder": "Neuanordnung nur bei sortierung nach ID möglich"
-        },
-        "radioList": {
-            "title": "Radiosender"
         },
         "windowBar": {
             "paused": "(Pausiert) ",

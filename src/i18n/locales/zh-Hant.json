@@ -338,7 +338,6 @@
             "myLibrary": "我的媒體庫",
             "shared": "共享播放清單",
             "favorites": "收藏",
-            "radio": "電台",
             "collections": "收藏集"
         },
         "trackList": {
@@ -404,9 +403,6 @@
         },
         "folderList": {
             "title": "$t(entity.folder, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "電台"
         },
         "windowBar": {
             "paused": "(暫停) ",
@@ -1090,8 +1086,6 @@
         "moveDown": "向下移動",
         "holdToMoveToTop": "按住以移動至頂部",
         "holdToMoveToBottom": "按住以移動至底部",
-        "createRadioStation": "建立$t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "刪除$t(entity.radioStation, {\"count\": 1})",
         "openApplicationDirectory": "開啟應用程式目錄",
         "addOrRemoveFromSelection": "新增或移除選取項目",
         "selectAll": "全選",
@@ -1119,9 +1113,7 @@
         "trackWithCount_other": "{{count}} 個曲目",
         "albumWithCount_other": "{{count}} 張專輯",
         "play_other": "{{count}} 次播放",
-        "song_other": "歌曲",
-        "radioStation_other": "電台",
-        "radioStationWithCount_other": "{{count}} 個電台"
+        "song_other": "歌曲"
     },
     "filter": {
         "albumCount": "$t(entity.album, {\"count\": 2}) 數",
@@ -1275,13 +1267,6 @@
             "input_limit_albums": "專輯數量？",
             "input_limit_songs": "歌曲數量？"
         },
-        "createRadioStation": {
-            "success": "電台建立成功",
-            "title": "建立電台",
-            "input_homepageUrl": "首頁 URL",
-            "input_name": "名稱",
-            "input_streamUrl": "串流 URL"
-        },
         "saveQueue": {
             "success": "已將播放佇列儲存至伺服器"
         },
@@ -1289,9 +1274,6 @@
             "export": "匯出歌詞",
             "input_synced": "匯出同步歌詞",
             "input_offset": "$t(setting.lyricOffset)"
-        },
-        "editRadioStation": {
-            "success": "電台更新成功"
         },
         "createPrefilledPlaylist": {
             "title": "從選取的歌曲建立$t(entity.playlist, {\"count\": 1})"

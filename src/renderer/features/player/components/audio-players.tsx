@@ -20,12 +20,6 @@ import {
 import { ScrobbleHook } from '/@/renderer/features/player/hooks/use-scrobble';
 import { UpdateCurrentSongHook } from '/@/renderer/features/player/hooks/use-update-current-song';
 import { useWebAudio } from '/@/renderer/features/player/hooks/use-webaudio';
-import { RadioWebPlayer } from '/@/renderer/features/radio/components/radio-web-player';
-import {
-    RadioAudioInstanceHook,
-    RadioMetadataHook,
-    useIsRadioActive,
-} from '/@/renderer/features/radio/hooks/use-radio-player';
 import { RemoteHook } from '/@/renderer/features/remote/hooks/use-remote';
 import { useSettingsStore } from '/@/renderer/store';
 import {
@@ -134,8 +128,6 @@ export const AudioPlayers = () => {
             <QueueRestoreTimestampHook />
             <InitialTimestampRestoreHook />
             <UpdateCurrentSongHook />
-            <RadioAudioInstanceHook />
-            <RadioMetadataHook />
             <AutosaveHook />
             <AudioPlayersContent
                 audioContext={audioContext}
@@ -167,8 +159,6 @@ const AudioPlayersContent = ({
     setWebAudio: ReturnType<typeof useWebAudio>['setWebAudio'];
     webAudio: boolean;
 }) => {
-    const isRadioActive = useIsRadioActive();
-
     useEffect(() => {
         if (webAudio && 'AudioContext' in window) {
             let context: AudioContext;
@@ -320,10 +310,6 @@ const AudioPlayersContent = ({
             eventEmitter.off('USER_RATING', handleRating);
         };
     }, [serverId]);
-
-    if (isRadioActive) {
-        return <RadioWebPlayer />;
-    }
 
     return <WebPlayer />;
 };

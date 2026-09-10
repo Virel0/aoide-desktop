@@ -543,8 +543,6 @@
         "shuffleAll": "すべてシャッフル",
         "shuffleSelected": "選択した曲をシャッフル",
         "viewMore": "さらに表示",
-        "createRadioStation": "$t(entity.radioStation, {\"count\": 1})を作成",
-        "deleteRadioStation": "$t(entity.radioStation, {\"count\": 1})を削除",
         "selectAll": "すべて選択",
         "moveUp": "上に移動",
         "moveDown": "下に移動",
@@ -903,7 +901,6 @@
             "albumArtists": "アルバムアーティスト",
             "myLibrary": "マイライブラリ",
             "shared": "共有プレイリスト",
-            "radio": "ラジオ局",
             "favorites": "お気に入り",
             "collections": "コレクション"
         },
@@ -1126,9 +1123,6 @@
         "playlist": {
             "reorder": "ID 順に並べ替えた場合のみ、並べ替えの順序変更が可能になります"
         },
-        "radioList": {
-            "title": "ラジオ局"
-        },
         "favorites": {
             "title": "$t(entity.favorite, {\"count\": 2})"
         },
@@ -1235,13 +1229,6 @@
             "title": "キューにアイテムを追加する",
             "description": "この操作により、現在のフィルタービュー内のすべてのアイテムが追加されます"
         },
-        "createRadioStation": {
-            "success": "ラジオ局が正常に作成されました",
-            "title": "ラジオ局を作成",
-            "input_homepageUrl": "ホームページ URL",
-            "input_name": "名前",
-            "input_streamUrl": "ストリーム URL"
-        },
         "lyricsExport": {
             "export": "歌詞をエクスポート",
             "input_synced": "同期歌詞をエクスポート",
@@ -1265,9 +1252,6 @@
         },
         "saveQueue": {
             "success": "プレイキューをサーバーに保存しました"
-        },
-        "editRadioStation": {
-            "success": "ラジオ局の更新に成功しました"
         },
         "createPrefilledPlaylist": {
             "title": "選択した曲から$t(entity.playlist, {\"count\": 1})を作成"
@@ -1295,9 +1279,7 @@
         "genreWithCount_other": "{{count}} 個のジャンル",
         "trackWithCount_other": "{{count}} 個のトラック",
         "play_other": "{{count}} 回再生",
-        "song_other": "曲",
-        "radioStation_other": "ラジオ局",
-        "radioStationWithCount_other": "{{count}} 局のラジオ局"
+        "song_other": "曲"
     },
     "dragDropZone": {
         "error_oneFileOnly": "1 つのファイルのみ選択してください",

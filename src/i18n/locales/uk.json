@@ -6,9 +6,7 @@
         "addToPlaylist": "Додати до $t(entity.playlist, {\"count\": 1})",
         "clearQueue": "Очистити чергу",
         "createPlaylist": "Створити $t(entity.playlist, {\"count\": 1})",
-        "createRadioStation": "Створити $t(entity.radioStation, {\"count\": 1})",
         "deletePlaylist": "Видалити $t(entity.playlist, {\"count\": 1})",
-        "deleteRadioStation": "Видалити $t(entity.radioStation, {\"count\": 1})",
         "selectAll": "Вибрати все",
         "deselectAll": "Скасувати вибір усього",
         "downloadStarted": "Почато завантаження {{count}} елементів",
@@ -189,12 +187,6 @@
         "albumWithCount_one": "{{count}} альбом",
         "albumWithCount_few": "{{count}} альбоми",
         "albumWithCount_many": "{{count}} альбомів",
-        "radioStation_one": "Радіостанція",
-        "radioStation_few": "Радіостанції",
-        "radioStation_many": "Радіостанцій",
-        "radioStationWithCount_one": "{{count}} радіостанція",
-        "radioStationWithCount_few": "{{count}} радіостанції",
-        "radioStationWithCount_many": "{{count}} радіостанцій",
         "artist_one": "Виконавець",
         "artist_few": "виконавці",
         "artist_many": "виконавців",
@@ -386,13 +378,6 @@
             "success": "$t(entity.playlist, {\"count\": 1}) стрворено успішно",
             "title": "Створити $t(entity.playlist, {\"count\": 1})"
         },
-        "createRadioStation": {
-            "success": "Радіостанція створена успішно",
-            "title": "Створити радіостанцію",
-            "input_homepageUrl": "Адреса домашньої сторінки",
-            "input_name": "Назва",
-            "input_streamUrl": "URL-адреса потоку"
-        },
         "deletePlaylist": {
             "input_confirm": "Введіть ім'я $t(entity.playlist, {\"count\": 1}) для підтвердження",
             "success": "$t(entity.playlist, {\"count\": 1}) успішно видалено",
@@ -459,9 +444,6 @@
             "enabled": "Приватний режим увімкнено, стан відтворення тепер приховано від зовнішніх інтеграцій",
             "disabled": "Приватний режим вимкнено, стан відтворення тепер видно для увімкнених зовнішніх інтеграцій",
             "title": "Приватний режим"
-        },
-        "editRadioStation": {
-            "success": "Радіо станція успішно оновлена"
         }
     },
     "player": {
@@ -547,9 +529,6 @@
             "artistAlbums": "Альбоми виконавця {{artist}}",
             "genreAlbums": "\"{{genre}}\" $t(entity.album, {\"count\": 2})",
             "title": "$t(entity.album, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "Радіостанції"
         },
         "releasenotes": {
             "commitsSinceStable": "Комміти від {{stable}}",
@@ -706,7 +685,6 @@
             "folders": "Папки",
             "genres": "Жанри",
             "home": "Додому",
-            "radio": "Радіостанції",
             "myLibrary": "Моя бібліотека",
             "nowPlaying": "Зараз грає",
             "playlists": "Плейлисти",

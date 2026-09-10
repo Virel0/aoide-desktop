@@ -549,8 +549,6 @@
         "holdToMoveToTop": "Mantener pulsado para desplazar hacia arriba",
         "moveUp": "Desplazar hacia arriba",
         "moveDown": "Desplazar hacia abajo",
-        "createRadioStation": "Crear $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Borrar $t(entity.radioStation, {\"count\": 1})",
         "openApplicationDirectory": "Abrir directorio de la aplicación",
         "addOrRemoveFromSelection": "Añadir o quitar de la selección",
         "selectRangeOfItems": "Seleccionar un intervalo de elementos",
@@ -796,7 +794,6 @@
             "shared": "Listas de reproducción compartidas",
             "myLibrary": "Mi Biblioteca",
             "favorites": "Favoritos",
-            "radio": "Estaciones de Radio",
             "collections": "Colecciones"
         },
         "appMenu": {
@@ -1024,9 +1021,6 @@
         "folderList": {
             "title": "$t(entity.folder, {\"count\": 2})"
         },
-        "radioList": {
-            "title": "Estaciones de radio"
-        },
         "windowBar": {
             "privateMode": "(Modo privado)",
             "paused": "(Pausado) "
@@ -1146,20 +1140,10 @@
         "saveQueue": {
             "success": "Cola de reproducción guardada en el servidor"
         },
-        "createRadioStation": {
-            "success": "Estación de radio creada con éxito",
-            "title": "Crear estación de radio",
-            "input_homepageUrl": "URL de la página de inicio",
-            "input_name": "Nombre",
-            "input_streamUrl": "URL de la transmisión"
-        },
         "lyricsExport": {
             "export": "Exportar letras",
             "input_synced": "Exportar letras sincronizadas",
             "input_offset": "$t(setting.lyricOffset)"
-        },
-        "editRadioStation": {
-            "success": "Estación de radio actualizada con éxito"
         },
         "createPrefilledPlaylist": {
             "title": "Crear $t(entity.playlist, {\"count\": 1}) desde las canciones seleccionadas"
@@ -1339,13 +1323,7 @@
         "play_other": "{{count}} reproducciones",
         "song_one": "Canción",
         "song_many": "Canciones",
-        "song_other": "Canciones",
-        "radioStation_one": "Estación de Radio",
-        "radioStation_many": "Estaciones de Radio",
-        "radioStation_other": "Estaciones de Radio",
-        "radioStationWithCount_one": "{{count}} estación de radio",
-        "radioStationWithCount_many": "{{count}} estaciones de radio",
-        "radioStationWithCount_other": "{{count}} estaciones de radio"
+        "song_other": "Canciones"
     },
     "dragDropZone": {
         "error_oneFileOnly": "Por favor selecciona un solo archivo",

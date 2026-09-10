@@ -50,7 +50,6 @@ export const CollapsedSidebar = () => {
             Home: t('page.sidebar.home'),
             'Now Playing': t('page.sidebar.nowPlaying'),
             Playlists: t('page.sidebar.playlists'),
-            Radio: t('page.sidebar.radio'),
             Search: t('page.sidebar.search'),
             Settings: t('page.sidebar.settings'),
             Tracks: t('page.sidebar.tracks'),

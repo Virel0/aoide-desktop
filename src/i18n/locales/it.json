@@ -27,8 +27,6 @@
         },
         "addOrRemoveFromSelection": "Aggiungi o rimuovi dalla selezione",
         "selectRangeOfItems": "Seleziona un intervallo di elementi",
-        "createRadioStation": "Crea $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Rimuovi $t(entity.radioStation, {\"count\": 1})",
         "selectAll": "Seleziona tutto",
         "downloadStarted": "Download di {{count}} elementi iniziato",
         "moveUp": "Sposta in alto",
@@ -782,8 +780,7 @@
             "myLibrary": "La mia libreria",
             "shared": "Playlist condivise",
             "collections": "Collezioni",
-            "favorites": "Preferiti",
-            "radio": "Stazioni radio"
+            "favorites": "Preferiti"
         },
         "fullscreenPlayer": {
             "config": {
@@ -987,9 +984,6 @@
         "playlist": {
             "reorder": "Riordino abilitato solo quando si ordina per ID"
         },
-        "radioList": {
-            "title": "Stazioni radio"
-        },
         "folderList": {
             "title": "$t(entity.folder, {\"count\": 2})"
         },
@@ -1094,13 +1088,6 @@
             "title": "Aggiungi elementi alla coda",
             "description": "Questa azione aggiungerà tutti gli elementi nella vista filtrata corrente"
         },
-        "createRadioStation": {
-            "success": "Stazione radio creata con successo",
-            "title": "Crea stazione radio",
-            "input_name": "Nome",
-            "input_homepageUrl": "URL della homepage",
-            "input_streamUrl": "URL dello stream"
-        },
         "lyricsExport": {
             "export": "Esporta testi",
             "input_synced": "Esporta testi sincronizzati",
@@ -1127,9 +1114,6 @@
         },
         "createPrefilledPlaylist": {
             "title": "Crea $t(entity.playlist, {\"count\": 1}) dalle tracce selezionate"
-        },
-        "editRadioStation": {
-            "success": "Stazione radio aggiornata con successo"
         }
     },
     "table": {
@@ -1298,13 +1282,7 @@
         "play_other": "{{count}} riproduzioni",
         "song_one": "Traccia",
         "song_many": "Tracce",
-        "song_other": "Tracce",
-        "radioStation_one": "Stazione radio",
-        "radioStation_many": "Stazioni radio",
-        "radioStation_other": "Stazioni radio",
-        "radioStationWithCount_one": "{{count}} stazione radio",
-        "radioStationWithCount_many": "{{count}} stazioni radio",
-        "radioStationWithCount_other": "{{count}} stazioni radio"
+        "song_other": "Tracce"
     },
     "datetime": {
         "minuteShort": "m",

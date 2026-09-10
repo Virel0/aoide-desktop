@@ -9,9 +9,7 @@
         "collapseAllFolders": "Ahenda kõik kaustad",
         "expandAllFolders": "Laienda kõik kaustad",
         "createPlaylist": "Loo $t(entity.playlist, {\"count\": 1})",
-        "createRadioStation": "Loo $t(entity.radioStation, {\"count\": 1})",
         "deletePlaylist": "Kustuta $t(entity.playlist, {\"count\": 1})",
-        "deleteRadioStation": "Kustuta $t(entity.radioStation, {\"count\": 1})",
         "selectAll": "Vali kõik",
         "deselectAll": "Tühista kõigi valik",
         "downloadStarted": "{{count}} üksuse allalaadimine algas",
@@ -188,10 +186,6 @@
         "albumArtistCount_other": "{{count}} albumi esitajat",
         "albumWithCount_one": "{{count}} album",
         "albumWithCount_other": "{{count}} albumit",
-        "radioStation_one": "Raadiojaam",
-        "radioStation_other": "Raadiojaamad",
-        "radioStationWithCount_one": "{{count}} raadiojaam",
-        "radioStationWithCount_other": "{{count}} raadiojaama",
         "artist_one": "Esitaja",
         "artist_other": "Esitajad",
         "artistWithCount_one": "{{count}} esitaja",
@@ -367,16 +361,6 @@
             "success": "$t(entity.playlist, {\"count\": 1}) loodi edukalt",
             "title": "Loo $t(entity.playlist, {\"count\": 1})"
         },
-        "createRadioStation": {
-            "success": "Raadiojaam loodi edukalt",
-            "title": "Loo raadiojaam",
-            "input_homepageUrl": "Avalehe URL",
-            "input_name": "Nimi",
-            "input_streamUrl": "Voo URL"
-        },
-        "editRadioStation": {
-            "success": "Raadiojaam on edukalt uuendatud"
-        },
         "deletePlaylist": {
             "input_confirm": "Kinnitamiseks sisesta $t(entity.playlist, {\"count\": 1}) nimi",
             "success": "$t(entity.playlist, {\"count\": 1}) edukalt kustutatud",
@@ -484,9 +468,6 @@
             "artistAlbums": "{{artist}} albumid",
             "genreAlbums": "\"{{genre}}\" $t(entity.album, {\"count\": 2})",
             "title": "$t(entity.album, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "Raadiojaamad"
         },
         "releasenotes": {
             "commitsSinceStable": "Muudatused alates {{stable}}",
@@ -700,7 +681,6 @@
             "folders": "Kaustad",
             "genres": "Žanrid",
             "home": "Avaleht",
-            "radio": "Raadiojaamad",
             "myLibrary": "Muusikakogu",
             "nowPlaying": "Esitamisel",
             "playlists": "Esitusloendid",

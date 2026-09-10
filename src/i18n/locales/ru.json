@@ -26,8 +26,6 @@
         },
         "moveToNext": "Перейти к следующему",
         "addOrRemoveFromSelection": "Добавить или удалить из списка выбранных элементов",
-        "createRadioStation": "Создать $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Удалить $t(entity.radioStation, {\"count\": 1})",
         "selectAll": "Выделить всё",
         "downloadStarted": "Начата загрузка {{count}} элементов",
         "moveUp": "Переместить вверх",
@@ -237,13 +235,7 @@
         "genreWithCount_many": "{{count}} жанров",
         "trackWithCount_one": "{{count}} трек",
         "trackWithCount_few": "{{count}} трека",
-        "trackWithCount_many": "{{count}} треков",
-        "radioStation_one": "Радиостанция",
-        "radioStation_few": "Радиостанции",
-        "radioStation_many": "Радиостанций",
-        "radioStationWithCount_one": "{{count}} радиостанция",
-        "radioStationWithCount_few": "{{count}} радиостанции",
-        "radioStationWithCount_many": "{{count}} радиостанций"
+        "trackWithCount_many": "{{count}} треков"
     },
     "table": {
         "config": {
@@ -509,7 +501,6 @@
             "favorites": "Избранное",
             "folders": "Папки",
             "genres": "Жанры",
-            "radio": "Радиостанции",
             "playlists": "Плейлисты",
             "settings": "Настройки",
             "tracks": "Треки"
@@ -710,9 +701,6 @@
             "multiValueToggle": "Множественное значение",
             "tagsTab": "Теги"
         },
-        "radioList": {
-            "title": "Радиостанции"
-        },
         "windowBar": {
             "privateMode": "(Приватный режим)",
             "paused": "(Приостановлено) "
@@ -823,13 +811,6 @@
             "title": "Добавить элементы в очередь",
             "description": "Эта операция добавит все элементы из текущего отфильтрованного вида"
         },
-        "createRadioStation": {
-            "success": "Радиостанция успешно создана",
-            "title": "Создать радиостанцию",
-            "input_homepageUrl": "URL главной страницы",
-            "input_name": "Имя",
-            "input_streamUrl": "URL потока"
-        },
         "lyricsExport": {
             "export": "Экспортировать текст песни",
             "input_synced": "Экспортировать синхронизированные тексты песен",
@@ -853,9 +834,6 @@
             "input_kind": "Случайный выбор",
             "input_limit_albums": "Сколько альбомов?",
             "input_limit_songs": "Сколько песен?"
-        },
-        "editRadioStation": {
-            "success": "Радиостанция успешно обновлена"
         },
         "createPrefilledPlaylist": {
             "title": "Создать $t(entity.playlist, {\"count\": 1}) из выбранных песен"

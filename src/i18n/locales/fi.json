@@ -156,11 +156,7 @@
         "play_one": "{{count}} toisto",
         "play_other": "{{count}} toistoa",
         "song_one": "Kappale",
-        "song_other": "Kappaleet",
-        "radioStation_one": "Radioasema",
-        "radioStation_other": "Radioasemaa",
-        "radioStationWithCount_one": "{{count}} radioasema",
-        "radioStationWithCount_other": "{{count}} radioasemaa"
+        "song_other": "Kappaleet"
     },
     "action": {
         "clearQueue": "Tyhjennä jono",
@@ -187,8 +183,6 @@
         "moveToNext": "Siirry seuraavaan",
         "selectRangeOfItems": "Valitse useita peräkkäisiä kohteita",
         "goToCurrent": "Siirry nykyiseen kohteeseen",
-        "createRadioStation": "Luo $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Poista $t(entity.radioStation, {\"count\": 1})",
         "selectAll": "Valitse kaikki",
         "downloadStarted": "Aloitettiin lataamaan {{count}} kohdetta",
         "moveUp": "Siirrä ylöspäin",
@@ -365,13 +359,6 @@
         "largeFetchConfirmation": {
             "title": "Lisää kohteet jonoon",
             "description": "Lisää kaikki suodatetun näkymän kohteet"
-        },
-        "createRadioStation": {
-            "success": "Radiokanava luotu onnistuneesti",
-            "title": "Luo radiokanava",
-            "input_homepageUrl": "Kotisivun osoite",
-            "input_name": "Nimi",
-            "input_streamUrl": "Suoratoisto-osoite"
         },
         "lyricsExport": {
             "export": "Vie sanoitukset",
@@ -703,8 +690,7 @@
             "search": "Etsi",
             "myLibrary": "Oma kirjasto",
             "collections": "Kokoelmat",
-            "favorites": "Suosikit",
-            "radio": "Radioasemat"
+            "favorites": "Suosikit"
         },
         "setting": {
             "generalTab": "Yleinen",
@@ -811,9 +797,6 @@
             "artistTracks": "Artistin {{artist}} kappaleet",
             "genreTracks": "\"{{genre}}\" $t(entity.track, {\"count\": 2})",
             "title": "$t(entity.track, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "Radiokanavat"
         },
         "releasenotes": {
             "commitsSinceStable": "Muutokset {{stable}} verrattuna",

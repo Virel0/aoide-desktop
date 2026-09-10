@@ -16,9 +16,6 @@ interface MobileFullscreenPlayerMetadataProps {
     currentSong?: QueueSong;
     onToggleFavorite: (e: MouseEvent<HTMLButtonElement>) => void;
     onUpdateRating: (rating: number) => void;
-    radioArtist?: string;
-    radioStationName?: string;
-    radioTitle?: string;
     showFavorite?: boolean;
     showRating?: boolean;
 }
@@ -28,25 +25,18 @@ export const MobileFullscreenPlayerMetadata = memo(
         currentSong,
         onToggleFavorite,
         onUpdateRating,
-        radioArtist,
-        radioStationName,
-        radioTitle,
         showFavorite,
         showRating,
     }: MobileFullscreenPlayerMetadataProps) => {
-        const isRadio = radioTitle !== undefined || radioStationName !== undefined;
-
-        const title = isRadio ? radioTitle || radioStationName || 'Radio' : currentSong?.name;
-        const artistsDisplay = isRadio
-            ? radioArtist || radioStationName || '—'
-            : currentSong?.artists?.map((a) => a.name).join(', ');
-        const album = isRadio ? radioStationName || '—' : currentSong?.album;
+        const title = currentSong?.name;
+        const artistsDisplay = currentSong?.artists?.map((a) => a.name).join(', ');
+        const album = currentSong?.album;
         const container = currentSong?.container;
         const year = currentSong?.releaseYear;
         const isFavorite = currentSong?.userFavorite;
         const rating = currentSong?.userRating;
 
-        const hasMetadata = !isRadio && (container || year);
+        const hasMetadata = container || year;
 
         return (
             <div className={styles.metadataContainer}>
@@ -77,25 +67,23 @@ export const MobileFullscreenPlayerMetadata = memo(
                         )}
                     </Group>
                 )}
-                {!isRadio && (
-                    <Group align="center" className={styles.actionsRow} gap="xs">
-                        {showFavorite && (
-                            <ActionIcon
-                                icon="favorite"
-                                iconProps={{
-                                    fill: isFavorite ? 'primary' : undefined,
-                                    size: 'md',
-                                }}
-                                onClick={onToggleFavorite}
-                                size="sm"
-                                variant="subtle"
-                            />
-                        )}
-                        {showRating && (
-                            <Rating onChange={onUpdateRating} size="sm" value={rating || 0} />
-                        )}
-                    </Group>
-                )}
+                <Group align="center" className={styles.actionsRow} gap="xs">
+                    {showFavorite && (
+                        <ActionIcon
+                            icon="favorite"
+                            iconProps={{
+                                fill: isFavorite ? 'primary' : undefined,
+                                size: 'md',
+                            }}
+                            onClick={onToggleFavorite}
+                            size="sm"
+                            variant="subtle"
+                        />
+                    )}
+                    {showRating && (
+                        <Rating onChange={onUpdateRating} size="sm" value={rating || 0} />
+                    )}
+                </Group>
             </div>
         );
     },

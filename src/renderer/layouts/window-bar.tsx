@@ -13,7 +13,6 @@ import macMinHover from './assets/min-mac-hover.png';
 import macMin from './assets/min-mac.png';
 import styles from './window-bar.module.css';
 
-import { useRadioPlayer } from '/@/renderer/features/radio/hooks/use-radio-player';
 import {
     useAppStore,
     usePlayerData,
@@ -143,8 +142,6 @@ export const WindowBar = () => {
     const handleMinimize = () => minimize();
 
     const { currentSong, index, queueLength } = usePlayerData();
-    const { isPlaying: isRadioPlaying, metadata, stationName } = useRadioPlayer();
-    const isRadioActive = Boolean(stationName || metadata);
     const [max, setMax] = useState(localSettings?.env.START_MAXIMIZED || false);
 
     const handleMaximize = useCallback(() => {
@@ -165,27 +162,6 @@ export const WindowBar = () => {
             return `Aoide${privateMode ? ` ${privateModeString}` : ''}`;
         }
 
-        // Show radio information if radio is active
-        if (isRadioActive) {
-            const radioStatusString = !isRadioPlaying ? t('page.windowBar.paused') : '';
-            const radioTitle = stationName;
-
-            // Format metadata: show title, or combine artist and title if both available
-            let radioMetadata = '';
-            if (metadata) {
-                if (metadata.title && metadata.artist) {
-                    radioMetadata = ` — ${metadata.artist} — ${metadata.title}`;
-                } else if (metadata.title) {
-                    radioMetadata = ` — ${metadata.title}`;
-                } else if (metadata.artist) {
-                    radioMetadata = ` — ${metadata.artist}`;
-                }
-            }
-
-            return `${radioStatusString}${radioTitle}${radioMetadata} — Aoide${privateMode ? ` ${privateModeString}` : ''}`;
-        }
-
-        // Show regular song information
         const statusString = playerStatus === PlayerStatus.PAUSED ? t('page.windowBar.paused') : '';
         const queueString = queueLength ? `(${index + 1} / ${queueLength}) ` : '';
         const title = `${
@@ -198,13 +174,9 @@ export const WindowBar = () => {
         currentSong?.artistName,
         currentSong?.name,
         index,
-        isRadioActive,
-        isRadioPlaying,
-        metadata,
         playerStatus,
         privateMode,
         queueLength,
-        stationName,
         t,
         windowBarTrackinfo,
     ]);

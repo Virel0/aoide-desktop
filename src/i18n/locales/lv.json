@@ -10,9 +10,7 @@
         "expandAllFolders": "Atvērt visas mapes",
         "createPlaylist": "Izveidot $t(entity.playlist, {\"count\": 1})",
         "createPlaylistFromQueue": "Izveidot $t(entity.playlist, {\"count\": 1}) no rindas",
-        "createRadioStation": "Izveidot $t(entity.radioStation, {\"count\": 1})",
         "deletePlaylist": "Dzēst $t(entity.playlist, {\"count\": 1})",
-        "deleteRadioStation": "Dzēst $t(entity.radioStation, {\"count\": 1})",
         "selectAll": "Atlasiet visu",
         "deselectAll": "Atzīmēt visu",
         "downloadStarted": "Sākta {{count}} vienumu lejupielāde",
@@ -322,16 +320,6 @@
         "createPrefilledPlaylist": {
             "title": "Izveidot $t(entity.playlist, {\"count\": 1}) no atlasītajām dziesmām"
         },
-        "createRadioStation": {
-            "success": "Radio stacija veiksmīgi izveidota",
-            "title": "Izveidot radio staciju",
-            "input_homepageUrl": "Mājaslapas URL",
-            "input_name": "Nosaukums",
-            "input_streamUrl": "Straumes URL"
-        },
-        "editRadioStation": {
-            "success": "Radio stacija veiksmīgi atjaunināta"
-        },
         "deletePlaylist": {
             "input_confirm": "Ievadiet $t(entity.playlist, {\"count\": 1}) nosaukumu, lai apstiprinātu",
             "success": "$t(entity.playlist, {\"count\": 1}) veiksmīgi dzēsts",
@@ -430,9 +418,6 @@
             "artistAlbums": "{{artist}} albumi",
             "genreAlbums": "\"{{genre}}\" $t(entity.album, {\"count\": 2})",
             "title": "$t(entity.album, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "Radio stacijas"
         },
         "releasenotes": {
             "commitsSinceStable": "Apņemšanās kopš {{stable}}",
@@ -607,7 +592,6 @@
             "folders": "Mapes",
             "genres": "Žanri",
             "home": "Sākums",
-            "radio": "Radiostacijas",
             "myLibrary": "Mana bibliotēka",
             "nowPlaying": "Pašlaik atskaņo",
             "playlists": "Atskaņošanas saraksti",

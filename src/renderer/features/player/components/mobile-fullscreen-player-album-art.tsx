@@ -6,10 +6,6 @@ import styles from './mobile-fullscreen-player.module.css';
 
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
 import {
-    useIsRadioActive,
-    useRadioPlayer,
-} from '/@/renderer/features/radio/hooks/use-radio-player';
-import {
     useFullScreenPlayerStore,
     useImageRes,
     usePlayerData,
@@ -48,12 +44,10 @@ const MotionImage = motion.img;
 
 const ImageWithPlaceholder = ({
     className,
-    placeholderIcon,
     useImageAspectRatio,
     ...props
 }: HTMLMotionProps<'img'> & {
     placeholder?: string;
-    placeholderIcon?: 'itemAlbum' | 'radio';
     useImageAspectRatio?: boolean;
 }) => {
     if (!props.src) {
@@ -66,11 +60,7 @@ const ImageWithPlaceholder = ({
                     width: '100%',
                 }}
             >
-                <Icon
-                    color="muted"
-                    icon={placeholderIcon === 'radio' ? 'radio' : 'itemAlbum'}
-                    size="25%"
-                />
+                <Icon color="muted" icon="itemAlbum" size="25%" />
             </Center>
         );
     }
@@ -93,12 +83,8 @@ export const MobileFullscreenPlayerAlbumArt = () => {
 
     const { fullScreenPlayer: albumArtRes } = useImageRes();
     const { useImageAspectRatio } = useFullScreenPlayerStore();
-    const isRadioActive = useIsRadioActive();
-    const { isPlaying: isRadioPlaying } = useRadioPlayer();
     const currentSong = usePlayerSong();
     const { nextSong } = usePlayerData();
-
-    const isPlayingRadio = isRadioActive && isRadioPlaying;
 
     const currentImageUrl = useItemImageUrl({
         id: currentSong?.imageId || undefined,
@@ -168,58 +154,38 @@ export const MobileFullscreenPlayerAlbumArt = () => {
                 })}
             >
                 <AnimatePresence initial={false} mode="sync">
-                    {isPlayingRadio ? (
+                    {imageState.current === 0 && (
                         <ImageWithPlaceholder
                             animate="open"
                             className={PlaybackSelectors.playerCoverArt}
-                            custom={{ isOpen: true }}
+                            custom={{ isOpen: imageState.current === 0 }}
                             draggable={false}
                             exit="closed"
                             initial="closed"
-                            key="radio"
+                            key={`top-${currentSong?._uniqueId || 'none'}`}
                             loading="eager"
                             placeholder="var(--theme-colors-foreground-muted)"
-                            placeholderIcon="radio"
-                            src=""
+                            src={imageState.topImage || ''}
                             useImageAspectRatio={useImageAspectRatio}
                             variants={imageVariants}
                         />
-                    ) : (
-                        <>
-                            {imageState.current === 0 && (
-                                <ImageWithPlaceholder
-                                    animate="open"
-                                    className={PlaybackSelectors.playerCoverArt}
-                                    custom={{ isOpen: imageState.current === 0 }}
-                                    draggable={false}
-                                    exit="closed"
-                                    initial="closed"
-                                    key={`top-${currentSong?._uniqueId || 'none'}`}
-                                    loading="eager"
-                                    placeholder="var(--theme-colors-foreground-muted)"
-                                    src={imageState.topImage || ''}
-                                    useImageAspectRatio={useImageAspectRatio}
-                                    variants={imageVariants}
-                                />
-                            )}
+                    )}
 
-                            {imageState.current === 1 && (
-                                <ImageWithPlaceholder
-                                    animate="open"
-                                    className={PlaybackSelectors.playerCoverArt}
-                                    custom={{ isOpen: imageState.current === 1 }}
-                                    draggable={false}
-                                    exit="closed"
-                                    initial="closed"
-                                    key={`bottom-${currentSong?._uniqueId || 'none'}`}
-                                    loading="eager"
-                                    placeholder="var(--theme-colors-foreground-muted)"
-                                    src={imageState.bottomImage || ''}
-                                    useImageAspectRatio={useImageAspectRatio}
-                                    variants={imageVariants}
-                                />
-                            )}
-                        </>
+                    {imageState.current === 1 && (
+                        <ImageWithPlaceholder
+                            animate="open"
+                            className={PlaybackSelectors.playerCoverArt}
+                            custom={{ isOpen: imageState.current === 1 }}
+                            draggable={false}
+                            exit="closed"
+                            initial="closed"
+                            key={`bottom-${currentSong?._uniqueId || 'none'}`}
+                            loading="eager"
+                            placeholder="var(--theme-colors-foreground-muted)"
+                            src={imageState.bottomImage || ''}
+                            useImageAspectRatio={useImageAspectRatio}
+                            variants={imageVariants}
+                        />
                     )}
                 </AnimatePresence>
             </div>

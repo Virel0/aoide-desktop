@@ -32,8 +32,6 @@
             "lastfm": "Öppna i Last.fm",
             "musicbrainz": "Öppna i MusicBrainz"
         },
-        "createRadioStation": "Skapa $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Ta bort $t(entity.radioStation, {\"count\": 1})",
         "addOrRemoveFromSelection": "Lägg till eller ta bort från markerade",
         "selectRangeOfItems": "Välj en mängd objekt",
         "selectAll": "Markera alla",
@@ -280,13 +278,6 @@
         "largeFetchConfirmation": {
             "title": "Lägg till objekt till kön",
             "description": "Åtgärden kommer att lägga till alla objekt till den nuvarande filtrerade vyn"
-        },
-        "createRadioStation": {
-            "success": "Radiostation skapades",
-            "title": "Skapa radiostation",
-            "input_homepageUrl": "Hemside-URL",
-            "input_name": "Namn",
-            "input_streamUrl": "Stream url"
         }
     },
     "page": {
@@ -421,11 +412,7 @@
         "play_other": "{{count}} spelningar",
         "smartPlaylist": "Smart $t(entity.playlist, {\"count\": 1})",
         "song_one": "Låt",
-        "song_other": "Låtar",
-        "radioStation_one": "Radiostation",
-        "radioStation_other": "Radiostationer",
-        "radioStationWithCount_one": "{{count}} radiostation",
-        "radioStationWithCount_other": "{{count}} radiostationer"
+        "song_other": "Låtar"
     },
     "player": {
         "repeat_all": "Repetera alla",

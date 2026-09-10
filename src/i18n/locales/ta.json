@@ -24,8 +24,6 @@
         },
         "addOrRemoveFromSelection": "தேர்வில் இருந்து சேர்க்கவும் அல்லது நீக்கவும்",
         "selectRangeOfItems": "உருப்படிகளின் வரம்பைத் தேர்ந்தெடுக்கவும்",
-        "createRadioStation": "$t(entity.radioStation, {\"count\": 1}) உருவாக்கவும்",
-        "deleteRadioStation": "$t(entity.radioStation, {\"count\": 1}) நீக்கு",
         "selectAll": "அனைத்தையும் தெரிவுசெய்",
         "downloadStarted": "{{count}} உருப்படிகளின் பதிவிறக்கம் தொடங்கியது",
         "moveUp": "மேலே செல்ல",
@@ -196,11 +194,7 @@
         "song_one": "பாடல்",
         "song_other": "பாடல்கள்",
         "trackWithCount_one": "{{count}} தடம்",
-        "trackWithCount_other": "{{count}} தடங்கள்",
-        "radioStation_one": "வானொலி நிலையம்",
-        "radioStation_other": "வானொலி நிலையங்கள்",
-        "radioStationWithCount_one": "{{count}} வானொலி நிலையம்",
-        "radioStationWithCount_other": "{{count}} வானொலி நிலையங்கள்"
+        "trackWithCount_other": "{{count}} தடங்கள்"
     },
     "error": {
         "remotePortError": "தொலை சேவையக துறைமுகத்தை அமைக்க முயற்சிக்கும்போது பிழை ஏற்பட்டது",
@@ -358,13 +352,6 @@
         "largeFetchConfirmation": {
             "title": "பொருட்களை வரிசையில் சேர்க்கவும்",
             "description": "இந்தச் செயல் தற்போதைய வடிகட்டப்பட்ட காட்சியில் உள்ள அனைத்து உருப்படிகளையும் சேர்க்கும்"
-        },
-        "createRadioStation": {
-            "success": "வானொலி நிலையம் வெற்றிகரமாக உருவாக்கப்பட்டது",
-            "title": "வானொலி நிலையத்தை உருவாக்குங்கள்",
-            "input_homepageUrl": "முகப்பு முகவரி",
-            "input_name": "பெயர்",
-            "input_streamUrl": "ச்ட்ரீம் முகவரி"
         },
         "lyricsExport": {
             "export": "ஏற்றுமதி பாடல் வரிகள்",
@@ -559,8 +546,7 @@
             "tracks": "தடங்கள்",
             "myLibrary": "எனது நூலகம்",
             "collections": "சேகரிப்புகள்",
-            "favorites": "பிடித்தவை",
-            "radio": "வானொலி நிலையங்கள்"
+            "favorites": "பிடித்தவை"
         },
         "trackList": {
             "title": "$t(entity.track, {\"count\": 2})",
@@ -579,9 +565,6 @@
             "artistAlbums": "ஆல்பங்கள் {{artist}}",
             "genreAlbums": "\"{{genre}}\" $t(entity.album, {\"count\": 2})",
             "title": "$t(entity.album, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "வானொலி நிலையங்கள்"
         },
         "releasenotes": {
             "commitsSinceStable": "{{stable}} முதல் உறுதியளிக்கிறது",

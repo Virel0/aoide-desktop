@@ -1,14 +1,12 @@
 import isElectron from 'is-electron';
 import { useEffect } from 'react';
 
-import { useIsRadioActive } from '/@/renderer/features/radio/hooks/use-radio-player';
 import { usePlayerActions, useVolumeWheelStep } from '/@/renderer/store';
 
 const playerEvents = isElectron() ? window.api.playerEvents : null;
 const ipc = isElectron() ? window.api.ipc : null;
 
 export const useMainPlayerListener = () => {
-    const isRadioActive = useIsRadioActive();
     const volumeWheelStep = useVolumeWheelStep();
     const {
         decreaseVolume,
@@ -32,55 +30,39 @@ export const useMainPlayerListener = () => {
         }
 
         playerEvents.rendererPlayPause(() => {
-            if (!isRadioActive) {
-                mediaTogglePlayPause();
-            }
+            mediaTogglePlayPause();
         });
 
         playerEvents.rendererNext(() => {
-            if (!isRadioActive) {
-                mediaNext(false);
-            }
+            mediaNext(false);
         });
 
         playerEvents.rendererNextAlbum(() => {
-            if (!isRadioActive) {
-                mediaNext(true);
-            }
+            mediaNext(true);
         });
 
         playerEvents.rendererPrevious(() => {
-            if (!isRadioActive) {
-                mediaPrevious(false);
-            }
+            mediaPrevious(false);
         });
 
         playerEvents.rendererPreviousAlbum(() => {
-            if (!isRadioActive) {
-                mediaPrevious(true);
-            }
+            mediaPrevious(true);
         });
 
         playerEvents.rendererPlay(() => {
-            if (!isRadioActive) {
-                mediaPlay();
-            }
+            mediaPlay();
         });
 
         playerEvents.rendererPause(() => {
-            if (!isRadioActive) {
-                mediaPause();
-            }
+            mediaPause();
         });
 
         playerEvents.rendererStop(() => {
-            if (!isRadioActive) {
-                // `reset: false` here was mpv's: it had already stopped itself
-                // by the time this arrived, so the seek was redundant. The web
-                // player has not, and without the seek Stop leaves the element
-                // parked mid-track for the next Play to resume from.
-                mediaStop();
-            }
+            // `reset: false` here was mpv's: it had already stopped itself by
+            // the time this arrived, so the seek was redundant. The web player
+            // has not, and without the seek Stop leaves the element parked
+            // mid-track for the next Play to resume from.
+            mediaStop();
         });
 
         playerEvents.rendererSkipForward(() => {
@@ -129,7 +111,6 @@ export const useMainPlayerListener = () => {
     }, [
         decreaseVolume,
         increaseVolume,
-        isRadioActive,
         mediaNext,
         mediaPause,
         mediaPlay,

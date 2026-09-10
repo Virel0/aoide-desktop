@@ -1564,13 +1564,13 @@ export type ControllerEndpoint = {
         body: { legacy?: boolean; password: string; username: string },
     ) => Promise<AuthenticationResponse>;
     createFavorite: (args: FavoriteArgs) => Promise<FavoriteResponse>;
-    createInternetRadioStation: (
+    createInternetRadioStation?: (
         args: CreateInternetRadioStationArgs,
     ) => Promise<CreateInternetRadioStationResponse>;
     createPlaylist: (args: CreatePlaylistArgs) => Promise<CreatePlaylistResponse>;
     deleteArtistImage?: (args: DeleteArtistImageArgs) => Promise<DeleteArtistImageResponse>;
     deleteFavorite: (args: FavoriteArgs) => Promise<FavoriteResponse>;
-    deleteInternetRadioStation: (
+    deleteInternetRadioStation?: (
         args: DeleteInternetRadioStationArgs,
     ) => Promise<DeleteInternetRadioStationResponse>;
     deleteInternetRadioStationImage?: (
@@ -1596,7 +1596,7 @@ export type ControllerEndpoint = {
     getGenreList: (args: GenreListArgs) => Promise<GenreListResponse>;
     getImageRequest: (args: ImageArgs) => ImageRequest | null;
     getImageUrl: (args: ImageArgs) => null | string;
-    getInternetRadioStations: (
+    getInternetRadioStations?: (
         args: GetInternetRadioStationsArgs,
     ) => Promise<GetInternetRadioStationsResponse>;
     getLyrics?: (args: LyricsArgs) => Promise<LyricsResponse>;
@@ -1633,7 +1633,7 @@ export type ControllerEndpoint = {
     setRating?: (args: SetRatingArgs) => Promise<RatingResponse>;
     shareItem?: (args: ShareItemArgs) => Promise<ShareItemResponse>;
     startLibraryScan: (args: StartLibraryScanArgs) => Promise<StartLibraryScanResponse>;
-    updateInternetRadioStation: (
+    updateInternetRadioStation?: (
         args: UpdateInternetRadioStationArgs,
     ) => Promise<UpdateInternetRadioStationResponse>;
     updatePlaylist: (args: UpdatePlaylistArgs) => Promise<UpdatePlaylistResponse>;
@@ -1701,7 +1701,7 @@ export type InternalControllerEndpoint = {
         body: { legacy?: boolean; password: string; username: string },
     ) => Promise<AuthenticationResponse>;
     createFavorite: (args: ReplaceApiClientProps<FavoriteArgs>) => Promise<FavoriteResponse>;
-    createInternetRadioStation: (
+    createInternetRadioStation?: (
         args: ReplaceApiClientProps<CreateInternetRadioStationArgs>,
     ) => Promise<CreateInternetRadioStationResponse>;
     createPlaylist: (
@@ -1711,7 +1711,7 @@ export type InternalControllerEndpoint = {
         args: ReplaceApiClientProps<DeleteArtistImageArgs>,
     ) => Promise<DeleteArtistImageResponse>;
     deleteFavorite: (args: ReplaceApiClientProps<FavoriteArgs>) => Promise<FavoriteResponse>;
-    deleteInternetRadioStation: (
+    deleteInternetRadioStation?: (
         args: ReplaceApiClientProps<DeleteInternetRadioStationArgs>,
     ) => Promise<DeleteInternetRadioStationResponse>;
     deleteInternetRadioStationImage?: (
@@ -1752,7 +1752,7 @@ export type InternalControllerEndpoint = {
     getGenreList: (args: ReplaceApiClientProps<GenreListArgs>) => Promise<GenreListResponse>;
     getImageRequest: (args: ReplaceApiClientProps<ImageArgs>) => ImageRequest | null;
     getImageUrl: (args: ReplaceApiClientProps<ImageArgs>) => null | string;
-    getInternetRadioStations: (
+    getInternetRadioStations?: (
         args: ReplaceApiClientProps<GetInternetRadioStationsArgs>,
     ) => Promise<GetInternetRadioStationsResponse>;
     getLyrics?: (args: ReplaceApiClientProps<LyricsArgs>) => Promise<LyricsResponse>;
@@ -1817,7 +1817,7 @@ export type InternalControllerEndpoint = {
     startLibraryScan: (
         args: ReplaceApiClientProps<StartLibraryScanArgs>,
     ) => Promise<StartLibraryScanResponse>;
-    updateInternetRadioStation: (
+    updateInternetRadioStation?: (
         args: ReplaceApiClientProps<UpdateInternetRadioStationArgs>,
     ) => Promise<UpdateInternetRadioStationResponse>;
     updatePlaylist: (

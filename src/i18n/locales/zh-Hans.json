@@ -38,8 +38,6 @@
         "addOrRemoveFromSelection": "在所选内容中添加或移除",
         "selectRangeOfItems": "批量选择",
         "selectAll": "全选",
-        "createRadioStation": "创建 $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "删除 $t(entity.radioStation, {\"count\": 1})",
         "openApplicationDirectory": "打开应用程序目录",
         "goToCurrent": "转到当前项目",
         "collapseAllFolders": "折叠所有文件夹",
@@ -186,9 +184,7 @@
         "genreWithCount_other": "{{count}} 种流派",
         "trackWithCount_other": "{{count}} 首曲目",
         "play_other": "{{count}} 次播放",
-        "song_other": "歌曲",
-        "radioStation_other": "广播电台",
-        "radioStationWithCount_other": "{{count}} 个广播电台"
+        "song_other": "歌曲"
     },
     "player": {
         "repeat_all": "循环全部",
@@ -719,7 +715,6 @@
             "shared": "共享播放列表",
             "myLibrary": "我的媒体库",
             "favorites": "收藏",
-            "radio": "广播电台",
             "collections": "合集"
         },
         "fullscreenPlayer": {
@@ -901,9 +896,6 @@
         "folderList": {
             "title": "$t(entity.folder, {\"count\": 2})"
         },
-        "radioList": {
-            "title": "广播电台"
-        },
         "windowBar": {
             "paused": "(暂停) ",
             "privateMode": "(私人模式)"
@@ -1001,13 +993,6 @@
             "title": "将项目添加到队列",
             "description": "此操作将添加当前筛选视图中的所有项目"
         },
-        "createRadioStation": {
-            "input_homepageUrl": "首页地址",
-            "input_name": "名称",
-            "input_streamUrl": "串流地址",
-            "success": "电台创建成功",
-            "title": "创建电台"
-        },
         "lyricsExport": {
             "export": "导出歌词",
             "input_synced": "导出同步歌词",
@@ -1031,9 +1016,6 @@
             "input_kind": "随机播放",
             "input_limit_albums": "有多少专辑？",
             "input_limit_songs": "有多少歌曲？"
-        },
-        "editRadioStation": {
-            "success": "电台更新成功"
         }
     },
     "table": {

@@ -28,8 +28,6 @@
         "addOrRemoveFromSelection": "إضافة أو إزالة من الإختيارات",
         "selectRangeOfItems": "اختر مجموعة من العناصر",
         "goToCurrent": "الانتقال إلى العنصر الحالي",
-        "createRadioStation": "إنشاء $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "يمسح $t(entity.radioStation, {\"count\": 1})",
         "selectAll": "تحديد الكل",
         "shuffle": "لخبط",
         "shuffleAll": "لخبط الكل",
@@ -212,18 +210,6 @@
         "albumWithCount_few": "{{count}} البومات",
         "albumWithCount_many": "{{count}} البومات",
         "albumWithCount_other": "{{count}} البومات",
-        "radioStation_zero": "محطة راديو",
-        "radioStation_one": "محطة راديو",
-        "radioStation_two": "محطتان راديو",
-        "radioStation_few": "محطات راديو",
-        "radioStation_many": "محطات راديو",
-        "radioStation_other": "محطات راديو",
-        "radioStationWithCount_zero": "{{count}} محطة راديو",
-        "radioStationWithCount_one": "{{count}} محطة راديو",
-        "radioStationWithCount_two": "{{count}} محطتان راديو",
-        "radioStationWithCount_few": "{{count}} محطات راديو",
-        "radioStationWithCount_many": "{{count}} محطات راديو",
-        "radioStationWithCount_other": "{{count}} محطات راديو",
         "artist_zero": "فنان",
         "artist_one": "فنان",
         "artist_two": "فنانان",
@@ -432,16 +418,6 @@
         },
         "createPlaylist": {
             "input_public": "عام"
-        },
-        "createRadioStation": {
-            "input_homepageUrl": "رابط الرئيسية",
-            "input_name": "الأسم",
-            "input_streamUrl": "رابط البث",
-            "success": "تم إنشاء محطة راديو جديدة بنجاح",
-            "title": "إنشاء محطة راديو"
-        },
-        "editRadioStation": {
-            "success": "تم تحديث محطة الراديو بنجاح"
         },
         "deletePlaylist": {
             "input_confirm": "أكتب أسم $t(entity.playlist, {\"count\": 1}) للتأكيد",

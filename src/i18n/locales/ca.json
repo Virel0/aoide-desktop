@@ -15,7 +15,6 @@
             "nowPlaying": "S'està reproduint",
             "shared": "Llistes de reproducció compartides",
             "favorites": "Preferits",
-            "radio": "Emissores de ràdio",
             "collections": "Col·leccions"
         },
         "albumArtistDetail": {
@@ -234,9 +233,6 @@
         "folderList": {
             "title": "$t(entity.folder, {\"count\": 2})"
         },
-        "radioList": {
-            "title": "Emissores de ràdio"
-        },
         "windowBar": {
             "paused": "(en pausa) ",
             "privateMode": "(Mode privat)"
@@ -440,13 +436,7 @@
         "song_other": "Cançons",
         "favorite_one": "Preferit",
         "favorite_many": "Preferits",
-        "favorite_other": "Preferits",
-        "radioStation_one": "Emissora de ràdio",
-        "radioStation_many": "Emissores de ràdio",
-        "radioStation_other": "Emissores de ràdio",
-        "radioStationWithCount_one": "{{count}} emissora de ràdio",
-        "radioStationWithCount_many": "{{count}} emissores de ràdio",
-        "radioStationWithCount_other": "{{count}} emissores de ràdio"
+        "favorite_other": "Preferits"
     },
     "form": {
         "addToPlaylist": {
@@ -548,13 +538,6 @@
             "input_limit_albums": "Quants àlbums?",
             "input_limit_songs": "Quantes cançons?"
         },
-        "createRadioStation": {
-            "success": "Emissora de ràdio creada amb èxit",
-            "title": "Crea una emissora de ràdio",
-            "input_homepageUrl": "URL de la pàgina d'inici",
-            "input_name": "Nom",
-            "input_streamUrl": "URL de transmissió"
-        },
         "saveQueue": {
             "success": "Cua de reproducció desada al servidor"
         },
@@ -562,9 +545,6 @@
             "export": "Exporta la lletra",
             "input_synced": "Exporta la lletra sincronitzada",
             "input_offset": "$t(setting.lyricOffset)"
-        },
-        "editRadioStation": {
-            "success": "Emissora de ràdio actualitzada amb èxit"
         },
         "createPrefilledPlaylist": {
             "title": "Crea una $t(entity.playlist, {\"count\": 1}) a partir de les cançons seleccionades"
@@ -606,8 +586,6 @@
         "shuffleAll": "Mescla-ho tot",
         "shuffleSelected": "Mescla els seleccionats",
         "viewMore": "Mostra'n més",
-        "createRadioStation": "Crea $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Elimina $t(entity.radioStation, {\"count\": 1})",
         "addOrRemoveFromSelection": "Afegeix o elimina de la selecció",
         "selectRangeOfItems": "Selecciona un interval d'elements",
         "selectAll": "Selecciona-ho tot",

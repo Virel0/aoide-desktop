@@ -27,8 +27,6 @@
         "toggleSmartPlaylistEditor": "$t(entity.smartPlaylist) düzenleyiciye geç",
         "addOrRemoveFromSelection": "Seçime ekle veya seçimi kaldır",
         "selectRangeOfItems": "Bir dizi öğe seçin",
-        "createRadioStation": "$t(entity.radioStation, {\"count\": 1}) oluştur",
-        "deleteRadioStation": "$t(entity.radioStation, {\"count\": 1}) istasyonunu sil",
         "selectAll": "Tümünü seç",
         "downloadStarted": "{{count}} öğenin indirilmesine başlandı",
         "moveUp": "Yukarı kaydır",
@@ -204,11 +202,7 @@
         "song_one": "Şarkı",
         "song_other": "Şarkılar",
         "trackWithCount_one": "{{count}} parça",
-        "trackWithCount_other": "{{count}} parça",
-        "radioStation_one": "Radyo İstasyonu",
-        "radioStation_other": "Radyo İstasyonları",
-        "radioStationWithCount_one": "{{count}} radyo istasyonu",
-        "radioStationWithCount_other": "{{count}} radyo istasyonu"
+        "trackWithCount_other": "{{count}} parça"
     },
     "error": {
         "apiRouteError": "İstek yönlendirilemiyor",
@@ -543,9 +537,6 @@
             "version": "{{version}} sürümü",
             "privateModeOff": "Gizli modu kapat",
             "privateModeOn": "Gizli modu aç"
-        },
-        "radioList": {
-            "title": "Radyo istasyonları"
         },
         "releasenotes": {
             "commitsSinceStable": "{{stable}}’dan sonraki commit’ler",

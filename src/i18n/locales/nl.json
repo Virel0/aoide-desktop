@@ -33,8 +33,6 @@
         "viewMore": "Bekijk meer",
         "addOrRemoveFromSelection": "Toevoegen aan of verwijderen uit selectie",
         "selectRangeOfItems": "Selecteer een reeks van nummers",
-        "createRadioStation": "Maak $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Verwijder $t(entity.radioStation, {\"count\": 1})",
         "selectAll": "Selecteer alles",
         "moveUp": "Verplaats omhoog",
         "moveDown": "Verplaats omlaag",
@@ -415,16 +413,12 @@
             "settings": "Instellingen",
             "shared": "Gedeelde afspeellijsten",
             "tracks": "Tracks",
-            "radio": "Radiostations",
             "collections": "Verzamelingen"
         },
         "trackList": {
             "artistTracks": "Nummers van {{artist}}",
             "genreTracks": "\"{{genre}}\" $t(entity.track, {\"count\": 2})",
             "title": "$t(entity.track, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "Radiostations"
         },
         "folderList": {
             "title": "$t(entity.folder, {\"count\": 2})"
@@ -511,11 +505,7 @@
         "song_one": "Lied",
         "song_other": "Liedjes",
         "play_one": "{{count}} keer afgespeeld",
-        "play_other": "{{count}} keren afgespeeld",
-        "radioStation_one": "Radiostation",
-        "radioStation_other": "Radiostations",
-        "radioStationWithCount_one": "{{count}} radiostation",
-        "radioStationWithCount_other": "{{count}} radiostations"
+        "play_other": "{{count}} keren afgespeeld"
     },
     "table": {
         "column": {
@@ -1096,13 +1086,6 @@
             "input_limit_albums": "Hoeveel albums?",
             "input_limit_songs": "Hoeveel nummers?"
         },
-        "createRadioStation": {
-            "success": "Radiostation succesvol aangemaakt",
-            "title": "Radiostation aanmaken",
-            "input_homepageUrl": "Thuispagina-url",
-            "input_name": "Naam",
-            "input_streamUrl": "Stream-url"
-        },
         "lyricsExport": {
             "export": "Exporteer songtekst",
             "input_synced": "Exporteer gesynchroniseerde songtekst",
@@ -1110,9 +1093,6 @@
         },
         "saveQueue": {
             "success": "Wachtrij opgeslagen op server"
-        },
-        "editRadioStation": {
-            "success": "Radiozender succesvol bijgewerkt"
         },
         "createPrefilledPlaylist": {
             "title": "Maak $t(entity.playlist, {\"count\": 1}) uit geselecteerde nummers."

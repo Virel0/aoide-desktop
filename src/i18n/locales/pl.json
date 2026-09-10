@@ -35,8 +35,6 @@
         "moveDown": "Przenieś niżej",
         "holdToMoveToTop": "Przytrzymaj aby, przesunąć na górę",
         "holdToMoveToBottom": "Przytrzymaj aby, przesunąć na dół",
-        "createRadioStation": "Utwórz $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Usuń $t(entity.radioStation, {\"count\": 1})",
         "addOrRemoveFromSelection": "Dodaj lub usuń z wyboru",
         "selectRangeOfItems": "Wybierz zakres elementów",
         "selectAll": "Wybierz wszystkie",
@@ -235,13 +233,7 @@
         "play_many": "{{count}} odtworzeń",
         "song_one": "Piosenka",
         "song_few": "Piosenki",
-        "song_many": "­Piosenek",
-        "radioStation_one": "Stacja radiowa",
-        "radioStation_few": "Stacje radiowe",
-        "radioStation_many": "Stacji radiowych",
-        "radioStationWithCount_one": "{{count}} stacja radiowa",
-        "radioStationWithCount_few": "{{count}} stacje radiowych",
-        "radioStationWithCount_many": "{{count}} stacji radiowych"
+        "song_many": "­Piosenek"
     },
     "error": {
         "remotePortWarning": "Uruchom ponownie serwer aby używać nowego portu",
@@ -431,20 +423,10 @@
         "saveQueue": {
             "success": "Zapisano kolejkę odtwarzania na serwerze"
         },
-        "createRadioStation": {
-            "success": "Stacja radiowa utworzona pomyślnie",
-            "title": "Utwórz stację radiową",
-            "input_homepageUrl": "Url strony głównej",
-            "input_name": "Nazwa",
-            "input_streamUrl": "Url strumienia"
-        },
         "lyricsExport": {
             "export": "Eksportuj tekst",
             "input_synced": "Eksportuj zsynchronizowany tekst",
             "input_offset": "$t(setting.lyricOffset)"
-        },
-        "editRadioStation": {
-            "success": "Stacja radiowa zaktualizowana pomyślnie"
         },
         "createPrefilledPlaylist": {
             "title": "Utwórz $t(entity.playlist, {\"count\": 1}) z wybranych piosenek"
@@ -584,7 +566,6 @@
             "shared": "Udostępnione playlisty",
             "myLibrary": "Moja biblioteka",
             "favorites": "Ulubione",
-            "radio": "Stacje radiowe",
             "collections": "Kolekcje"
         },
         "home": {
@@ -697,9 +678,6 @@
         },
         "folderList": {
             "title": "$t(entity.folder, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "Stacje radiowe"
         },
         "windowBar": {
             "paused": "(Wstrzymane) ",

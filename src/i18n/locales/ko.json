@@ -27,8 +27,6 @@
         "toggleSmartPlaylistEditor": "$t(entity.smartPlaylist) 편집기 펼치기",
         "addOrRemoveFromSelection": "선택항목에서 추가 또는 제거",
         "selectRangeOfItems": "항목의 범위 선택",
-        "createRadioStation": "$t(entity.radioStation, {\"count\": 1}) 생성",
-        "deleteRadioStation": "$t(entity.radioStation, {\"count\": 1}) 삭제",
         "selectAll": "전부 선택",
         "downloadStarted": "{{count}}개 항목 다운로드 시작했습니다",
         "moveUp": "위로 옮기기",
@@ -186,9 +184,7 @@
         "play_other": "{{count}} 재생",
         "playlistWithCount_other": "{{count}} 재생목록",
         "smartPlaylist": "스마트 $t(entity.playlist, {\"count\": 1})",
-        "track_other": "트랙",
-        "radioStation_other": "라디오 방송국",
-        "radioStationWithCount_other": "{{count}}개 라디오 방송국"
+        "track_other": "트랙"
     },
     "error": {
         "systemFontError": "시스템 폰트를 가져오는데 실패하였습니다",
@@ -353,16 +349,6 @@
         "largeFetchConfirmation": {
             "title": "대기열에 항목을 추가하세요",
             "description": "이 작업은 현재 필터링된 보기의 모든 항목을 추가합니다"
-        },
-        "createRadioStation": {
-            "success": "라디오 방송국이 성공적으로 생성되었습니다",
-            "title": "라디오 방송국 만들기",
-            "input_homepageUrl": "홈페이지 URL",
-            "input_name": "명의",
-            "input_streamUrl": "스트림 URL"
-        },
-        "editRadioStation": {
-            "success": "라디오 방송국이 성공적으로 업데이트되었습니다"
         },
         "lyricsExport": {
             "export": "가사 내보내기",
@@ -564,7 +550,6 @@
             "folders": "폴더",
             "genres": "장르",
             "home": "홈",
-            "radio": "라디오 방송국",
             "playlists": "플레이리스트",
             "search": "검색",
             "settings": "설정",
@@ -574,9 +559,6 @@
             "artistTracks": "{{artist}}의 음악",
             "genreTracks": "\"{{genre}}\" $t(entity.track, {\"count\": 2})",
             "title": "$t(entity.track, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "라디오 방송국"
         },
         "releasenotes": {
             "commitsSinceStable": "{{stable}} 이후 커밋",

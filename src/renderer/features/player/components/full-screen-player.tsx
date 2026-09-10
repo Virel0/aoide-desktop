@@ -18,10 +18,6 @@ import { SONG_TABLE_COLUMNS } from '/@/renderer/components/item-list/item-table-
 import { FullScreenPlayerImage } from '/@/renderer/features/player/components/full-screen-player-image';
 import { FullScreenPlayerQueue } from '/@/renderer/features/player/components/full-screen-player-queue';
 import {
-    useIsRadioActive,
-    useRadioPlayer,
-} from '/@/renderer/features/radio/hooks/use-radio-player';
-import {
     ListConfigMenu,
     SONG_DISPLAY_TYPES,
 } from '/@/renderer/features/shared/components/list-config-menu';
@@ -663,11 +659,6 @@ export const FullScreenPlayer = () => {
     const { dynamicBackground, dynamicImageBlur, dynamicIsImage } = useFullScreenPlayerStore();
     const { setStore } = useFullScreenPlayerStoreActions();
     const { windowBarStyle } = useWindowSettings();
-    const isRadioActive = useIsRadioActive();
-    const { isPlaying: isRadioPlaying } = useRadioPlayer();
-
-    const isPlayingRadio = isRadioActive && isRadioPlaying;
-    const effectiveDynamicBackground = dynamicBackground && !isPlayingRadio;
 
     const location = useLocation();
     const isOpenedRef = useRef<boolean | null>(null);
@@ -682,13 +673,13 @@ export const FullScreenPlayer = () => {
 
     return (
         <PlayerContainer
-            dynamicBackground={effectiveDynamicBackground}
+            dynamicBackground={dynamicBackground}
             dynamicIsImage={dynamicIsImage}
             windowBarStyle={windowBarStyle}
         >
             <Controls />
             <BackgroundImageOverlay
-                dynamicBackground={effectiveDynamicBackground}
+                dynamicBackground={dynamicBackground}
                 dynamicImageBlur={dynamicImageBlur}
             />
             <div className={styles.responsiveContainer}>

@@ -20,7 +20,6 @@ const SIDEBAR_ITEMS: Array<[string, string]> = [
     [SidebarItem.NOW_PLAYING, 'page.sidebar.nowPlaying'],
     [SidebarItem.PLAYLISTS, 'page.sidebar.playlists'],
     [SidebarItem.COLLECTIONS, 'page.sidebar.collections'],
-    [SidebarItem.RADIO, 'page.sidebar.radio'],
     [SidebarItem.SEARCH, 'page.sidebar.search'],
     [SidebarItem.SETTINGS, 'page.sidebar.settings'],
     [SidebarItem.TRACKS, 'page.sidebar.tracks'],

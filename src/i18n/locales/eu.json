@@ -25,8 +25,6 @@
         "deletePlaylist": "Ezabatu $t(entity.playlist, {\"count\": 1})",
         "addToFavorites": "Gehitu gogokoetara",
         "addToPlaylist": "Gehitu $t(entity.playlist, {\"count\": 1})ra",
-        "createRadioStation": "Sortu $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Ezabatu $t(entity.radioStation, {\"count\": 1})",
         "viewMore": "Ikusi gehiago",
         "shuffle": "Nahastu",
         "selectAll": "Aukeratu guztiak",
@@ -326,11 +324,7 @@
         "song_one": "Abestia",
         "song_other": "Abestiak",
         "trackWithCount_one": "Pista {{count}}",
-        "trackWithCount_other": "{{count}} pista",
-        "radioStation_one": "Irrati-katea",
-        "radioStation_other": "Irrati-kateak",
-        "radioStationWithCount_one": "Irrati-kate {{count}}",
-        "radioStationWithCount_other": "{{count}} irrati-kate"
+        "trackWithCount_other": "{{count}} pista"
     },
     "error": {
         "apiRouteError": "Ezin izan da eskaera bideratu",
@@ -803,12 +797,6 @@
             "title": "Gehitu elementuak ilaran",
             "description": "Ekintza honek uneko iragazki-ikuspegian dauden elementu guztiak gehituko ditu"
         },
-        "createRadioStation": {
-            "input_homepageUrl": "Hasierako orriaren URLa",
-            "input_name": "Izena",
-            "title": "Irrati-katea sortu",
-            "success": "Irrati-katea behar bezala sortu da"
-        },
         "lyricsExport": {
             "export": "Esportatu letrak",
             "input_synced": "Esportatu sinkronizatutako letrak",
@@ -978,7 +966,6 @@
             "nowPlaying": "Orain erreproduzitzen",
             "shared": "Partekatutako Erreprodukzio-zerrendak",
             "favorites": "Gogokoak",
-            "radio": "Irrati-kateak",
             "collections": "Bildumak"
         },
         "trackList": {
@@ -1015,9 +1002,6 @@
         },
         "favorites": {
             "title": "$t(entity.favorite, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "Irrati-kateak"
         },
         "releasenotes": {
             "noStableReleaseToCompare": "Ez dago bertsio egonkorrik alderatzeko"

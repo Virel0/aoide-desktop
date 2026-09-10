@@ -13,10 +13,6 @@ import { useAoidePlaylistSurface } from '/@/renderer/aoide/features/settings/use
 import { AoideSidebarList } from '/@/renderer/aoide/features/sidebar/aoide-sidebar-list';
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
 import { ContextMenuController } from '/@/renderer/features/context-menu/context-menu-controller';
-import {
-    useIsRadioActive,
-    useRadioPlayer,
-} from '/@/renderer/features/radio/hooks/use-radio-player';
 import { ActionBar } from '/@/renderer/features/sidebar/components/action-bar';
 import { SidebarCollectionList } from '/@/renderer/features/sidebar/components/sidebar-collection-list';
 import { SidebarIcon } from '/@/renderer/features/sidebar/components/sidebar-icon';
@@ -44,9 +40,7 @@ import {
 } from '/@/renderer/store/settings.store';
 import { Accordion } from '/@/shared/components/accordion/accordion';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
-import { Center } from '/@/shared/components/center/center';
 import { Group } from '/@/shared/components/group/group';
-import { Icon } from '/@/shared/components/icon/icon';
 import { ImageUnloader } from '/@/shared/components/image/image';
 import { ScrollArea } from '/@/shared/components/scroll-area/scroll-area';
 import { Text } from '/@/shared/components/text/text';
@@ -88,7 +82,6 @@ export const Sidebar = () => {
             Home: t('page.sidebar.home'),
             'Now Playing': t('page.sidebar.nowPlaying'),
             Playlists: t('page.sidebar.playlists'),
-            Radio: t('page.sidebar.radio'),
             Search: t('page.sidebar.search'),
             Settings: t('page.sidebar.settings'),
             Tracks: t('page.sidebar.tracks'),
@@ -188,8 +181,6 @@ const SidebarImage = () => {
     const { t } = useTranslation();
     const { setSideBar } = useAppStoreActions();
     const currentSong = usePlayerSong();
-    const isRadioActive = useIsRadioActive();
-    const { currentStationArt, isPlaying: isRadioPlaying } = useRadioPlayer();
     const { blurExplicitImages } = useGeneralSettings();
 
     const imageUrl = useItemImageUrl({
@@ -199,15 +190,6 @@ const SidebarImage = () => {
         type: 'sidebar',
     });
 
-    const radioImageUrl = useItemImageUrl({
-        id: isRadioActive ? currentStationArt?.imageId || undefined : undefined,
-        imageUrl: isRadioActive ? currentStationArt?.imageUrl || undefined : undefined,
-        itemType: LibraryItem.RADIO_STATION,
-        serverId: isRadioActive ? currentStationArt?.serverId : undefined,
-        type: 'sidebar',
-    });
-
-    const isPlayingRadio = isRadioActive && isRadioPlaying;
     const isSongDefined = Boolean(currentSong?.id);
 
     const setFullScreenPlayerStore = useSetFullScreenPlayerStore();
@@ -220,7 +202,7 @@ const SidebarImage = () => {
         e.preventDefault();
         e.stopPropagation();
 
-        if (!currentSong || isPlayingRadio) {
+        if (!currentSong) {
             return;
         }
 
@@ -246,21 +228,7 @@ const SidebarImage = () => {
             transition={{ duration: 0.3, ease: 'easeInOut' }}
         >
             <Tooltip label={t('player.toggleFullscreenPlayer')}>
-                {isRadioActive && radioImageUrl ? (
-                    <img className={styles.sidebarImage} loading="eager" src={radioImageUrl} />
-                ) : isRadioActive ? (
-                    <Center
-                        className={styles.sidebarImage}
-                        style={{
-                            background: 'var(--theme-colors-surface)',
-                            borderRadius: 'var(--theme-card-default-radius)',
-                            height: '100%',
-                            width: '100%',
-                        }}
-                    >
-                        <Icon color="muted" icon="radio" size="40%" />
-                    </Center>
-                ) : imageUrl ? (
+                {imageUrl ? (
                     <img
                         className={clsx(styles.sidebarImage, {
                             [styles.censored]:

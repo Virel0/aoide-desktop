@@ -29,8 +29,6 @@
         "goToCurrent": "Ir para o elemento atual",
         "collapseAllFolders": "Colapsar todas as pastas",
         "expandAllFolders": "Expandir todas as pastas",
-        "createRadioStation": "Criar $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Apagar $t(entity.radioStation, {\"count\": 1})",
         "selectAll": "Selecionar tudo",
         "moveUp": "Mover para cima",
         "moveDown": "Mover para baixo",
@@ -344,10 +342,6 @@
             "success": "Servidor atualizado com sucesso",
             "title": "Atualizar servidor"
         },
-        "createRadioStation": {
-            "title": "Criar estação de rádio",
-            "input_name": "Nome"
-        },
         "lyricsExport": {
             "input_synced": "Exportar letras sincronizadas"
         },
@@ -525,9 +519,6 @@
             "artistTracks": "Faixas de {{artist}}",
             "genreTracks": "\"{{genre}}\" $t(entity.track, {\"count\": 2})",
             "title": "$t(entity.track, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "Estações de rádio"
         },
         "folderList": {
             "title": "$t(entity.folder, {\"count\": 2})"

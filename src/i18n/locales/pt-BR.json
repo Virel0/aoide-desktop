@@ -158,8 +158,6 @@
         "moveToNext": "Mover para o próximo",
         "addOrRemoveFromSelection": "Adicionar ou remover da seleção",
         "goToCurrent": "Ir para o item atual",
-        "createRadioStation": "Criar $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Deletar $t(entity.radioStation, {\"count\": 1})",
         "selectAll": "Selecionar tudo",
         "holdToMoveToTop": "Segure para ir ao topo",
         "moveItems": "Mover itens",
@@ -252,16 +250,6 @@
         "largeFetchConfirmation": {
             "title": "Adicionar items à lista de reprodução",
             "description": "Essa ação adicionará todos os itens do filtro atual"
-        },
-        "createRadioStation": {
-            "success": "Estação de rádio criada com sucesso",
-            "title": "Criar estação de rádio",
-            "input_homepageUrl": "URL da página principal",
-            "input_name": "Nome",
-            "input_streamUrl": "URL da stream"
-        },
-        "editRadioStation": {
-            "success": "Estação de rádio atualizada com sucesso"
         },
         "lyricsExport": {
             "export": "Exportar letra",
@@ -903,13 +891,7 @@
         "song_other": "Músicas",
         "play_one": "{{count}} reprodução",
         "play_many": "{{count}} reproduções",
-        "play_other": "{{count}} reproduções",
-        "radioStation_one": "Estação de rádio",
-        "radioStation_many": "Estações de rádio",
-        "radioStation_other": "Estações de rádio",
-        "radioStationWithCount_one": "{{count}} estação de rádio",
-        "radioStationWithCount_many": "{{count}} estações de rádio",
-        "radioStationWithCount_other": "{{count}} estações de rádio"
+        "play_other": "{{count}} reproduções"
     },
     "error": {
         "remotePortWarning": "Reinicie o servidor para aplicar a nova porta",

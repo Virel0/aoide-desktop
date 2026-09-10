@@ -90,8 +90,6 @@
         "moveDown": "Descendre",
         "holdToMoveToTop": "Maintenir pour déplacer en haut",
         "holdToMoveToBottom": "Maintenir pour déplacer en bas",
-        "createRadioStation": "Créer $t(entity.radioStation, {\"count\": 1})",
-        "deleteRadioStation": "Supprimer $t(entity.radioStation, {\"count\": 1})",
         "addOrRemoveFromSelection": "Ajouter ou supprimer de la sélection",
         "selectRangeOfItems": "Sélectionner une plage d'entrées",
         "selectAll": "Tout sélectionner",
@@ -336,7 +334,6 @@
             "shared": "Listes de lecture partagées",
             "myLibrary": "Bibliothèque",
             "favorites": "Favoris",
-            "radio": "Stations radio",
             "collections": "Collections"
         },
         "fullscreenPlayer": {
@@ -546,9 +543,6 @@
         },
         "folderList": {
             "title": "$t(entity.folder, {\"count\": 2})"
-        },
-        "radioList": {
-            "title": "Stations radio"
         },
         "releasenotes": {
             "commitsSinceStable": "Commits depuis {{stable}}",
@@ -1088,13 +1082,6 @@
             "input_limit_albums": "Combien d'albums ?",
             "input_limit_songs": "Combien de titres ?"
         },
-        "createRadioStation": {
-            "success": "Station radio créée avec succès",
-            "title": "Créer une station radio",
-            "input_homepageUrl": "Lien de la page d'accueil",
-            "input_name": "Nom",
-            "input_streamUrl": "Lien du flux en direct"
-        },
         "saveQueue": {
             "success": "File d'attente enregistrée sur le serveur"
         },
@@ -1102,9 +1089,6 @@
             "export": "Exporter les paroles",
             "input_synced": "Exporter les paroles synchronisées",
             "input_offset": "$t(setting.lyricOffset)"
-        },
-        "editRadioStation": {
-            "success": "Station de radio a été mise à jour avec succès"
         },
         "createPrefilledPlaylist": {
             "title": "Créer $t(entity.playlist, {\"count\": 1}) à partir des titres sélectionnées"
@@ -1162,13 +1146,7 @@
         "play_other": "{{count}} écoutes",
         "song_one": "Titre",
         "song_many": "Titres",
-        "song_other": "Titres",
-        "radioStation_one": "Station radio",
-        "radioStation_many": "Stations radio",
-        "radioStation_other": "Stations radio",
-        "radioStationWithCount_one": "{{count}} station radio",
-        "radioStationWithCount_many": "{{count}} stations radio",
-        "radioStationWithCount_other": "{{count}} stations radio"
+        "song_other": "Titres"
     },
     "table": {
         "config": {

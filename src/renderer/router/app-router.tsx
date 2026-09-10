@@ -94,8 +94,6 @@ const GenreDetailRoute = lazy(
 
 const FolderListRoute = lazy(() => import('/@/renderer/features/folders/routes/folder-list-route'));
 
-const RadioListRoute = lazy(() => import('/@/renderer/features/radio/routes/radio-list-route'));
-
 const FavoritesRoute = lazy(() => import('/@/renderer/features/favorites/routes/favorites-route'));
 
 const SettingsRoute = lazy(() => import('/@/renderer/features/settings/routes/settings-route'));
@@ -322,7 +320,6 @@ export const AppRouter = () => {
                                                 path={AppRoute.AOIDE_PLAYLISTS_DETAIL}
                                             />
                                         </Route>
-                                        <Route element={<RadioListRoute />} path={AppRoute.RADIO} />
                                         <Route
                                             element={<PlaylistDetailSongListRoute />}
                                             path={AppRoute.PLAYLISTS_DETAIL_SONGS}

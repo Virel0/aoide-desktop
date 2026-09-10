@@ -1029,7 +1029,6 @@ export enum SidebarItem {
     HOME = 'Home',
     NOW_PLAYING = 'Now Playing',
     PLAYLISTS = 'Playlists',
-    RADIO = 'Radio',
     SEARCH = 'Search',
     SETTINGS = 'Settings',
     TRACKS = 'Tracks',
@@ -1222,12 +1221,6 @@ export const sidebarItems: SidebarItemType[] = [
         id: 'Collections',
         label: i18n.t('page.sidebar.collections'),
         route: '',
-    },
-    {
-        disabled: false,
-        id: 'Radio',
-        label: i18n.t('page.sidebar.radio'),
-        route: AppRoute.RADIO,
     },
     {
         disabled: true,
@@ -2519,15 +2512,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     state.lists['sidequeue']?.table.columns.push(...columns);
                 }
 
-                if (version <= 15) {
-                    state.general.sidebarItems.push({
-                        disabled: false,
-                        id: 'Radio',
-                        label: i18n.t('page.sidebar.radio'),
-                        route: AppRoute.RADIO,
-                    });
-                }
-
                 // Version 16 introduced a bug where the release channel may have been reset
                 // to the latest channel. This is to revert it.
                 if (version === 16) {
@@ -2953,10 +2937,19 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     delete playback.type;
                 }
 
+                if (version < 36) {
+                    // Internet radio went, and `/radio` with it. Anyone who had
+                    // reordered their sidebar has the row stored by hand, and it
+                    // would sit there pointing at a route that no longer answers.
+                    state.general.sidebarItems = state.general.sidebarItems.filter(
+                        (item) => item.id !== 'Radio',
+                    );
+                }
+
                 return persistedState;
             },
             name: 'store_settings',
-            version: 35,
+            version: 36,
         },
     ),
 );

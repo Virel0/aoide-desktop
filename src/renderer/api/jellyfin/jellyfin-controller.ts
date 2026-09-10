@@ -6,7 +6,6 @@ import orderBy from 'lodash/orderBy';
 import { z } from 'zod';
 
 import { createAuthHeader, jfApiClient } from '/@/renderer/api/jellyfin/jellyfin-api';
-import { useRadioStore } from '/@/renderer/features/radio/store/radio-store';
 import { getServerUrl } from '/@/renderer/utils/normalize-server-url';
 import { jfNormalize } from '/@/shared/api/jellyfin/jellyfin-normalize';
 import { JFSongListSort, JFSortOrder, jfType } from '/@/shared/api/jellyfin/jellyfin-types';
@@ -282,26 +281,6 @@ export const JellyfinController: InternalControllerEndpoint = {
 
         return null;
     },
-    createInternetRadioStation: async (args) => {
-        const { apiClientProps, body } = args;
-
-        if (!apiClientProps.serverId) {
-            throw new Error('No serverId found');
-        }
-
-        const state = useRadioStore.getState();
-        if (!state?.actions?.createStation) {
-            throw new Error('Radio store not initialized');
-        }
-
-        state.actions.createStation(apiClientProps.serverId, {
-            homepageUrl: body.homepageUrl || null,
-            name: body.name,
-            streamUrl: body.streamUrl,
-        });
-
-        return null;
-    },
     createPlaylist: async (args) => {
         const { apiClientProps, body } = args;
 
@@ -347,22 +326,6 @@ export const JellyfinController: InternalControllerEndpoint = {
                 },
             });
         }
-
-        return null;
-    },
-    deleteInternetRadioStation: async (args) => {
-        const { apiClientProps, query } = args;
-
-        if (!apiClientProps.serverId) {
-            throw new Error('No serverId found');
-        }
-
-        const state = useRadioStore.getState();
-        if (!state?.actions?.deleteStation) {
-            throw new Error('Radio store not initialized');
-        }
-
-        state.actions.deleteStation(apiClientProps.serverId, query.id);
 
         return null;
     },
@@ -958,20 +921,6 @@ export const JellyfinController: InternalControllerEndpoint = {
     },
     getImageRequest: getJellyfinImageRequest,
     getImageUrl: (args) => getJellyfinImageRequest(args)?.url || null,
-    getInternetRadioStations: async (args) => {
-        const { apiClientProps } = args;
-
-        if (!apiClientProps.serverId) {
-            throw new Error('No serverId found');
-        }
-
-        const state = useRadioStore.getState();
-        if (!state?.actions?.getStations) {
-            throw new Error('Radio store not initialized');
-        }
-
-        return state.actions.getStations(apiClientProps.serverId);
-    },
     getLyrics: async (args) => {
         const { apiClientProps, query } = args;
 
@@ -1999,26 +1948,6 @@ export const JellyfinController: InternalControllerEndpoint = {
                 }),
             ),
         );
-
-        return null;
-    },
-    updateInternetRadioStation: async (args) => {
-        const { apiClientProps, body, query } = args;
-
-        if (!apiClientProps.serverId) {
-            throw new Error('No serverId found');
-        }
-
-        const state = useRadioStore.getState();
-        if (!state?.actions?.updateStation) {
-            throw new Error('Radio store not initialized');
-        }
-
-        state.actions.updateStation(apiClientProps.serverId, query.id, {
-            homepageUrl: body.homepageUrl || null,
-            name: body.name,
-            streamUrl: body.streamUrl,
-        });
 
         return null;
     },
