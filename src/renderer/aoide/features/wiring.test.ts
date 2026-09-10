@@ -1092,7 +1092,9 @@ describe('the exact join: a buffer deck takes the boundary, or the elements keep
         // Cancelled the moment playing resumes, or a pause and a play would
         // hand the record back for no reason.
         expect(hook).toContain('if (status === PlayerStatus.PLAYING) {');
-        expect(hook).toContain('usePlayerStoreBase.subscribe((state) => check(state.player.status))');
+        expect(hook).toContain(
+            'usePlayerStoreBase.subscribe((state) => check(state.player.status))',
+        );
     });
 
     it('decodes the next track close to the boundary, not a whole track ahead', () => {
@@ -1171,6 +1173,44 @@ describe('the exact join: a buffer deck takes the boundary, or the elements keep
         expect(hook).toContain('if (seek && sameTrack && position !== null)');
     });
 
+    // The reported failure: a track ends, the next one starts, and then the
+    // track that just finished starts again from the top. `takeOver` parks the
+    // current slot's element paused at zero, so a hand-back that presses play
+    // on it without having put it anywhere plays the track again — and a deck
+    // with nothing left in it has nowhere to put it.
+    it('never resumes an element the deck has no position for', () => {
+        expect(hook).toMatch(/resume &&\s+position !== null &&/);
+    });
+
+    // A join is committed to the audio clock up to two seconds before it is
+    // heard. For those two seconds the deck is still playing the outgoing
+    // track, and `positionSec`, `currentId` and `outgoing` have to say so — the
+    // progress bar and the hand-back both read them there.
+    it('the committed join becomes the playing track at the join, not at the commit', () => {
+        expect(hook).toContain('deckRef.current?.promote()');
+        expect(deck).toContain('private pending: DeckVoice | null = null');
+        expect(deck).toContain('this.pending = voice');
+        expect(deck).toContain('if (this.current) this.retired.push(this.current)');
+        // The timer that promotes can be a frame behind the clock that starts
+        // the sound, so the voice ending hands over on its own as well.
+        expect(deck).toMatch(
+            /} else if \(this\.current === voice\) \{\s+this\.current = this\.pending;/,
+        );
+    });
+
+    // The tick is a quarter-second grid over timers set against the audio
+    // clock. Racing them for the boundary clears them, and the queue is then
+    // stranded on a track that has finished.
+    it('the deck’s own tick stands down for a boundary something else owns', () => {
+        expect(hook).toContain('if (!context || !deck || !engagedRef.current) return;');
+        // Twice: the pass at the boundary in front of the deck already stood
+        // down for one, and now the tick over a track that has ended does too.
+        expect(
+            hook.match(/if \(planned\.current \|\| handingBack\.current\) return;/g),
+        ).toHaveLength(2);
+        expect(hook).toContain('if (playing) mediaAutoNext();');
+    });
+
     it('gives both slots their volume back, having muted one of them', () => {
         expect(hook).toContain('elementFor(incomingSlot)?.setVolume(0)');
         expect(hook).toContain('playerRef.current?.setVolume(volume)');
@@ -1204,7 +1244,7 @@ describe('the exact join: a buffer deck takes the boundary, or the elements keep
         expect(deck).toContain('gain.connect(sink)');
         expect(deck).toContain('node.connect(gain)');
         expect(deck).toContain('node.start(startAtContextTime, offsetSec)');
-        expect(deck).toContain('outgoing.node.stop(startAtContextTime)');
+        expect(deck).toContain('this.current.node.stop(startAtContextTime)');
         expect(hook).toContain('gainIndex: incomingSlot - 1');
     });
 });

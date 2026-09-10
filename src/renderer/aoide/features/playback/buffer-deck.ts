@@ -55,10 +55,23 @@ const MINIMUM_FADE_SECONDS = 0.02;
 
 export class BufferDeck {
     private readonly context: AudioContext;
+    /** The voice that is audible now, which is never the one about to be. */
     private current: DeckVoice | null = null;
     private decoded: null | { buffer: AudioBuffer; id: string } = null;
     private decoding: null | { controller: AbortController; id: string } = null;
     private readonly gains: GainNode[];
+    /**
+     * A voice committed to the audio clock whose `when` has not arrived.
+     *
+     * Held apart from `current` because a join is committed up to two seconds
+     * before it is heard, and for those two seconds every question about what
+     * is playing still has the outgoing track as its answer. A deck that
+     * answered with the incoming one would tell the progress bar the next
+     * track's position, and would tell a hand-back that the element beside it
+     * is holding some other song — which is how a hand-back inside that window
+     * came to leave the element parked at zero and play the track again.
+     */
+    private pending: DeckVoice | null = null;
     /** Voices that have been handed over from but have not yet ended. */
     private retired: DeckVoice[] = [];
     private volume = 1;
@@ -139,6 +152,22 @@ export class BufferDeck {
         }
     }
 
+    /**
+     * The committed voice becomes the audible one.
+     *
+     * Called at the join from `takeOver`, and again by `forget` when the
+     * outgoing voice reaches the `stop` the join gave it — whichever notices
+     * first, because a timer set against the audio clock can be a frame behind
+     * it and the deck must not spend that frame claiming nothing is playing.
+     */
+    promote() {
+        const voice = this.pending;
+        if (!voice) return;
+        this.pending = null;
+        if (this.current) this.retired.push(this.current);
+        this.current = voice;
+    }
+
     /** Whether the track is decoded and waiting. */
     ready(id: string): boolean {
         return this.decoded?.id === id;
@@ -169,10 +198,11 @@ export class BufferDeck {
             } catch {
                 // Already stopped; the sound is gone either way.
             }
-            if (this.current === voice) this.retired.push(voice);
+            if (this.current === voice || this.pending === voice) this.retired.push(voice);
         }
 
         this.current = null;
+        this.pending = null;
     }
 
     /**
@@ -208,17 +238,15 @@ export class BufferDeck {
         node.start(startAtContextTime, offsetSec);
 
         if (this.current) {
-            const outgoing = this.current;
             try {
-                outgoing.node.stop(startAtContextTime);
+                this.current.node.stop(startAtContextTime);
             } catch {
                 // Already stopped, which is the same outcome.
             }
-            this.retired.push(outgoing);
         }
 
         this.decoded = null;
-        this.current = voice;
+        this.pending = voice;
         return voice;
     }
 
@@ -254,6 +282,7 @@ export class BufferDeck {
             this.forget(voice);
         }
         this.current = null;
+        this.pending = null;
         this.retired = [];
     }
 
@@ -270,10 +299,17 @@ export class BufferDeck {
             // Already disconnected.
         }
         this.retired = this.retired.filter((retired) => retired !== voice);
-        if (this.current === voice) this.current = null;
+        if (this.pending === voice) {
+            this.pending = null;
+        } else if (this.current === voice) {
+            this.current = this.pending;
+            this.pending = null;
+        }
     }
 
     private voices(): DeckVoice[] {
-        return this.current ? [...this.retired, this.current] : [...this.retired];
+        return [...this.retired, this.current, this.pending].filter(
+            (voice): voice is DeckVoice => voice !== null,
+        );
     }
 }

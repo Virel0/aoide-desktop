@@ -163,6 +163,11 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
      *
      * The fade runs on the deck's own gain while the element is already parked
      * and paused, so a pause sounds like a pause rather than like a cut.
+     *
+     * A deck with nothing playing has no position to give back, and the element
+     * it would hand to is the one `takeOver` parked at zero. Resuming that is
+     * not a hand-back — it is the track starting again, over the top of the one
+     * the boundary was moving to.
      */
     const relinquish = useCallback(
         (options: { fadeSeconds?: number; resume?: boolean; seek?: boolean } = {}) => {
@@ -193,7 +198,11 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
             if (seek && sameTrack && position !== null) {
                 elementFor(num)?.ref?.seekTo(position, 'seconds');
             }
-            if (resume && usePlayerStoreBase.getState().player.status === PlayerStatus.PLAYING) {
+            if (
+                resume &&
+                position !== null &&
+                usePlayerStoreBase.getState().player.status === PlayerStatus.PLAYING
+            ) {
                 void mediaElementFor(num)
                     ?.play()
                     ?.catch(() => {});
@@ -220,6 +229,10 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
         const incomingSlot: 1 | 2 = outgoingSlot === 1 ? 2 : 1;
         mediaElementFor(outgoingSlot)?.pause();
 
+        // The committed voice is audible from this moment, and the deck has to
+        // agree with the queue about that before the queue moves — everything
+        // downstream asks the deck what is playing.
+        deckRef.current?.promote();
         mediaAutoNext();
 
         // The queue ran out, or a pause was armed for exactly this boundary.
@@ -229,6 +242,8 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
             latest.current.playerRef.current?.setVolume(latest.current.volume);
             deckRef.current?.release();
             ownsRef.current = false;
+            engagedRef.current = false;
+            setEngaged(false);
             return;
         }
 
@@ -427,12 +442,24 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
             const state = latest.current;
             const context = state.webAudio?.context;
             const deck = deckRef.current;
-            if (!context || !deck) return;
+            // A hand-back disengages synchronously and the interval is only
+            // torn down on the commit after it, so a tick can still be in
+            // flight over a deck that has already been given away.
+            if (!context || !deck || !engagedRef.current) return;
 
             const outgoing = deck.outgoing();
             const position = deck.positionSec(context.currentTime);
             if (!outgoing || position === null) {
-                relinquish({ resume: true, seek: false });
+                // The track ran out. A committed join or an armed hand-back
+                // owns this boundary and is holding timers against the audio
+                // clock; this tick is a quarter-second grid and must not race
+                // them for it — clearing their timers would strand the queue on
+                // a track that has finished.
+                if (planned.current || handingBack.current) return;
+                const playing =
+                    usePlayerStoreBase.getState().player.status === PlayerStatus.PLAYING;
+                relinquish({ seek: false });
+                if (playing) mediaAutoNext();
                 return;
             }
             setTimestamp(position);
@@ -450,7 +477,7 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
         tick();
         const interval = setInterval(tick, TICK_MS);
         return () => clearInterval(interval);
-    }, [advanceBoundary, engaged, mediaElementFor, relinquish, setTimestamp]);
+    }, [advanceBoundary, engaged, mediaAutoNext, mediaElementFor, relinquish, setTimestamp]);
 
     // A hundred megabytes of decoded audio is worth holding for a record that
     // is playing and worth nothing at all for one that is paused. After a
