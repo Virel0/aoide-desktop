@@ -5,7 +5,6 @@ import {
     gainDb,
     hasReplayGain,
     linearGain,
-    mpvGainOptions,
     normalisationGainDb,
     TARGET_LUFS,
 } from './loudness';
@@ -158,15 +157,5 @@ describe('linearGain', () => {
     it('halves the amplitude at about six decibels down', () => {
         expect(linearGain(-6)).toBeCloseTo(0.501, 3);
         expect(linearGain(-20)).toBeCloseTo(0.1, 6);
-    });
-});
-
-describe('mpvGainOptions', () => {
-    it('names an af volume filter in decibels', () => {
-        expect(mpvGainOptions(-8.3)).toEqual({ af: 'volume=-8.3dB' });
-    });
-
-    it('adds nothing to the chain when there is no gain', () => {
-        expect(mpvGainOptions(null)).toEqual({});
     });
 });

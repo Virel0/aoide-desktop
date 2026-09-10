@@ -59,7 +59,6 @@ import {
     ListPaginationType,
     Platform,
     Play,
-    PlayerType,
     TableColumn,
 } from '/@/shared/types/types';
 
@@ -729,13 +728,10 @@ const PlaybackSettingsSchema = z.object({
     equalizer: EqSettingsSchema,
     filters: z.array(PlayerFilterSchema),
     mediaSession: z.boolean(),
-    mpvAudioDeviceId: z.string().nullable().optional(),
-    mpvExtraParameters: z.array(z.string()),
     mpvProperties: MpvSettingsSchema,
     preservePitch: z.boolean(),
     scrobble: ScrobbleSettingsSchema,
     transcode: TranscodingConfigSchema,
-    type: z.nativeEnum(PlayerType),
     webAudio: z.boolean(),
 });
 
@@ -2095,8 +2091,6 @@ const initialState: SettingsState = {
         },
         filters: [],
         mediaSession: false,
-        mpvAudioDeviceId: undefined,
-        mpvExtraParameters: [],
         mpvProperties: {
             audioExclusiveMode: 'no',
             audioFormat: undefined,
@@ -2117,7 +2111,6 @@ const initialState: SettingsState = {
         transcode: {
             enabled: false,
         },
-        type: PlayerType.WEB,
         webAudio: true,
     },
     queryBuilder: {
@@ -2927,8 +2920,6 @@ export const useTableSettings = (type: ItemListKey) =>
     useSettingsStore((state) => state.lists[type as keyof typeof state.lists]);
 
 export const useGeneralSettings = () => useSettingsStore((state) => state.general, shallow);
-
-export const usePlaybackType = () => useSettingsStore((state) => state.playback.type, shallow);
 
 export const usePlayButtonBehavior = () =>
     useSettingsStore((state) => state.general.playButtonBehavior, shallow);

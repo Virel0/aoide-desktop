@@ -8,10 +8,9 @@
  * The sidecar serves the same numbers for streamed tracks, since neither the
  * desktop nor a phone playing a stream holds the file to measure.
  *
- * This module decides *what* to do with a pair of bounds. Both players consult
- * it and neither restates it: the web player seeks and advances early, mpv
- * takes per-file `start=` and `end=`, and the numbers they act on come from
- * here.
+ * This module decides *what* to do with a pair of bounds. The player consults
+ * it and does not restate it: it seeks to the start and advances early at the
+ * end, and both numbers come from here.
  */
 
 /** The sidecar's row for one track. Milliseconds from the start of the file. */
@@ -94,16 +93,3 @@ export const trimFor = (
  */
 export const shouldAdvance = (currentSec: number, endSec: null | number): boolean =>
     endSec !== null && Number.isFinite(currentSec) && currentSec >= endSec;
-
-/**
- * The plan as mpv's per-file options: `start=<s>` and `end=<s>`, values as
- * strings, because mpv's `loadfile` takes its option values as strings and
- * nothing else. Only the ends that trim are named; an absent option leaves
- * mpv's own default, which is the file's own edge.
- */
-export const mpvFileOptions = (plan: TrimPlan): Record<string, string> => {
-    const options: Record<string, string> = {};
-    if (plan.startSec > 0) options.start = String(plan.startSec);
-    if (plan.endSec !== null) options.end = String(plan.endSec);
-    return options;
-};

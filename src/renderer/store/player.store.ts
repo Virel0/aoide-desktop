@@ -67,7 +67,7 @@ interface Actions {
     mediaSkipForward: (offset?: number) => void;
     /**
      * @param options.reset - When true (default), sets seekToTimestamp(0) so the engine seeks to start.
-     * Timestamp display is always cleared to 0. Use false when the engine is already idle (e.g. mpv `stopped`) to skip that seek.
+     * Timestamp display is always cleared to 0. Use false only when the engine has already stopped itself, so it is not asked to seek a track it is no longer holding.
      */
     mediaStop: (options?: { reset?: boolean }) => void;
     mediaToggleMute: () => void;
@@ -1371,8 +1371,8 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                 },
                 mediaTogglePlayPause: () => {
                     // Restarting from STOPPED (e.g. end of queue) needs a full play
-                    // event so engines like mpv can reload the current track — play()
-                    // alone is a no-op when mpv's playlist-pos is -1.
+                    // event so the engine reloads the current track; a bare play()
+                    // is a no-op once the engine has let go of it.
                     const wasStopped = get().player.status === PlayerStatus.STOPPED;
 
                     set((state) => {

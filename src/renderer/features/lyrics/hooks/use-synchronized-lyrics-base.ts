@@ -8,16 +8,9 @@ import {
     resumeLyricsAutoscroll,
     shouldSkipLyricsScrollEvent,
 } from '/@/renderer/features/lyrics/hooks/lyrics-animation-engine';
-import {
-    useLyricsDisplaySettings,
-    useLyricsSettings,
-    usePlaybackType,
-    usePlayerActions,
-} from '/@/renderer/store';
+import { useLyricsDisplaySettings, useLyricsSettings, usePlayerActions } from '/@/renderer/store';
 import { SynchronizedLyrics } from '/@/shared/types/domain-types';
-import { PlayerType } from '/@/shared/types/types';
 
-const mpvPlayer = isElectron() ? window.api.mpvPlayer : null;
 const utils = isElectron() ? window.api.utils : null;
 const mpris = isElectron() && utils?.isLinux() ? window.api.mpris : null;
 
@@ -26,7 +19,6 @@ export const MANUAL_SCROLL_PAUSE_MS = 2000;
 const MANUAL_SCROLL_DRIFT_PX = 3;
 
 export const useSynchronizedLyricsBase = (settingsKey = 'default', offsetMs?: number) => {
-    const playbackType = usePlaybackType();
     const lyricsSettings = useLyricsSettings();
     const displaySettings = useLyricsDisplaySettings(settingsKey);
     const { mediaSeekToTimestamp } = usePlayerActions();
@@ -65,14 +57,10 @@ export const useSynchronizedLyricsBase = (settingsKey = 'default', offsetMs?: nu
 
     const handleSeek = useCallback(
         (time: number) => {
-            if (playbackType === PlayerType.LOCAL && mpvPlayer) {
-                mpvPlayer.seekTo(time);
-            } else {
-                mpris?.updateSeek(time);
-                mediaSeekToTimestamp(time);
-            }
+            mpris?.updateSeek(time);
+            mediaSeekToTimestamp(time);
         },
-        [mediaSeekToTimestamp, playbackType],
+        [mediaSeekToTimestamp],
     );
 
     const handleLineClick = useCallback(

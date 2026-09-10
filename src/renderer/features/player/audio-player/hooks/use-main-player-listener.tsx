@@ -1,13 +1,10 @@
-import { t } from 'i18next';
 import isElectron from 'is-electron';
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 
 import { useIsRadioActive } from '/@/renderer/features/radio/hooks/use-radio-player';
 import { usePlayerActions, useVolumeWheelStep } from '/@/renderer/store';
-import { toast } from '/@/shared/components/toast/toast';
 
-const mpvPlayer = isElectron() ? window.api.mpvPlayer : null;
-const mpvPlayerListener = isElectron() ? window.api.mpvPlayerListener : null;
+const playerEvents = isElectron() ? window.api.playerEvents : null;
 const ipc = isElectron() ? window.api.ipc : null;
 
 export const useMainPlayerListener = () => {
@@ -16,7 +13,6 @@ export const useMainPlayerListener = () => {
     const {
         decreaseVolume,
         increaseVolume,
-        mediaAutoNext,
         mediaNext,
         mediaPause,
         mediaPlay,
@@ -30,102 +26,89 @@ export const useMainPlayerListener = () => {
         toggleShuffle,
     } = usePlayerActions();
 
-    const handleMpvError = useCallback(
-        (message: string) => {
-            toast.error({
-                id: 'mpv-error',
-                message,
-                title: t('error.playbackError') as string,
-            });
-            mediaPause();
-            mpvPlayer!.pause();
-        },
-        [mediaPause],
-    );
-
     useEffect(() => {
-        if (!mpvPlayerListener) {
+        if (!playerEvents) {
             return;
         }
 
-        mpvPlayerListener.rendererPlayPause(() => {
+        playerEvents.rendererPlayPause(() => {
             if (!isRadioActive) {
                 mediaTogglePlayPause();
             }
         });
 
-        mpvPlayerListener.rendererNext(() => {
+        playerEvents.rendererNext(() => {
             if (!isRadioActive) {
                 mediaNext(false);
             }
         });
 
-        mpvPlayerListener.rendererNextAlbum(() => {
+        playerEvents.rendererNextAlbum(() => {
             if (!isRadioActive) {
                 mediaNext(true);
             }
         });
 
-        mpvPlayerListener.rendererPrevious(() => {
+        playerEvents.rendererPrevious(() => {
             if (!isRadioActive) {
                 mediaPrevious(false);
             }
         });
 
-        mpvPlayerListener.rendererPreviousAlbum(() => {
+        playerEvents.rendererPreviousAlbum(() => {
             if (!isRadioActive) {
                 mediaPrevious(true);
             }
         });
 
-        mpvPlayerListener.rendererPlay(() => {
+        playerEvents.rendererPlay(() => {
             if (!isRadioActive) {
                 mediaPlay();
             }
         });
 
-        mpvPlayerListener.rendererPause(() => {
+        playerEvents.rendererPause(() => {
             if (!isRadioActive) {
                 mediaPause();
             }
         });
 
-        mpvPlayerListener.rendererStop(() => {
+        playerEvents.rendererStop(() => {
             if (!isRadioActive) {
-                mediaStop({ reset: false });
+                // `reset: false` here was mpv's: it had already stopped itself
+                // by the time this arrived, so the seek was redundant. The web
+                // player has not, and without the seek Stop leaves the element
+                // parked mid-track for the next Play to resume from.
+                mediaStop();
             }
         });
 
-        mpvPlayerListener.rendererSkipForward(() => {
+        playerEvents.rendererSkipForward(() => {
             mediaSkipForward();
         });
 
-        mpvPlayerListener.rendererSkipBackward(() => {
+        playerEvents.rendererSkipBackward(() => {
             mediaSkipBackward();
         });
 
-        mpvPlayerListener.rendererToggleShuffle(() => {
+        playerEvents.rendererToggleShuffle(() => {
             toggleShuffle();
         });
 
-        mpvPlayerListener.rendererToggleRepeat(() => {
+        playerEvents.rendererToggleRepeat(() => {
             toggleRepeat();
         });
 
-        mpvPlayerListener.rendererVolumeMute(() => {
+        playerEvents.rendererVolumeMute(() => {
             mediaToggleMute();
         });
 
-        mpvPlayerListener.rendererVolumeUp(() => {
+        playerEvents.rendererVolumeUp(() => {
             increaseVolume(volumeWheelStep);
         });
 
-        mpvPlayerListener.rendererVolumeDown(() => {
+        playerEvents.rendererVolumeDown(() => {
             decreaseVolume(volumeWheelStep);
-        });
-
-        mpvPlayerListener.rendererError((message: string) => {
-            handleMpvError(message);
         });
 
         return () => {
@@ -142,14 +125,11 @@ export const useMainPlayerListener = () => {
             ipc?.removeAllListeners('renderer-player-volume-mute');
             ipc?.removeAllListeners('renderer-player-volume-up');
             ipc?.removeAllListeners('renderer-player-volume-down');
-            ipc?.removeAllListeners('renderer-player-error');
         };
     }, [
         decreaseVolume,
-        handleMpvError,
         increaseVolume,
         isRadioActive,
-        mediaAutoNext,
         mediaNext,
         mediaPause,
         mediaPlay,
@@ -171,10 +151,7 @@ const MainPlayerListenerHookInner = () => {
 };
 
 export const MainPlayerListenerHook = () => {
-    const isElectronEnv = isElectron();
-    const mpvPlayerListener = isElectronEnv ? window.api.mpvPlayerListener : null;
-
-    if (mpvPlayerListener === null) {
+    if (!isElectron()) {
         return null;
     }
 

@@ -5,7 +5,6 @@ import {
     app,
     BrowserWindow,
     BrowserWindowConstructorOptions,
-    desktopCapturer,
     globalShortcut,
     ipcMain,
     Menu,
@@ -27,10 +26,9 @@ import path, { join } from 'path';
 import semver from 'semver';
 
 import packageJson from '../../package.json';
-import { disableMediaKeys, enableMediaKeys } from './features/core/player/media-keys';
+import { disableMediaKeys, enableMediaKeys } from './features/core/media-keys';
 import { shutdownServer } from './features/core/remote';
 import { store } from './features/core/settings';
-import { canHandleVisualizerDisplayMedia } from './features/core/visualizer';
 import log, { autoUpdaterLogInterface } from './logger';
 import MenuBuilder, { MenuPlaybackState } from './menu';
 import './features';
@@ -39,7 +37,7 @@ import './features/aoide';
 import { hotkeyToElectronAccelerator } from './utils';
 
 import { disableAutoUpdates, isLinux, isMacOS, isWindows } from '/@/main/env';
-import { PlayerRepeat, PlayerStatus, PlayerType, TitleTheme } from '/@/shared/types/types';
+import { PlayerRepeat, PlayerStatus, TitleTheme } from '/@/shared/types/types';
 
 const ALPHA_UPDATER_CONFIG: {
     bucket: string;
@@ -847,34 +845,6 @@ async function createWindow(first = true): Promise<void> {
         return { action: 'deny' };
     });
 
-    mainWindow.webContents.session.setDisplayMediaRequestHandler((_request, callback) => {
-        if (!canHandleVisualizerDisplayMedia()) {
-            callback({});
-            return;
-        }
-
-        if (!isMacOS()) {
-            callback({ audio: 'loopback' });
-            return;
-        }
-
-        desktopCapturer
-            .getSources({ thumbnailSize: { height: 0, width: 0 }, types: ['screen'] })
-            .then((sources) => {
-                const source = sources[0];
-                if (!source) {
-                    callback({});
-                    return;
-                }
-
-                callback({ audio: 'loopback', video: source });
-            })
-            .catch((err) => {
-                log.warn('desktopCapturer.getSources failed', err);
-                callback({});
-            });
-    });
-
     if (!disableAutoUpdates() && store.get('disable_auto_updates') !== true) {
         new AppUpdater();
     }
@@ -898,14 +868,10 @@ async function createWindow(first = true): Promise<void> {
     }
 }
 
-// Only allow hardware media key handling if:
-// 1. The "Enable Media Session" setting is enabled
-// 2. The playback type is WEB (mpv not supported)
-// 3. The platform is not Linux (because we are using mpris instead)
+// Only allow hardware media key handling if the "Enable Media Session" setting
+// is on and the platform is not Linux, where mpris does this instead.
 const enableMediaSession = store.get('mediaSession', false) as boolean;
-const playbackType = store.get('playbackType', PlayerType.WEB) as PlayerType;
-const shouldDisableMediaFeatures =
-    isLinux() || !enableMediaSession || playbackType !== PlayerType.WEB;
+const shouldDisableMediaFeatures = isLinux() || !enableMediaSession;
 
 const chromiumDisabledFeatures: string[] = [];
 // Fractional scaling on Wayland: https://github.com/jeffvli/feishin/issues/1271#issuecomment-4063326712

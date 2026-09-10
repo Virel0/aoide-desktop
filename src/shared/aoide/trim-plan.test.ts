@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { MIN_TRIM_MS, mpvFileOptions, shouldAdvance, trimFor } from './trim-plan';
+import { MIN_TRIM_MS, shouldAdvance, trimFor } from './trim-plan';
 
 describe('trimFor', () => {
     // The spec's own example: 2 s of silence, 3 s of tone, 2.5 s of silence.
@@ -83,19 +83,5 @@ describe('shouldAdvance', () => {
 
     it('never advances on a time that is not one', () => {
         expect(shouldAdvance(Number.NaN, 5.2)).toBe(false);
-    });
-});
-
-describe('mpvFileOptions', () => {
-    it('names both ends as strings, the way loadfile takes them', () => {
-        expect(mpvFileOptions({ endSec: 312.2, startSec: 1.94 })).toEqual({
-            end: '312.2',
-            start: '1.94',
-        });
-    });
-
-    it('leaves out an end that does not trim', () => {
-        expect(mpvFileOptions({ endSec: null, startSec: 1.94 })).toEqual({ start: '1.94' });
-        expect(mpvFileOptions({ endSec: 312.2, startSec: 0 })).toEqual({ end: '312.2' });
     });
 });

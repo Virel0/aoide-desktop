@@ -312,7 +312,6 @@
         "credentialsRequired": "يتطلب بيانات اعتماد",
         "genericError": "حدث خطأ",
         "loginRateError": "تجاوزت الحد لمحاولات الدخول. حاول مجدداً بعد بضع ثوان",
-        "mpvRequired": "يتطلب MPV",
         "multipleServerSaveQueueError": "قائمة التشغيل تحتوي على أغنية أو أكثر من خادم مختلف. هذا غير مدعوم",
         "networkError": "حصل خطأ في الشبكة",
         "noNetwork": "الخادم غير متوفر",

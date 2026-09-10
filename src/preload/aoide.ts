@@ -25,7 +25,6 @@ import type { FinishCounts } from '/@/shared/aoide/finish-rate';
 import type { SmartRules } from '/@/shared/aoide/smart-rules';
 import type { SyncOp } from '/@/shared/aoide/sync-types';
 import type { TasteProfileWire } from '/@/shared/aoide/taste-ranking';
-import type { TrimPlan } from '/@/shared/aoide/trim-plan';
 
 import { ipcRenderer } from 'electron';
 
@@ -77,20 +76,6 @@ export const aoide = {
 
         setNotInterested: (track: TrackInput, value: boolean): Promise<TrackFlagRow | undefined> =>
             ipcRenderer.invoke('aoide:flags-set-not-interested', track, value),
-    },
-
-    /**
-     * Loudness normalisation for the mpv backend, told the same way and for
-     * the same reason as the trims below: mpv takes the gain as a per-file
-     * option on `loadfile`, so it has to know before the load.
-     */
-    gain: {
-        /** Every known gain is dropped; the next load is unmodified. */
-        forget: (): void => ipcRenderer.send('aoide:gain-forget'),
-
-        /** Gains in dB by Jellyfin id. `null` forgets one — "nothing to correct". */
-        remember: (gains: Record<string, null | number>): void =>
-            ipcRenderer.send('aoide:gain-remember', gains),
     },
 
     /** Listening history: recorded and aggregated in the main process where the events live. */
@@ -324,20 +309,6 @@ export const aoide = {
 
         setCursor: (cursor: number): Promise<void> =>
             ipcRenderer.invoke('aoide:sync-set-cursor', cursor),
-    },
-
-    /**
-     * Silence trimming for the mpv backend, which loads files in the main
-     * process and so has to be told each track's plan before the load. Fire
-     * and forget: a plan that arrives late is a plan for next time.
-     */
-    trim: {
-        /** Every known plan is dropped; the next load is untrimmed. */
-        forget: (): void => ipcRenderer.send('aoide:trim-forget'),
-
-        /** Plans by Jellyfin id. `null` forgets one — "measured, nothing to trim". */
-        remember: (plans: Record<string, null | TrimPlan>): void =>
-            ipcRenderer.send('aoide:trim-remember', plans),
     },
 };
 

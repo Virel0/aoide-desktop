@@ -9,10 +9,9 @@ import { ipc } from './ipc';
 import { localSettings } from './local-settings';
 import { lyrics } from './lyrics';
 import { mpris } from './mpris';
-import { mpvPlayer, mpvPlayerListener } from './mpv-player';
+import { playerEvents } from './player-events';
 import { remote } from './remote';
 import { utils } from './utils';
-import { visualizer } from './visualizer';
 
 // Custom APIs for renderer
 const api = {
@@ -26,11 +25,9 @@ const api = {
     localSettings,
     lyrics,
     mpris,
-    mpvPlayer,
-    mpvPlayerListener,
+    playerEvents,
     remote,
     utils,
-    visualizer,
 };
 
 export type PreloadApi = typeof api;

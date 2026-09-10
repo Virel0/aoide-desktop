@@ -1021,17 +1021,9 @@ describe('taste flags: the phone’s "Not Interested" and "Don’t Count Plays"'
     });
 });
 
-describe('silence trimming: both players consult the trim plan, the setting gates it', () => {
+describe('silence trimming: the player consults the trim plan, the setting gates it', () => {
     const webPlayer = readFileSync(
         join(import.meta.dirname, '../../features/player/audio-player/web-player.tsx'),
-        'utf8',
-    );
-    const mpvMain = readFileSync(
-        join(import.meta.dirname, '../../../main/features/core/player/index.ts'),
-        'utf8',
-    );
-    const mpvTrim = readFileSync(
-        join(import.meta.dirname, '../../../main/features/aoide/mpv-trim.ts'),
         'utf8',
     );
     const store = sourceOf('playback/sound-bounds-store.ts');
@@ -1046,11 +1038,6 @@ describe('silence trimming: both players consult the trim plan, the setting gate
         'utf8',
     );
     const app = readFileSync(join(import.meta.dirname, '../../app.tsx'), 'utf8');
-    const preload = readFileSync(join(import.meta.dirname, '../../../preload/aoide.ts'), 'utf8');
-    const main = readFileSync(
-        join(import.meta.dirname, '../../../main/features/aoide/index.ts'),
-        'utf8',
-    );
 
     // The web player: a hook over its two slots, fed from the same progress
     // samples it scrobbles and crossfades from.
@@ -1080,42 +1067,16 @@ describe('silence trimming: both players consult the trim plan, the setting gate
         expect(players).toContain("ref.seekTo(action.toSec, 'seconds')");
     });
 
-    // mpv: every load in Feishin's player goes through the trim-aware load,
-    // and none goes around it.
-    it('every mpv load goes through loadWithAoideOptions', () => {
-        expect(mpvMain).toContain(
-            "import { loadWithAoideOptions } from '/@/main/features/aoide/mpv-trim'",
-        );
-        expect(mpvMain.match(/loadWithAoideOptions\(getMpvInstance\(\), /g)).toHaveLength(4);
-        expect(mpvMain).not.toMatch(/getMpvInstance\(\)\?\.load\(/);
-    });
-
-    // DOCS/man/input.rst: from 0.38.0 the third argument is an index and
-    // options need -1 there. node-mpv's own load() gets this wrong.
-    it('mpv gets start= and end= as per-file loadfile options, never as global properties', () => {
-        expect(mpvTrim).toContain("mpv.command('loadfile', loadfileArgs(");
-        expect(mpvTrim).toContain('mpvFileOptions(plan)');
-        expect(mpvTrim).not.toMatch(/setProperty\(\s*['"](start|end)['"]/);
-    });
-
-    it('main learns the plans from the renderer, and forgets them on request', () => {
-        expect(preload).toContain("ipcRenderer.send('aoide:trim-remember', plans)");
-        expect(preload).toContain("ipcRenderer.send('aoide:trim-forget')");
-        expect(mpvTrim).toContain("ipcMain.on('aoide:trim-remember'");
-        expect(mpvTrim).toContain("ipcMain.on('aoide:trim-forget'");
-        expect(main).toContain('registerTrimHandlers();');
-    });
-
-    it('the effect that tells main is mounted, only in a build with a main', () => {
+    // The prefetch runs ahead of the two slots the hook trims, so a bound is
+    // usually already in the store by the time its track reaches one.
+    it('the prefetch effect is mounted, only in a build with a sidecar', () => {
         expect(app).toContain('<AoideTrimEffect />');
         expect(effect).toContain('isAoideAvailable() ? <Trimmer /> : null');
-        expect(effect).toContain('window.api.aoide.trim.remember(update)');
-        expect(effect).toContain('window.api.aoide.trim.forget()');
-        expect(effect).toContain('trimFor(bounds, duration)');
+        expect(effect).toContain("soundBoundsStore.ensure(key.split(','), client)");
     });
 
-    // The setting gates every consumer at once: the hook answers undefined
-    // when it is off, and the effect tells main to forget.
+    // The setting gates every consumer at once: the hook answers undefined when
+    // it is off, and the prefetch stops asking.
     it('the setting exists, defaults on, and is in the general tab', () => {
         expect(settings).toContain('aoideTrimSilence: AoideTrimSilenceSchema');
         expect(settings).toContain('aoideTrimSilence: DEFAULT_AOIDE_TRIM_SILENCE');
@@ -1125,10 +1086,9 @@ describe('silence trimming: both players consult the trim plan, the setting gate
         );
     });
 
-    it('the setting gates the bounds every player reads', () => {
+    it('the setting gates the bounds the player reads', () => {
         expect(store).toContain('const enabled = useAoideTrimSilenceEnabled();');
         expect(store).toContain('const wanted = enabled ? trackId : undefined;');
-        expect(effect).toContain('if (!enabled) {');
         expect(effect).toContain('if (!enabled || !client || key.length === 0) return;');
     });
 
@@ -1141,36 +1101,9 @@ describe('silence trimming: both players consult the trim plan, the setting gate
     });
 });
 
-describe('the Flatpak can find the mpv it ships', () => {
-    // A Flatpak sandbox cannot see the host's mpv, so packaging/flatpak builds
-    // one into /app/bin. If this candidate ever goes, the MPV backend inside the
-    // Flatpak stops working with nothing on screen to say why — which is exactly
-    // how the macOS path broke once before.
-    const player = readFileSync(
-        join(import.meta.dirname, '../../../main/features/core/player/index.ts'),
-        'utf8',
-    );
-
-    it('lists /app/bin/mpv among the binary candidates', () => {
-        expect(player).toContain("'/app/bin/mpv'");
-    });
-
-    it('still consults PATH first, so a user own build wins', () => {
-        expect(player).toContain('...fromPath, ...MPV_BINARY_CANDIDATES');
-    });
-});
-
-describe('loudness normalisation: both backends consult the gain module, the setting gates it', () => {
+describe('loudness normalisation: the player consults the gain module, the setting gates it', () => {
     const webPlayer = readFileSync(
         join(import.meta.dirname, '../../features/player/audio-player/web-player.tsx'),
-        'utf8',
-    );
-    const mpvGain = readFileSync(
-        join(import.meta.dirname, '../../../main/features/aoide/mpv-gain.ts'),
-        'utf8',
-    );
-    const mpvTrim = readFileSync(
-        join(import.meta.dirname, '../../../main/features/aoide/mpv-trim.ts'),
         'utf8',
     );
     const store = sourceOf('playback/audio-analysis-store.ts');
@@ -1185,11 +1118,6 @@ describe('loudness normalisation: both backends consult the gain module, the set
         'utf8',
     );
     const app = readFileSync(join(import.meta.dirname, '../../app.tsx'), 'utf8');
-    const preload = readFileSync(join(import.meta.dirname, '../../../preload/aoide.ts'), 'utf8');
-    const main = readFileSync(
-        join(import.meta.dirname, '../../../main/features/aoide/index.ts'),
-        'utf8',
-    );
 
     // The web player: a second factor into the gain node ReplayGain already
     // uses, so the two multiply. Multiplied rather than assigned — assigning
@@ -1216,30 +1144,11 @@ describe('loudness normalisation: both backends consult the gain module, the set
         expect(hook).not.toMatch(/10\s*\*\*/);
     });
 
-    // mpv: a per-file option on the same loadfile that carries the trim, so a
-    // file can be trimmed and levelled at once.
-    it('mpv gets the gain as a per-file af filter, beside the trim, never as a global', () => {
-        expect(mpvGain).toContain('mpvGainOptions(db)');
-        expect(mpvTrim).toContain('{ ...trimOptionsForUrl(url), ...gainOptionsForUrl(url) }');
-        expect(mpvTrim).toContain('const options = aoideFileOptions(url);');
-        // `volume` as a property is the person's own volume slider.
-        expect(mpvGain).not.toMatch(/setProperty\(\s*['"](volume|af)['"]/);
-    });
-
-    it('main learns the gains from the renderer, and forgets them on request', () => {
-        expect(preload).toContain("ipcRenderer.send('aoide:gain-remember', gains)");
-        expect(preload).toContain("ipcRenderer.send('aoide:gain-forget')");
-        expect(mpvGain).toContain("ipcMain.on('aoide:gain-remember'");
-        expect(mpvGain).toContain("ipcMain.on('aoide:gain-forget'");
-        expect(main).toContain('registerGainHandlers();');
-    });
-
-    it('the effect that tells main is mounted, only in a build with a main', () => {
+    // The twin of the trim prefetch, and mounted the same way.
+    it('the prefetch effect is mounted, only in a build with a sidecar', () => {
         expect(app).toContain('<AoideLoudnessEffect />');
         expect(effect).toContain('isAoideAvailable() ? <Leveller /> : null');
-        expect(effect).toContain('window.api.aoide.gain.remember(update)');
-        expect(effect).toContain('window.api.aoide.gain.forget()');
-        expect(effect).toContain('normalisationGainDb({');
+        expect(effect).toContain("audioAnalysisStore.ensure(key.split(','), client)");
     });
 
     it('the setting defaults to on', () => {
@@ -1260,14 +1169,13 @@ describe('loudness normalisation: both backends consult the gain module, the set
     });
 
     // The setting gates every consumer at once: the store answers undefined
-    // when it is off, the hook passes it to the decision, and the effect tells
-    // main to forget.
-    it('the setting gates the gain every player reads', () => {
+    // when it is off, the hook passes it to the decision, and the prefetch
+    // stops asking.
+    it('the setting gates the gain the player reads', () => {
         expect(store).toContain('const enabled = useAoideLoudnessNormalisationEnabled();');
         expect(store).toContain('const wanted = enabled ? trackId : undefined;');
         expect(hook).toContain('const enabled = useAoideLoudnessNormalisationEnabled();');
         expect(hook).toContain('enabled,');
-        expect(effect).toContain('if (!enabled) {');
         expect(effect).toContain('if (!enabled || !client || key.length === 0) return;');
     });
 

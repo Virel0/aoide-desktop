@@ -7,89 +7,48 @@ import {
     SettingOption,
     SettingsSection,
 } from '/@/renderer/features/settings/components/settings-section';
-import { useCurrentServer, usePlaybackType, usePlayerStatus } from '/@/renderer/store';
-import { usePlaybackSettings, useSettingsStoreActions } from '/@/renderer/store/settings.store';
-import { logger } from '/@/renderer/utils/logger';
-import { hasFeature } from '/@/shared/api/utils';
+import {
+    SettingsState,
+    usePlaybackSettings,
+    useSettingsStoreActions,
+} from '/@/renderer/store/settings.store';
+import { NumberInput } from '/@/shared/components/number-input/number-input';
 import { Select } from '/@/shared/components/select/select';
 import { Switch } from '/@/shared/components/switch/switch';
+import { Text } from '/@/shared/components/text/text';
 import { toast } from '/@/shared/components/toast/toast';
-import { ServerFeature } from '/@/shared/types/features-types';
-import { PlayerStatus, PlayerType } from '/@/shared/types/types';
-
-const ipc = isElectron() ? window.api.ipc : null;
-const mpvPlayer = isElectron() ? window.api.mpvPlayer : null;
 
 const getAudioDevices = async () => {
     const devices = await navigator.mediaDevices.enumerateDevices();
     return (devices || []).filter((dev: MediaDeviceInfo) => dev.kind === 'audiooutput');
 };
 
-const getMpvAudioDevices = async () => {
-    if (!mpvPlayer) {
-        return [];
-    }
-
-    try {
-        return await mpvPlayer.getAudioDevices();
-    } catch (error) {
-        logger.error('Failed to get MPV audio devices:', error);
-        return [];
-    }
-};
-
 export type AudioDeviceOption = { label: string; value: string };
 
-export const getDefaultAudioDevice = (
-    devices: AudioDeviceOption[],
-    playbackType: PlayerType,
-): null | string => {
-    const defaultId = playbackType === PlayerType.LOCAL ? 'auto' : 'default';
-    return devices.find((d) => d.value === defaultId)?.value ?? devices[0]?.value ?? null;
-};
+export const getDefaultAudioDevice = (devices: AudioDeviceOption[]): null | string =>
+    devices.find((d) => d.value === 'default')?.value ?? devices[0]?.value ?? null;
 
-export const useAudioDevices = (playbackType: PlayerType) => {
+export const useAudioDevices = () => {
     const [audioDevices, setAudioDevices] = useState<AudioDeviceOption[]>([]);
 
     useEffect(() => {
-        const fetchAudioDevices = async () => {
-            if (!isElectron()) {
-                return;
-            }
+        if (!isElectron()) {
+            return;
+        }
 
-            if (playbackType === PlayerType.WEB) {
-                getAudioDevices()
-                    .then((dev) => {
-                        const uniqueDevices = dev.filter(
-                            (d, index, self) =>
-                                index === self.findIndex((t) => t.deviceId === d.deviceId),
-                        );
-                        setAudioDevices(
-                            uniqueDevices.map((d) => ({ label: d.label, value: d.deviceId })),
-                        );
-                    })
-                    .catch(() =>
-                        toast.error({
-                            message: t('error.audioDeviceFetchError'),
-                        }),
-                    );
-            } else if (playbackType === PlayerType.LOCAL && mpvPlayer) {
-                try {
-                    const devices = await getMpvAudioDevices();
-                    const uniqueDevices = devices.filter(
-                        (d, index, self) => index === self.findIndex((t) => t.value === d.value),
-                    );
-                    setAudioDevices(uniqueDevices);
-                } catch {
-                    toast.error({
-                        message: t('error.audioDeviceFetchError'),
-                    });
-                }
-            }
-        };
-
-        fetchAudioDevices();
-    }, [playbackType]);
+        getAudioDevices()
+            .then((dev) => {
+                const uniqueDevices = dev.filter(
+                    (d, index, self) => index === self.findIndex((t) => t.deviceId === d.deviceId),
+                );
+                setAudioDevices(uniqueDevices.map((d) => ({ label: d.label, value: d.deviceId })));
+            })
+            .catch(() =>
+                toast.error({
+                    message: t('error.audioDeviceFetchError'),
+                }),
+            );
+    }, []);
 
     return audioDevices;
 };
@@ -98,69 +57,65 @@ export const AudioSettings = memo(() => {
     const { t } = useTranslation();
     const settings = usePlaybackSettings();
     const { setSettings } = useSettingsStoreActions();
-    const status = usePlayerStatus();
-    const playbackType = usePlaybackType();
 
-    // Cleaned up server feature logic via requested hooks/utilities
-    const currentServer = useCurrentServer();
-    const isJukeboxSupported = hasFeature(currentServer, ServerFeature.JUKEBOX);
+    const audioDevices = useAudioDevices();
 
-    const audioDevices = useAudioDevices(playbackType);
-    const audioDeviceId =
-        playbackType === PlayerType.LOCAL ? settings.mpvAudioDeviceId : settings.audioDeviceId;
+    // Both of the groups below act on the Web Audio graph and do nothing
+    // without it, which is the gate the MPV panel used to apply to them from
+    // one level up.
+    const hasAudioGraph = settings.webAudio && 'AudioContext' in window;
 
-    // Dynamically build the options for the dropdown
-    const selectData = [
-        {
-            disabled: !isElectron(),
-            label: 'MPV',
-            value: PlayerType.LOCAL,
-        },
-        { label: 'Web', value: PlayerType.WEB },
-    ];
-
-    if (isJukeboxSupported) {
-        selectData.push({ label: 'Jukebox', value: PlayerType.JUKEBOX });
-    }
+    // Both groups below used to live in the MPV panel, which rendered them for
+    // web-player users too. They are the web player's outright now: the sample
+    // rate is the one the AudioContext is built with, and ReplayGain is a
+    // factor into each slot's gain node.
+    const setAudioProperty = (
+        setting: keyof SettingsState['playback']['mpvProperties'],
+        value: unknown,
+    ) => {
+        setSettings({
+            playback: {
+                mpvProperties: {
+                    [setting]: value,
+                },
+            },
+        });
+    };
 
     const audioOptions: SettingOption[] = [
-        {
-            control: (
-                <Select
-                    data={selectData}
-                    defaultValue={settings.type}
-                    disabled={status === PlayerStatus.PLAYING}
-                    onChange={(e) => {
-                        setSettings({ playback: { type: e as PlayerType } });
-                        ipc?.send('settings-set', { property: 'playbackType', value: e });
-                    }}
-                />
-            ),
-            description: t('setting.audioPlayer', { context: 'description' }),
-            isHidden: !isElectron() && !isJukeboxSupported,
-            note: status === PlayerStatus.PLAYING ? t('common.playerMustBePaused') : undefined,
-            title: t('setting.audioPlayer'),
-        },
         {
             control: (
                 <Select
                     clearable
                     data={audioDevices}
                     disabled={!isElectron()}
-                    onChange={(e) =>
-                        setSettings({
-                            playback:
-                                playbackType === PlayerType.LOCAL
-                                    ? { mpvAudioDeviceId: e }
-                                    : { audioDeviceId: e },
-                        })
-                    }
-                    value={audioDeviceId ?? getDefaultAudioDevice(audioDevices, playbackType)}
+                    onChange={(e) => setSettings({ playback: { audioDeviceId: e } })}
+                    value={settings.audioDeviceId ?? getDefaultAudioDevice(audioDevices)}
                 />
             ),
             description: t('setting.audioDevice', { context: 'description' }),
             isHidden: !isElectron(),
             title: t('setting.audioDevice'),
+        },
+        {
+            control: (
+                <NumberInput
+                    defaultValue={settings.mpvProperties.audioSampleRateHz || undefined}
+                    max={192000}
+                    min={0}
+                    onBlur={(e) => {
+                        setAudioProperty('audioSampleRateHz', Number(e.currentTarget.value));
+                    }}
+                    placeholder="48000"
+                    rightSection={<Text size="xs">Hz</Text>}
+                    width={100}
+                />
+            ),
+            description: t('setting.sampleRate', { context: 'description' }),
+            isHidden: !hasAudioGraph,
+            // The AudioContext is built once, at startup, with this rate.
+            note: t('common.restartRequired'),
+            title: t('setting.sampleRate'),
         },
         {
             control: (
@@ -174,7 +129,6 @@ export const AudioSettings = memo(() => {
                 />
             ),
             description: t('setting.webAudio', { context: 'description' }),
-            isHidden: settings.type !== PlayerType.WEB,
             note: t('common.restartRequired'),
             title: t('setting.webAudio'),
         },
@@ -190,7 +144,6 @@ export const AudioSettings = memo(() => {
                 />
             ),
             description: t('setting.preservePitch', { context: 'description' }),
-            isHidden: settings.type !== PlayerType.WEB,
             title: t('setting.preservePitch'),
         },
         {
@@ -209,5 +162,85 @@ export const AudioSettings = memo(() => {
         },
     ];
 
-    return <SettingsSection options={audioOptions} title={t('page.setting.audio')} />;
+    // Read as each slot's source is wired up, so a change here lands on the
+    // next track rather than needing a restart.
+    const replayGainOptions: SettingOption[] = [
+        {
+            control: (
+                <Select
+                    data={[
+                        {
+                            label: t('setting.replayGainMode', { context: 'optionNone' }),
+                            value: 'no',
+                        },
+                        {
+                            label: t('setting.replayGainMode', { context: 'optionTrack' }),
+                            value: 'track',
+                        },
+                        {
+                            label: t('setting.replayGainMode', { context: 'optionAlbum' }),
+                            value: 'album',
+                        },
+                    ]}
+                    defaultValue={settings.mpvProperties.replayGainMode}
+                    onChange={(e) => setAudioProperty('replayGainMode', e)}
+                />
+            ),
+            description: t('setting.replayGainMode', {
+                context: 'description',
+
+                ReplayGain: 'ReplayGain',
+            }),
+            title: t('setting.replayGainMode', { ReplayGain: 'ReplayGain' }),
+        },
+        {
+            control: (
+                <NumberInput
+                    defaultValue={settings.mpvProperties.replayGainPreampDB}
+                    onChange={(e) => setAudioProperty('replayGainPreampDB', Number(e) || 0)}
+                    width={75}
+                />
+            ),
+            description: t('setting.replayGainMode', {
+                context: 'description',
+
+                ReplayGain: 'ReplayGain',
+            }),
+            title: t('setting.replayGainPreamp', { ReplayGain: 'ReplayGain' }),
+        },
+        {
+            control: (
+                <Switch
+                    defaultChecked={settings.mpvProperties.replayGainClip}
+                    onChange={(e) => setAudioProperty('replayGainClip', e.currentTarget.checked)}
+                />
+            ),
+            description: t('setting.replayGainClipping', {
+                context: 'description',
+
+                ReplayGain: 'ReplayGain',
+            }),
+            title: t('setting.replayGainClipping', { ReplayGain: 'ReplayGain' }),
+        },
+        {
+            control: (
+                <NumberInput
+                    defaultValue={settings.mpvProperties.replayGainFallbackDB}
+                    onBlur={(e) =>
+                        setAudioProperty('replayGainFallbackDB', Number(e.currentTarget.value))
+                    }
+                    width={75}
+                />
+            ),
+            description: t('setting.replayGainFallback', { ReplayGain: 'ReplayGain' }),
+            title: t('setting.replayGainFallback', { ReplayGain: 'ReplayGain' }),
+        },
+    ];
+
+    return (
+        <>
+            <SettingsSection options={audioOptions} title={t('page.setting.audio')} />
+            {hasAudioGraph && <SettingsSection options={replayGainOptions} />}
+        </>
+    );
 });

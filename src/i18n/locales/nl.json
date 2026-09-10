@@ -459,7 +459,6 @@
         "localFontAccessDenied": "Toegang geweigerd tot lokale fonts",
         "serverNotSelectedError": "Geen server geselecteerd",
         "remoteDisableError": "Er is iets fout gegaan tijdens het $t(common.disable) van de remote server",
-        "mpvRequired": "MPV vereist",
         "audioDeviceFetchError": "Er is iets mis gegaan met het ophalen van de audioapparaten",
         "invalidServer": "Ongeldige server",
         "loginRateError": "Te veel login pogingen, probeer het opnieuw in een paar seconde",
@@ -662,9 +661,6 @@
         "fontType_optionCustom": "Aangepaste lettertype",
         "fontType_optionSystem": "Systeemlettertype",
         "fontType": "Lettertype-type",
-        "gaplessAudio_description": "Stelt de gapless audio-instelling voor mpv in",
-        "gaplessAudio_optionWeak": "Zwak (aanbevolen)",
-        "gaplessAudio": "Gapless audio",
         "globalMediaHotkeys_description": "Het gebruik van systeem mediahotkeys voor controle van afspelen aan-/uitzetten",
         "globalMediaHotkeys": "Globale mediasneltoetsen",
         "autoDJ": "Auto-DJ",
@@ -694,10 +690,6 @@
         "artistReleaseTypeConfiguration_description": "Configureer welke uitgavesoorten worden getoond op de albumartiestpagina en in welke volgorde",
         "audioDevice_description": "Kies het audioapparaat dat wordt gebruikt om af te spelen",
         "audioDevice": "Audioapparaat",
-        "audioExclusiveMode_description": "Schakel exclusieve uitvoermodus in. In deze modus wordt het systeem normaliter uitgesloten en zal enkel mpv audio kunnen uitvoeren",
-        "audioExclusiveMode": "Audio-exclusieve modus",
-        "audioPlayer_description": "Kies de audiospeler om te gebruiken bij het afspelen",
-        "audioPlayer": "Audiospeler",
         "buttonSize_description": "De grootte van de knoppen in de afspeelbalk",
         "buttonSize": "Knopgrootte afspeelbalk",
         "clearCache_description": "Een 'harde schoning' van Feishin. Naast het legen van Feishin's cache wordt de browser-cache (opgeslagen afbeeldingen en andere gegevens) geleegd. Inloggegevens en instellingen blijven bewaard",
@@ -775,7 +767,6 @@
         "minimumScrobblePercentage": "Minimale duur voor scrobblen (percentage)",
         "minimumScrobbleSeconds_description": "De minimale duur in seconden dat van een nummer gespeeld moet zijn om deze te scrobblen",
         "minimumScrobbleSeconds": "Minimale duur voor scrobblen (seconden)",
-        "mpvExecutablePath_description": "Bepaal het pad naar het uitvoerbare bestand van mpv. indien leeg wordt het standaard pad gebruikt",
         "showRatings": "Toon beoordelingssterren",
         "showVisualizerInSidebar_description": "Een paneel met de visualiseerder wordt aan de zijbalk toegevoegd",
         "showVisualizerInSidebar": "Toon visualiseerder in zijbalk",
@@ -833,10 +824,6 @@
         "hotkey_listPlayDefault": "Speel in lijst",
         "hotkey_listPlayLast": "Speel laatste in lijst",
         "hotkey_listPlayNext": "Speel volgende in lijst",
-        "mpvExecutablePath": "Pad uitvoerbaar bestand mpv",
-        "mpvExtraParameters": "Aanvullende parameters mpv",
-        "mpvExtraParameters_description": "Aanvullende parameters die aan mpv worden meegegeven",
-        "mpvExtraParameters_help": "Één per regel",
         "musicbrainz_description": "Toon links naar MusicBrainz op artiest- en albumpagina's, als een MusicBrainz-ID aanwezig is",
         "musicbrainz": "Toon MusicBrainz-links",
         "neteaseTranslation_description": "Haalt songteksten van NetEase op en toont deze, indien beschikbaar",
@@ -1392,13 +1379,6 @@
                 "d": "D",
                 "z": "Z"
             }
-        },
-        "systemAudioConsentAllow": "Toestaan",
-        "systemAudioConsentBody": "De visualiseerder heeft toegang tot het audiosysteem nodig om te werken",
-        "systemAudioConsentDecline": "Weigeren",
-        "systemAudioConsentTitle": "Toegang tot audiosysteem toestaan?",
-        "systemAudioCaptureFailed": "Kon opname niet starten: {{message}}",
-        "systemAudioNoAudioTrack": "Geen geluidsspoor ontvangen. Verifieer dat audio-opname is ingeschakeld als daar om wordt gevraagd.",
-        "systemAudioExclusiveModeNotSupported": "De visualiseerder is niet beschikbaar als audio-exclusieve modus is ingeschakeld. Schakel audio-exclusieve modus in de MPV-instellingen uit en probeer het opnieuw."
+        }
     }
 }

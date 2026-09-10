@@ -193,7 +193,6 @@
     "error": {
         "systemFontError": "시스템 폰트를 가져오는데 실패하였습니다",
         "loginRateError": "너무 많은 로그인 시도하였습니다 잠시 후 다시 시도해 주세요",
-        "mpvRequired": "MPV 필요",
         "openError": "파일을 열 수 없습니다",
         "remoteDisableError": "원격 서버를 $t(common.disable) 하는데 실패하였습니다",
         "playbackError": "미디어를 재생하는 도중에 에러가 발생하였습니다",
@@ -681,10 +680,6 @@
         "artistConfiguration_description": "앨범아티스트 페이지에 표시할 정보 및 순서 설정",
         "audioDevice_description": "음악재생에 사용할 장치 선택(웹플레이어만 가능)",
         "audioDevice": "오디오 장치",
-        "audioExclusiveMode_description": "독점 출력 모드를 활성화합니다. 이 모드에서는 일반적으로 시스템의 오디오 출력이 차단되며, 오직 mpv만이 오디오를 출력할 수 있습니다. 이 모드가 활성화된 동안에는 비주얼라이저의 시스템 오디오 캡처 기능이 작동하지 않습니다",
-        "audioExclusiveMode": "오디오 단독재생모드",
-        "audioPlayer_description": "재생을 위한 오디오 플레이어 선택",
-        "audioPlayer": "오디오 플레이어",
         "buttonSize_description": "플레이어 바 버튼 크기",
         "buttonSize": "플레이어 바 버튼 크기",
         "clearCache_description": "페이신 하드클리어. 페이신의 캐시 및 브라우저의 캐시 삭제(저장된 이미지 및 기타 정보). 서버 접속정보 및 설정은 유지됩니다"

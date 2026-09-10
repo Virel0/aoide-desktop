@@ -6,7 +6,7 @@ import { useWebAudio } from '/@/renderer/features/player/hooks/use-webaudio';
 import { getVisualizerAudioNodes } from '/@/renderer/features/player/utils/get-visualizer-audio-nodes';
 import { openVisualizerSettingsModal } from '/@/renderer/features/player/utils/open-visualizer-settings-modal';
 import { ComponentErrorBoundary } from '/@/renderer/features/shared/components/component-error-boundary';
-import { useAccent, usePlaybackType, useSettingsStore } from '/@/renderer/store';
+import { useAccent, useSettingsStore } from '/@/renderer/store';
 import {
     useFullScreenPlayerStore,
     useFullScreenPlayerStoreActions,
@@ -14,14 +14,13 @@ import {
 import { usePlayerStatus } from '/@/renderer/store/player.store';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Group } from '/@/shared/components/group/group';
-import { PlayerStatus, PlayerType } from '/@/shared/types/types';
+import { PlayerStatus } from '/@/shared/types/types';
 
 const VisualizerInner = () => {
     const { webAudio } = useWebAudio();
     const canvasRef = createRef<HTMLDivElement>();
     const accent = useAccent();
     const visualizer = useSettingsStore((store) => store.visualizer);
-    const playbackType = usePlaybackType();
     const opacity = useSettingsStore((store) => store.visualizer.audiomotionanalyzer.opacity);
     const [motion, setMotion] = useState<any>();
     const [libraryLoaded, setLibraryLoaded] = useState(false);
@@ -222,10 +221,7 @@ const VisualizerInner = () => {
 
     useEffect(() => {
         const { context } = webAudio || {};
-        const inputNodes = getVisualizerAudioNodes(webAudio, playbackType);
-        const shouldRunForWebPlayback = playbackType === PlayerType.WEB && isPlaying;
-        const shouldRunForMpvLoopback =
-            playbackType === PlayerType.LOCAL && isPlaying && inputNodes.length > 0;
+        const inputNodes = getVisualizerAudioNodes(webAudio);
 
         let audioMotion: any | undefined;
         if (
@@ -234,7 +230,7 @@ const VisualizerInner = () => {
             canvasRef.current &&
             !motion &&
             libraryLoaded &&
-            (shouldRunForWebPlayback || shouldRunForMpvLoopback)
+            isPlaying
         ) {
             const AudioMotionAnalyzer = AudioMotionAnalyzerRef.current;
             if (!AudioMotionAnalyzer) return;
@@ -285,7 +281,6 @@ const VisualizerInner = () => {
         accent,
         canvasRef,
         registerCustomGradients,
-        playbackType,
         webAudio,
         visualizer,
         options,

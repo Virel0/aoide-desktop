@@ -1,4 +1,3 @@
-import isElectron from 'is-electron';
 import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -11,7 +10,6 @@ import {
     ListConfigTable,
 } from '/@/renderer/features/shared/components/list-config-menu';
 import {
-    usePlaybackType,
     usePlayerActions,
     usePlayerProperties,
     usePlayerSongProperties,
@@ -38,9 +36,7 @@ import { Select } from '/@/shared/components/select/select';
 import { Slider } from '/@/shared/components/slider/slider';
 import { Stack } from '/@/shared/components/stack/stack';
 import { Text } from '/@/shared/components/text/text';
-import { CrossfadeStyle, PlayerStatus, PlayerStyle, PlayerType } from '/@/shared/types/types';
-
-const ipc = isElectron() ? window.api.ipc : null;
+import { CrossfadeStyle, PlayerStatus, PlayerStyle } from '/@/shared/types/types';
 
 export const PlayerConfig = () => {
     const { t } = useTranslation();
@@ -65,11 +61,6 @@ export const PlayerConfig = () => {
 
     const audioOptions = useMemo(
         () => [
-            {
-                component: <AudioPlayerTypeConfig />,
-                id: 'audioPlayerType',
-                label: t('setting.audioPlayer'),
-            },
             {
                 component: <AudioDeviceConfig />,
                 id: 'audioDevice',
@@ -240,51 +231,12 @@ export const PlayerConfig = () => {
     );
 };
 
-const AudioPlayerTypeConfig = () => {
-    const status = usePlayerStatus();
-    const playbackSettings = usePlaybackSettings();
-    const { setSettings } = useSettingsStoreActions();
-
-    return (
-        <Select
-            comboboxProps={{ withinPortal: false }}
-            data={[
-                {
-                    disabled: !isElectron(),
-                    label: 'MPV',
-                    value: PlayerType.LOCAL,
-                },
-                { label: 'Web', value: PlayerType.WEB },
-                { label: 'Jukebox', value: PlayerType.JUKEBOX },
-            ]}
-            defaultValue={playbackSettings.type}
-            disabled={status === PlayerStatus.PLAYING}
-            onChange={(e) => {
-                setSettings({
-                    playback: { ...playbackSettings, type: e as PlayerType },
-                });
-                ipc?.send('settings-set', {
-                    property: 'playbackType',
-                    value: e,
-                });
-            }}
-            variant="filled"
-            width="100%"
-        />
-    );
-};
-
 const AudioDeviceConfig = () => {
     const status = usePlayerStatus();
-    const playbackType = usePlaybackType();
     const playbackSettings = usePlaybackSettings();
     const { setSettings } = useSettingsStoreActions();
 
-    const audioDevices = useAudioDevices(playbackType);
-    const audioDeviceId =
-        playbackType === PlayerType.LOCAL
-            ? playbackSettings.mpvAudioDeviceId
-            : playbackSettings.audioDeviceId;
+    const audioDevices = useAudioDevices();
 
     return (
         <Select
@@ -293,15 +245,10 @@ const AudioDeviceConfig = () => {
             disabled={status === PlayerStatus.PLAYING}
             onChange={(e) => {
                 setSettings({
-                    playback: {
-                        ...playbackSettings,
-                        ...(playbackType === PlayerType.LOCAL
-                            ? { mpvAudioDeviceId: e }
-                            : { audioDeviceId: e }),
-                    },
+                    playback: { ...playbackSettings, audioDeviceId: e },
                 });
             }}
-            value={audioDeviceId ?? getDefaultAudioDevice(audioDevices, playbackType)}
+            value={playbackSettings.audioDeviceId ?? getDefaultAudioDevice(audioDevices)}
             variant="filled"
             width="100%"
         />
@@ -311,7 +258,6 @@ const AudioDeviceConfig = () => {
 const TransitionTypeConfig = () => {
     const { t } = useTranslation();
     const status = usePlayerStatus();
-    const playbackSettings = usePlaybackSettings();
     const { transitionType } = usePlayerProperties();
     const { setTransitionType } = usePlayerActions();
 
@@ -331,7 +277,7 @@ const TransitionTypeConfig = () => {
                     value: PlayerStyle.CROSSFADE,
                 },
             ]}
-            disabled={playbackSettings.type !== PlayerType.WEB || status === PlayerStatus.PLAYING}
+            disabled={status === PlayerStatus.PLAYING}
             onChange={(value) => setTransitionType(value as PlayerStyle)}
             size="sm"
             value={transitionType}
@@ -342,7 +288,6 @@ const TransitionTypeConfig = () => {
 
 const CrossfadeStyleConfig = () => {
     const status = usePlayerStatus();
-    const playbackSettings = usePlaybackSettings();
     const { crossfadeStyle, transitionType } = usePlayerProperties();
     const { setCrossfadeStyle } = usePlayerActions();
 
@@ -356,11 +301,7 @@ const CrossfadeStyleConfig = () => {
                 { label: 'Exponential', value: CrossfadeStyle.EXPONENTIAL },
             ]}
             defaultValue={crossfadeStyle}
-            disabled={
-                playbackSettings.type !== PlayerType.WEB ||
-                transitionType !== PlayerStyle.CROSSFADE ||
-                status === PlayerStatus.PLAYING
-            }
+            disabled={transitionType !== PlayerStyle.CROSSFADE || status === PlayerStatus.PLAYING}
             onChange={(e) => {
                 if (e) {
                     setCrossfadeStyle(e as CrossfadeStyle);
@@ -374,18 +315,13 @@ const CrossfadeStyleConfig = () => {
 
 const CrossfadeDurationConfig = () => {
     const status = usePlayerStatus();
-    const playbackSettings = usePlaybackSettings();
     const { crossfadeDuration, transitionType } = usePlayerProperties();
     const { setCrossfadeDuration } = usePlayerActions();
 
     return (
         <Slider
             defaultValue={crossfadeDuration}
-            disabled={
-                playbackSettings.type !== PlayerType.WEB ||
-                transitionType !== PlayerStyle.CROSSFADE ||
-                status === PlayerStatus.PLAYING
-            }
+            disabled={transitionType !== PlayerStyle.CROSSFADE || status === PlayerStatus.PLAYING}
             marks={[
                 { label: '3', value: 3 },
                 { label: '6', value: 6 },

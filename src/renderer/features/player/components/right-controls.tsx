@@ -27,7 +27,6 @@ import {
     useFullScreenPlayerStore,
     useHotkeySettings,
     usePlaybackSettings,
-    usePlaybackType,
     usePlayerData,
     usePlayerMuted,
     usePlayerSong,
@@ -59,7 +58,6 @@ import { useMediaQuery } from '/@/shared/hooks/use-media-query';
 import { useThrottledCallback } from '/@/shared/hooks/use-throttled-callback';
 import { useThrottledValue } from '/@/shared/hooks/use-throttled-value';
 import { LibraryItem, QueueSong, ServerType } from '/@/shared/types/domain-types';
-import { PlayerType } from '/@/shared/types/types';
 
 const calculateVolumeUp = (volume: number, volumeWheelStep: number) => {
     let volumeToSet: number;
@@ -599,26 +597,17 @@ const VolumeButton = () => {
     const { decreaseVolume, increaseVolume, mediaToggleMute, setVolume } = usePlayer();
     const isMinWidth = useMediaQuery('(max-width: 480px)');
 
-    const playbackType = usePlaybackType();
     const playbackSettings = usePlaybackSettings();
     const { setSettings } = useSettingsStoreActions();
-    const audioDevices = useAudioDevices(playbackType);
+    const audioDevices = useAudioDevices();
 
-    const currentAudioDeviceId =
-        playbackType === PlayerType.LOCAL
-            ? playbackSettings.mpvAudioDeviceId
-            : playbackSettings.audioDeviceId;
+    const currentAudioDeviceId = playbackSettings.audioDeviceId;
 
     const handleSelectAudioDevice = useCallback(
         (deviceId: null | string) => {
-            setSettings({
-                playback:
-                    playbackType === PlayerType.LOCAL
-                        ? { mpvAudioDeviceId: deviceId }
-                        : { audioDeviceId: deviceId },
-            });
+            setSettings({ playback: { audioDeviceId: deviceId } });
         },
-        [playbackType, setSettings],
+        [setSettings],
     );
 
     const [sliderValue, setSliderValue] = useState(volume);

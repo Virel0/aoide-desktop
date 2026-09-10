@@ -157,12 +157,6 @@ export enum PlayerStyle {
     GAPLESS = 'gapless',
 }
 
-export enum PlayerType {
-    JUKEBOX = 'jukebox',
-    LOCAL = 'local',
-    WEB = 'web',
-}
-
 export enum TableColumn {
     ACTIONS = 'actions',
     ALBUM = 'album',
@@ -298,5 +292,4 @@ export type WebAudio = {
         preampGain: GainNode;
     };
     gains: GainNode[];
-    visualizerInputs?: AudioNode[];
 };

@@ -167,7 +167,6 @@
         "localFontAccessDenied": "Åtkomst nekad till lokala teckensnitt",
         "serverNotSelectedError": "Ingen server vald",
         "remoteDisableError": "Ett fel uppstod vid försök av $t(common.disable) servern",
-        "mpvRequired": "MPV krävs",
         "audioDeviceFetchError": "Ett fel uppstod vid hämtning av ljudenheter",
         "invalidServer": "Ogiltig server",
         "loginRateError": "För många inloggningsförsök, försök igen om några sekunder",

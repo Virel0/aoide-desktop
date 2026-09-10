@@ -1,20 +1,17 @@
 import { useMove } from '@mantine/hooks';
-import isElectron from 'is-electron';
 import { memo, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-import {
-    buildMpvAudioFilters,
-    type CompressorSettings,
-    type EqSettings as EqSettingsType,
-} from './mpv-audio-filters';
 
 import { WebAudioContext } from '/@/renderer/features/player/context/webaudio-context';
 import {
     SettingOption,
     SettingsSection,
 } from '/@/renderer/features/settings/components/settings-section';
-import { usePlaybackSettings, useSettingsStoreActions } from '/@/renderer/store/settings.store';
+import {
+    SettingsState,
+    usePlaybackSettings,
+    useSettingsStoreActions,
+} from '/@/renderer/store/settings.store';
 import { Button } from '/@/shared/components/button/button';
 import { Divider } from '/@/shared/components/divider/divider';
 import { Group } from '/@/shared/components/group/group';
@@ -25,9 +22,11 @@ import { Stack } from '/@/shared/components/stack/stack';
 import { Switch } from '/@/shared/components/switch/switch';
 import { TextInput } from '/@/shared/components/text-input/text-input';
 import { Text } from '/@/shared/components/text/text';
-import { PlayerType } from '/@/shared/types/types';
 
-const mpvPlayer = isElectron() ? window.api.mpvPlayer : null;
+// These lived in the MPV filter builder, which is gone. The store is the only
+// thing that describes their shape now.
+type CompressorSettings = SettingsState['playback']['compressor'];
+type EqSettingsType = SettingsState['playback']['equalizer'];
 
 const BAND_LABELS = [
     '31.5',
@@ -283,14 +282,6 @@ export const EqSettings = memo(() => {
 
     const applyFilters = useCallback(
         (eq: EqSettingsType, compressor: CompressorSettings) => {
-            // ── MPV player ────────────────────────────────────────────────
-            if (settings.type === PlayerType.LOCAL) {
-                const filterStr = buildMpvAudioFilters(eq, compressor);
-                mpvPlayer?.setProperties({ af: filterStr });
-                return;
-            }
-
-            // ── Web Audio player ──────────────────────────────────────────
             // Read from ref so we always get the current AudioContext state,
             // not the stale value captured when this callback was created.
             const dsp = webAudioContextRef.current.webAudio?.dsp;
@@ -322,19 +313,10 @@ export const EqSettings = memo(() => {
                 dsp.compressor.knee.value = 0;
             }
         },
-        // settings.type is the only reactive dep — webAudioContextRef is a
-        // stable ref that always holds the latest context value.
-        [settings.type],
+        // No reactive deps — webAudioContextRef is a stable ref that always
+        // holds the latest context value.
+        [],
     );
-
-    // Re-apply filters when switching to Web Audio so DSP nodes reflect
-    // persisted settings immediately without requiring a slider interaction.
-    useEffect(() => {
-        if (settings.type === PlayerType.WEB) {
-            applyFilters(settings.equalizer, settings.compressor);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [settings.type]);
 
     // ── EQ handlers ──────────────────────────────────────────────────────────
     const handleEqToggle = (enabled: boolean) => {
@@ -488,10 +470,7 @@ export const EqSettings = memo(() => {
                     onChange={(e) => handleEqToggle(e.currentTarget.checked)}
                 />
             ),
-            description:
-                settings.type === PlayerType.LOCAL
-                    ? t('setting.equalizer', { context: 'descriptionMpv' })
-                    : t('setting.equalizer', { context: 'descriptionWebAudio' }),
+            description: t('setting.equalizer', { context: 'descriptionWebAudio' }),
             title: t('setting.equalizer'),
         },
         ...(settings.equalizer.enabled
@@ -708,10 +687,7 @@ export const EqSettings = memo(() => {
                     onChange={(e) => handleCompToggle(e.currentTarget.checked)}
                 />
             ),
-            description:
-                settings.type === PlayerType.LOCAL
-                    ? t('setting.compressor', { context: 'descriptionMpv' })
-                    : t('setting.compressor', { context: 'descriptionWebAudio' }),
+            description: t('setting.compressor', { context: 'descriptionWebAudio' }),
             title: t('setting.compressor'),
         },
         ...(settings.compressor.enabled

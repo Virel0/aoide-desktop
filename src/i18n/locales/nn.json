@@ -226,7 +226,6 @@
         "invalidServer": "Ugyldig sørvar",
         "localFontAccessDenied": "Ingen tilgang til lokale skrifttypar",
         "loginRateError": "For mange innloggingsforsøk, venlegast prøv på nytt om nokon sekundar",
-        "mpvRequired": "MPV nødvendig",
         "multipleServerSaveQueueError": "Spelekøen har ein eller fleire songar som ikkje er frå den noverande sørvaren. Dette er ikkje støtta",
         "networkError": "Ein nettverksfeil skjedde",
         "noNetwork": "Sørvar utilgjengeleg",

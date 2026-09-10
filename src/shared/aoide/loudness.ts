@@ -8,12 +8,11 @@
  * same numbers and — because this module is the only thing that turns them
  * into a gain — both apply the same correction.
  *
- * This module decides *what* to do with a measurement. Both backends consult
- * it and neither restates it: mpv takes a per-file `af=volume=…dB` on
- * `loadfile`, the web player multiplies its per-slot gain node, and the number
- * they act on comes from here. The target lives here once, for the same
- * reason: two copies of a reference level are two apps that end up at
- * different volumes.
+ * This module decides *what* to do with a measurement. The player consults it
+ * and does not restate it: it multiplies the number into its per-slot gain
+ * node and computes nothing itself. The target lives here once, for the same
+ * reason the phone reads it from here: two copies of a reference level are two
+ * apps that end up at different volumes.
  */
 
 /** The sidecar's row for one track. Any field may be null on its own. */
@@ -53,10 +52,9 @@ export const TARGET_LUFS = -18;
 /**
  * Below this much correction, leave the file alone.
  *
- * A hundredth of a decibel is inaudible, and emitting `volume=-0.0dB` into an
- * mpv filter chain is a filter that does nothing but can still fail to parse.
- * Rounding to two places and treating the result as nothing is one rule for
- * both.
+ * A hundredth of a decibel is inaudible. Rounding to two places and treating
+ * the result as nothing keeps a gain node from being written for a correction
+ * nobody can hear.
  */
 const round = (db: number): number => Math.round(db * 100) / 100;
 
@@ -106,10 +104,9 @@ export const gainDb = (
  * Whether the file carries its own ReplayGain, in which case this does
  * nothing.
  *
- * Both backends already honour tags — mpv through its own ReplayGain handling,
- * the web player through `calculateReplayGain` — and Jellyfin synthesises a
- * track gain from its own LUFS scan where it has one. Adding a second
- * correction on top of the first would attenuate twice.
+ * The player already honours tags through `calculateReplayGain`, and Jellyfin
+ * synthesises a track gain from its own LUFS scan where it has one. Adding a
+ * second correction on top of the first would attenuate twice.
  */
 export const hasReplayGain = (
     gain: null | undefined | { album?: null | number; track?: null | number },
@@ -119,7 +116,7 @@ export const hasReplayGain = (
  * The gain for a track as a player sees it: its measurement, its own tags, and
  * whether the setting is on.
  *
- * The whole decision in one call, so neither backend can implement half of it.
+ * The whole decision in one call, so no caller can implement half of it.
  * The tag check arrives already made — `hasReplayGain(song.gain)` — because a
  * boolean is a stable React dependency and the song's `gain` object is a fresh
  * one on every render.
@@ -140,14 +137,3 @@ export const normalisationGainDb = (args: {
  * `1` for no gain, so a caller can multiply unconditionally.
  */
 export const linearGain = (db: null | number): number => (db === null ? 1 : 10 ** (db / 20));
-
-/**
- * The gain as mpv's per-file options: an `af` chain with ffmpeg's `volume`
- * filter, whose value takes a `dB` suffix.
- *
- * Values as strings because `loadfile` takes its option values as strings and
- * nothing else. Empty for no gain, so nothing is added to the chain and mpv
- * plays the file as it is.
- */
-export const mpvGainOptions = (db: null | number): Record<string, string> =>
-    db === null ? {} : { af: `volume=${db}dB` };

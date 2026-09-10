@@ -19,9 +19,9 @@ import { Text } from '/@/shared/components/text/text';
  *
  * Beside Auto DJ, because they are the two halves of the same job: Crossfade
  * decides how one song becomes the next, Auto DJ decides that there is a next
- * one. The footer says that mpv cannot do this and what it does instead —
- * a switch that is on and a player that still cuts between every track would
- * otherwise look like a switch that does nothing.
+ * one. The footer says what the fade costs, because a fade that starts the
+ * next song early is a fade that shortens the one before it, and someone who
+ * turns this on without knowing that will hear it as tracks being cut off.
  */
 export const CrossfadeSettings = memo(() => {
     const { t } = useTranslation();
