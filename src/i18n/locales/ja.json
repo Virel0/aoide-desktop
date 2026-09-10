@@ -894,7 +894,6 @@
             "tracks": "トラック",
             "albums": "アルバム",
             "genres": "ジャンル",
-            "folders": "フォルダー",
             "settings": "設定",
             "home": "ホーム",
             "artists": "アーティスト",
@@ -1125,9 +1124,6 @@
         },
         "favorites": {
             "title": "$t(entity.favorite, {\"count\": 2})"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "windowBar": {
             "paused": "(一時停止) ",

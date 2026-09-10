@@ -327,7 +327,6 @@
             "albumArtists": "專輯藝人",
             "albums": "專輯",
             "artists": "藝人",
-            "folders": "資料夾",
             "search": "搜尋",
             "settings": "設定",
             "tracks": "曲目",
@@ -400,9 +399,6 @@
         },
         "favorites": {
             "title": "$t(entity.favorite, {\"count\": 2})"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "windowBar": {
             "paused": "(暫停) ",

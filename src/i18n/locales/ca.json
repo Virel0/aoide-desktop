@@ -5,7 +5,6 @@
             "albumArtists": "Artistes de l'àlbum",
             "albums": "Àlbums",
             "artists": "Artistes",
-            "folders": "Carpetes",
             "genres": "Gèneres",
             "home": "Inici",
             "playlists": "Llistes de reproducció",
@@ -229,9 +228,6 @@
         },
         "favorites": {
             "title": "$t(entity.favorite, {\"count\": 2})"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "windowBar": {
             "paused": "(en pausa) ",

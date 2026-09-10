@@ -403,7 +403,6 @@
             "albums": "Albums",
             "artists": "Artiesten",
             "favorites": "Favorieten",
-            "folders": "Folders",
             "genres": "Genres",
             "home": "Home",
             "myLibrary": "Mijn bibliotheek",
@@ -419,9 +418,6 @@
             "artistTracks": "Nummers van {{artist}}",
             "genreTracks": "\"{{genre}}\" $t(entity.track, {\"count\": 2})",
             "title": "$t(entity.track, {\"count\": 2})"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "windowBar": {
             "paused": "(Gepauzeerd) ",

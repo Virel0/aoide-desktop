@@ -607,7 +607,6 @@
             "shared": "Playlists compartilhadas",
             "albums": "Álbuns",
             "genres": "Gêneros",
-            "folders": "Pastas",
             "albumArtists": "Artistas do álbum",
             "artists": "Artistas",
             "nowPlaying": "Tocando agora",
@@ -749,9 +748,6 @@
         },
         "playlist": {
             "reorder": "Reordenar apenas disponível quando ordenado pelo ID"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "collections": {
             "overrideExisting": "Substituir atual",

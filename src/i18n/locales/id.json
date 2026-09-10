@@ -541,7 +541,6 @@
             "albumArtists": "Artis Album",
             "albums": "Album",
             "artists": "Artis",
-            "folders": "Folder",
             "genres": "Genre",
             "home": "Beranda",
             "nowPlaying": "Sedang diputar",
@@ -565,9 +564,6 @@
         "windowBar": {
             "paused": "(Dijeda) ",
             "privateMode": "(Mode pribadi)"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "collections": {
             "overrideExisting": "Timpa yang ada",

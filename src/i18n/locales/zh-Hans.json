@@ -707,7 +707,6 @@
             "tracks": "曲目",
             "albums": "专辑",
             "genres": "流派",
-            "folders": "文件夹",
             "settings": "设置",
             "home": "主页",
             "artists": "艺术家",
@@ -892,9 +891,6 @@
         },
         "favorites": {
             "title": "$t(entity.favorite, {\"count\": 2})"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "windowBar": {
             "paused": "(暂停) ",

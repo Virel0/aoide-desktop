@@ -955,7 +955,6 @@
             "albumArtists": "Albumaren artistak",
             "albums": "Albumak",
             "artists": "Artistak",
-            "folders": "Karpetak",
             "genres": "Generoak",
             "home": "Etxea",
             "playlists": "Erreprodukzio-zerrendak",
@@ -996,9 +995,6 @@
         },
         "playlist": {
             "reorder": "Berrantolaketa idaren arabera ordenatzean bakarrik gaituta dago"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "favorites": {
             "title": "$t(entity.favorite, {\"count\": 2})"

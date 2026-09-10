@@ -541,7 +541,6 @@
             "albumArtists": "Zenészek",
             "albums": "Albumok",
             "artists": "Előadók",
-            "folders": "Mappák",
             "genres": "Műfajok",
             "home": "Főoldal",
             "myLibrary": "Könyvtáram",
@@ -560,9 +559,6 @@
         },
         "favorites": {
             "title": "$t(entity.favorite, {\"count\": 2})"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         }
     },
     "player": {

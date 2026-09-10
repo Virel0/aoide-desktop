@@ -412,7 +412,6 @@ describe('"Add to Aoide playlist" is offered wherever "Add to playlist" is', () 
         'album-artist-context-menu',
         'album-context-menu',
         'artist-context-menu',
-        'folder-context-menu',
         'genre-context-menu',
         'playlist-context-menu',
         'playlist-song-context-menu',

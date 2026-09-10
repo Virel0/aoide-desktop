@@ -558,7 +558,6 @@
             "tracks": "Utwory",
             "albums": "Albumy",
             "genres": "Gatunki",
-            "folders": "Katalogi",
             "settings": "Ustawienia",
             "home": "Główna",
             "artists": "Wykonawców",
@@ -675,9 +674,6 @@
         },
         "favorites": {
             "title": "$t(entity.favorite, {\"count\": 2})"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "windowBar": {
             "paused": "(Wstrzymane) ",

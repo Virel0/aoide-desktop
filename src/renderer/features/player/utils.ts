@@ -2,12 +2,12 @@ import { QueryClient } from '@tanstack/react-query';
 
 import { api } from '/@/renderer/api';
 import { queryKeys } from '/@/renderer/api/query-keys';
-import { folderQueries } from '/@/renderer/features/folders/api/folder-api';
 import { PlayerFilter, useSettingsStore } from '/@/renderer/store';
 import { logger } from '/@/renderer/utils/logger';
 import { resolveSongPath } from '/@/renderer/utils/resolve-song-path';
 import { sortSongList } from '/@/shared/api/utils';
 import {
+    FolderQuery,
     PlaylistSongListQuery,
     PlaylistSongListQueryClientSide,
     Song,
@@ -257,16 +257,20 @@ export const getSongsByFolder = async (args: {
 
     const collectSongsFromFolder = async (folderId: string): Promise<Song[]> => {
         const folderSongs: Song[] = [];
+        const query: FolderQuery = {
+            id: folderId,
+            sortBy: SongListSort.ID,
+            sortOrder: SortOrder.ASC,
+        };
+
         const folder = await queryClient.fetchQuery({
-            ...folderQueries.folder({
-                query: {
-                    id: folderId,
-                    sortBy: SongListSort.ID,
-                    sortOrder: SortOrder.ASC,
-                },
-                serverId,
-            }),
             gcTime: 0,
+            queryFn: ({ signal }) =>
+                api.controller.getFolder({
+                    apiClientProps: { serverId, signal },
+                    query,
+                }),
+            queryKey: queryKeys.folders.folder(serverId, query),
             staleTime: 0,
         });
 

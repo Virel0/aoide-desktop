@@ -626,9 +626,6 @@
             "showTracks": "Показати $t(entity.genre, {\"count\": 1}) $t(entity.track, {\"count\": 2})",
             "title": "$t(entity.genre, {\"count\": 2})"
         },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
-        },
         "globalSearch": {
             "commands": {
                 "goToPage": "Перейти до сторінки",
@@ -682,7 +679,6 @@
             "collections": "Колекції",
             "artists": "Виконавці",
             "favorites": "Улюблені",
-            "folders": "Папки",
             "genres": "Жанри",
             "home": "Додому",
             "myLibrary": "Моя бібліотека",

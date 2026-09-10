@@ -786,7 +786,6 @@
             "tracks": "Pistas",
             "albums": "Álbumes",
             "genres": "Géneros",
-            "folders": "Carpetas",
             "settings": "Configuración",
             "home": "Inicio",
             "artists": "Artistas",
@@ -1017,9 +1016,6 @@
         },
         "favorites": {
             "title": "$t(entity.favorite, {\"count\": 2})"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "windowBar": {
             "privateMode": "(Modo privado)",

@@ -1024,7 +1024,6 @@ export enum SidebarItem {
     ARTISTS_ALL = 'Artists-all',
     COLLECTIONS = 'Collections',
     FAVORITES = 'Favorites',
-    FOLDERS = 'Folders',
     GENRES = 'Genres',
     HOME = 'Home',
     NOW_PLAYING = 'Now Playing',
@@ -1203,12 +1202,6 @@ export const sidebarItems: SidebarItemType[] = [
         id: 'Genres',
         label: i18n.t('page.sidebar.genres'),
         route: AppRoute.LIBRARY_GENRES,
-    },
-    {
-        disabled: false,
-        id: 'Folders',
-        label: i18n.t('page.sidebar.folders'),
-        route: AppRoute.LIBRARY_FOLDERS,
     },
     {
         disabled: true,
@@ -2465,15 +2458,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     return {};
                 }
 
-                if (version <= 12) {
-                    state.general.sidebarItems.push({
-                        disabled: false,
-                        id: 'Folders',
-                        label: i18n.t('page.sidebar.folders'),
-                        route: AppRoute.LIBRARY_FOLDERS,
-                    });
-                }
-
                 if (version <= 13) {
                     state.general.homeItems.push({
                         disabled: false,
@@ -2946,10 +2930,18 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     );
                 }
 
+                if (version < 37) {
+                    // Same for the folder browser: `/library/folders` is gone,
+                    // and a stored row would still be trying to reach it.
+                    state.general.sidebarItems = state.general.sidebarItems.filter(
+                        (item) => item.id !== 'Folders',
+                    );
+                }
+
                 return persistedState;
             },
             name: 'store_settings',
-            version: 36,
+            version: 37,
         },
     ),
 );

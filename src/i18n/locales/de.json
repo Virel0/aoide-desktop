@@ -597,7 +597,6 @@
             "tracks": "Tracks",
             "albums": "Alben",
             "genres": "Genres",
-            "folders": "Verzeichnisse",
             "settings": "Einstellungen",
             "home": "Home",
             "artists": "Interpreten",
@@ -685,9 +684,6 @@
         },
         "favorites": {
             "title": "$t(entity.favorite, {\"count\": 2})"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "playlist": {
             "reorder": "Neuanordnung nur bei sortierung nach ID möglich"

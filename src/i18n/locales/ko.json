@@ -547,7 +547,6 @@
             "collections": "컬렉션",
             "artists": "아티스트",
             "favorites": "즐겨찾기",
-            "folders": "폴더",
             "genres": "장르",
             "home": "홈",
             "playlists": "플레이리스트",
@@ -571,9 +570,6 @@
         "windowBar": {
             "paused": "(일시 정지됨) ",
             "privateMode": "(비공개 모드)"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "playlistList": {
             "title": "$t(entity.playlist, {\"count\": 2})"

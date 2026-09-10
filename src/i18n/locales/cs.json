@@ -892,7 +892,6 @@
             "tracks": "Skladby",
             "albums": "Alba",
             "genres": "Žánry",
-            "folders": "Složky",
             "settings": "Nastavení",
             "home": "Domů",
             "artists": "Umělci",
@@ -1122,9 +1121,6 @@
         },
         "favorites": {
             "title": "$t(entity.favorite, {\"count\": 2})"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "windowBar": {
             "paused": "(Pozastaveno) ",

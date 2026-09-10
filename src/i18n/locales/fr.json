@@ -326,7 +326,6 @@
             "tracks": "Pistes",
             "albums": "Albums",
             "genres": "Genres",
-            "folders": "Dossiers",
             "settings": "Paramètres",
             "home": "Accueil",
             "artists": "Artistes",
@@ -540,9 +539,6 @@
         },
         "favorites": {
             "title": "$t(entity.favorite, {\"count\": 2})"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "releasenotes": {
             "commitsSinceStable": "Commits depuis {{stable}}",

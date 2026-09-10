@@ -590,9 +590,6 @@
             "showTracks": "Kuva $t(entity.genre, {\"count\": 1}) $t(entity.track, {\"count\": 2})",
             "title": "$t(entity.genre, {\"count\": 2})"
         },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
-        },
         "globalSearch": {
             "commands": {
                 "goToPage": "Mine lehele",
@@ -678,7 +675,6 @@
             "collections": "Kogumikud",
             "artists": "Esitajad",
             "favorites": "Lemmikud",
-            "folders": "Kaustad",
             "genres": "Žanrid",
             "home": "Avaleht",
             "myLibrary": "Muusikakogu",

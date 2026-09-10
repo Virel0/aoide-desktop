@@ -532,7 +532,6 @@
             "playerFilters": "பிளேயர் வடிப்பான்கள்"
         },
         "sidebar": {
-            "folders": "கோப்புறைகள்",
             "genres": "வகைகள்",
             "home": "வீடு",
             "nowPlaying": "இப்போது விளையாடுகிறது",
@@ -577,9 +576,6 @@
         "windowBar": {
             "paused": "(இடைநிறுத்தப்பட்டது) ",
             "privateMode": "(தனிப்பட்ட முறை)"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "collections": {
             "overrideExisting": "ஏற்கனவே உள்ளதை மேலெழுதவும்",

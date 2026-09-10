@@ -499,7 +499,6 @@
             "albums": "Альбомы",
             "artists": "Исполнители",
             "favorites": "Избранное",
-            "folders": "Папки",
             "genres": "Жанры",
             "playlists": "Плейлисты",
             "settings": "Настройки",
@@ -719,9 +718,6 @@
         },
         "favorites": {
             "title": "$t(entity.favorite, {\"count\": 2})"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "playlistList": {
             "title": "$t(entity.playlist, {\"count\": 2})"

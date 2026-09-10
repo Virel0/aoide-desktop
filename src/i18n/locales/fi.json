@@ -682,7 +682,6 @@
             "shared": "Jaetut soittolistat",
             "tracks": "Raidat",
             "artists": "Artistit",
-            "folders": "Kansiot",
             "genres": "Genret",
             "home": "Koti",
             "nowPlaying": "Nyt soi",
@@ -809,9 +808,6 @@
         "windowBar": {
             "paused": "(Tauotettu) ",
             "privateMode": "(Yksityinen tila)"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "collections": {
             "overrideExisting": "Syrjäytä olemassa olevat",

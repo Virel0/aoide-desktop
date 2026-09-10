@@ -503,7 +503,6 @@
             "albumArtists": "Artistas do álbum",
             "albums": "Álbuns",
             "artists": "Artistas",
-            "folders": "Pastas",
             "genres": "Gêneros",
             "home": "Início",
             "myLibrary": "A minha biblioteca",
@@ -519,9 +518,6 @@
             "artistTracks": "Faixas de {{artist}}",
             "genreTracks": "\"{{genre}}\" $t(entity.track, {\"count\": 2})",
             "title": "$t(entity.track, {\"count\": 2})"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         }
     },
     "player": {

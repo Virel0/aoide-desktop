@@ -45,7 +45,6 @@ export const CollapsedSidebar = () => {
             'Artists-all': t('page.sidebar.artists'),
             Collections: t('page.sidebar.collections'),
             Favorites: t('page.sidebar.favorites'),
-            Folders: t('page.sidebar.folders'),
             Genres: t('page.sidebar.genres'),
             Home: t('page.sidebar.home'),
             'Now Playing': t('page.sidebar.nowPlaying'),

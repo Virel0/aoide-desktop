@@ -772,7 +772,6 @@
             "tracks": "Tracce",
             "albums": "Album",
             "genres": "Generi",
-            "folders": "Cartelle",
             "settings": "Impostazioni",
             "home": "Home",
             "artists": "Artisti",
@@ -983,9 +982,6 @@
         },
         "playlist": {
             "reorder": "Riordino abilitato solo quando si ordina per ID"
-        },
-        "folderList": {
-            "title": "$t(entity.folder, {\"count\": 2})"
         },
         "collections": {
             "overrideExisting": "Sovrascrivi esistente",
