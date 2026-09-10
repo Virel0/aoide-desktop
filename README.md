@@ -1,256 +1,158 @@
-> ### This is a fork
->
-> [Feishin](https://github.com/jeffvli/feishin) with the Aoide sidecar added: local
-> playlists, smart playlists, real play history, and sync with the Aoide iOS app.
-> Everything below is Feishin's own documentation and still applies — see
-> [docs/aoide-integration.md](docs/aoide-integration.md) for what is different and why.
->
-> GPL-3.0, like its upstream. Distributing a build obliges you to offer the source.
->
-> **On Arch** (including CachyOS), install it as a real package:
->
-> ```sh
-> sudo pacman -Syu nodejs pnpm
-> cd packaging/arch && ./build.sh
-> ```
->
-> That pulls in mpv, puts Aoide in your application launcher, and lets
-> `pacman -R aoide` remove it again. Two things the commands above are doing for a
-> reason: makepkg resolves dependencies against pacman's database alone, so a Node
-> from nvm or corepack does not count; and `build.sh` keeps makepkg's scratch
-> directories out of the checkout, which electron-builder otherwise walks into and
-> fails on. For development instead, `pnpm install && pnpm dev`.
->
-> The AppImage, Flathub, and Docker instructions below are Feishin's own, and they
-> install *Feishin*, not this.
-> This fork ships under its own identity (`Aoide`, `io.github.Virel0.Aoide`) so
-> the two can sit side by side without fighting over settings, the MPRIS bus, or the
-> `aoide://` URL scheme.
+<img src="assets/icons/icon.png" alt="Aoide" align="right" height="64px" width="64px" />
 
-<img src="assets/icons/icon.png" alt="logo" title="feishin" align="right" height="60px" width="60px" />
+# Aoide for Linux
 
-# Feishin
+A music player for your own Jellyfin server, and the desktop half of
+[Aoide on iPhone](https://github.com/Virel0/aoide). Playlists, listening history
+and taste live on your devices and sync between them through the
+[Aoide sidecar](https://github.com/Virel0/aoide-sidecar), a small Jellyfin
+plugin. A playlist made on the phone is on the desk; a song played at the desk
+counts on the phone.
 
-  <p align="center">
-    <a href="https://github.com/jeffvli/feishin/blob/main/LICENSE">
-      <img src="https://img.shields.io/github/license/jeffvli/feishin?style=flat-square&color=brightgreen"
-      alt="License">
-    </a>
-      <a href="https://github.com/jeffvli/feishin/releases">
-      <img src="https://img.shields.io/github/v/release/jeffvli/feishin?style=flat-square&color=blue"
-      alt="Release">
-    </a>
-    <a href="https://github.com/jeffvli/feishin/releases">
-      <img src="https://img.shields.io/github/downloads/jeffvli/feishin/total?style=flat-square&color=orange"
-      alt="Downloads">
-    </a>
-  </p>
-  <p align="center">
-    <a href="https://discord.gg/FVKpcMDy5f">
-      <img src="https://img.shields.io/discord/922656312888811530?color=black&label=discord&logo=discord&logoColor=white"
-      alt="Discord">
-    </a>
-    <a href="https://matrix.to/#/#sonixd:matrix.org">
-      <img src="https://img.shields.io/matrix/sonixd:matrix.org?color=black&label=matrix&logo=matrix&logoColor=white"
-      alt="Matrix">
-    </a>
-  </p>
+Aoide is a fork of [Feishin](https://github.com/jeffvli/feishin), GPL-3.0, and
+owes it most of its bones.
 
----
+## Install
 
-Rewrite of [Sonixd](https://github.com/jeffvli/sonixd).
-
-## Features
-
-- [x] MPV player backend
-- [x] Web player backend
-- [x] Modern UI
-- [x] Scrobble playback to your server
-- [x] Smart playlist editor (Navidrome)
-- [x] Synchronized and unsynchronized lyrics support
-- [ ] [Request a feature](https://github.com/jeffvli/feishin/issues) or [view taskboard](https://github.com/users/jeffvli/projects/5/views/1)
-
-## Screenshots
-
-<a href="./media/preview_full_screen_player.png"><img src="./media/preview_full_screen_player.png" width="49.5%"/></a> <a href="./media/preview_album_artist_detail.png"><img src="./media/preview_album_artist_detail.png" width="49.5%"/></a> <a href="./media/preview_album_detail.png"><img src="./media/preview_album_detail.png" width="49.5%"/></a> <a href="./media/preview_smart_playlist.png"><img src="./media/preview_smart_playlist.png" width="49.5%"/></a>
-
-## Getting Started
-
-### Desktop (recommended)
-
-Download the [latest desktop client](https://github.com/jeffvli/feishin/releases). The desktop client is the recommended way to use Feishin. It supports both the MPV and web player backends, as well as includes built-in fetching for lyrics.
-
-#### macOS Notes
-
-If you're using a device running macOS 12 (Monterey) or higher, [check here](https://github.com/jeffvli/feishin/issues/104#issuecomment-1553914730) for instructions on how to remove the app from quarantine.
-
-For media keys to work, you will be prompted to allow Feishin to be a Trusted Accessibility Client. After allowing, you will need to restart Feishin for the privacy settings to take effect.
-
-#### Linux Notes
-
-Feishin is available in [Flathub](https://flathub.org/en/apps/org.jeffvli.feishin).
-
-Alternatively, you can install it as an Appimage. We provide a small install script to download the latest `.AppImage`, make it executable, and also download the icons required by Desktop Environments. Finally, it generates a `.desktop` file to add Feishin to your Application Launcher.
-
-Simply run the installer like this:
+**Arch, CachyOS and derivatives.** Add the repository once and Aoide upgrades
+with the rest of your system:
 
 ```sh
-dir=/your/application/directory
-curl 'https://raw.githubusercontent.com/jeffvli/feishin/refs/heads/development/install-feishin-appimage' | sh -s -- "$dir"
+sudo tee -a /etc/pacman.conf <<'EOF'
+
+[aoide]
+SigLevel = Optional TrustAll
+Server = https://github.com/Virel0/aoide-desktop/releases/latest/download
+EOF
+sudo pacman -Syu aoide
 ```
 
-The script also has an option to add launch arguments to run Feishin in native Wayland mode. Note that this is experimental in Electron and therefore not officially supported. If you want to use it, run this instead:
+Using fish, which has no heredocs:
+
+```fish
+printf '%s\n' '' '[aoide]' 'SigLevel = Optional TrustAll' 'Server = https://github.com/Virel0/aoide-desktop/releases/latest/download' | sudo tee -a /etc/pacman.conf
+sudo pacman -Syu aoide
+```
+
+**Anywhere else.** Download `aoide.flatpak` from the
+[latest release](https://github.com/Virel0/aoide-desktop/releases/latest):
 
 ```sh
-dir=/your/application/directory
-curl 'https://raw.githubusercontent.com/jeffvli/feishin/refs/heads/development/install-feishin-appimage' | sh -s -- "$dir" wayland-native
+flatpak install aoide.flatpak
 ```
 
-It also provides a simple uninstall routine, removing the downloaded files:
+mpv is built into the Flatpak, so gapless playback works with nothing else
+installed. See [packaging/flatpak](packaging/flatpak/README.md) for building it
+yourself and for moving your settings across.
 
-```sh
-dir=/your/application/directory
-curl 'https://raw.githubusercontent.com/jeffvli/feishin/refs/heads/development/install-feishin-appimage' | sh -s -- "$dir" remove
-```
+**From source**, for development: `pnpm install && pnpm dev`.
 
-The entry should show up in your Application Launcher immediately. If it does not, simply log out, wait 10 seconds, and log back in. Your Desktop Environment may alternatively provide a way to reload entries.
+## What it does that Feishin does not
 
-### Web and Docker
+Everything here is Aoide's own, and most of it exists because the sidecar keeps
+an honest record of what you actually listened to.
 
-Visit [https://feishin.vercel.app](https://feishin.vercel.app) to use the hosted web version of Feishin. The web client only supports the web player backend.
+**Playlists that are yours.** Kept on the device and synced between them, with
+folders, drag-to-reorder that survives two devices reordering at once, chosen
+covers, and smart playlists whose rules re-run every time you open them. Two are
+built in: *Rediscover Mix* and *Heavy Rotation*. Jellyfin's own playlists are
+still there, and a preference decides which of the two kinds the sidebar shows.
 
-Feishin is also available as a Docker image. The images are hosted via `ghcr.io` and are available to view [here](https://github.com/jeffvli/feishin/pkgs/container/feishin). You can run the container using the following commands:
+**Listening history worth trusting.** A play is half the track or four minutes,
+whichever comes first; a skip is under a fifth. Jellyfin counts a play the moment
+audio starts, so a four-second skip counts there exactly as much as an album
+side. Both apps use one definition, checked against one table of cases, so the
+phone and the desk never disagree.
 
-```bash
-# Run the latest version
-docker run --name feishin -p 9180:9180 ghcr.io/jeffvli/feishin:latest
+**Replay.** This month, this year or all time: plays, hours, the busiest day, and
+the songs, artists and albums you actually finished.
 
-# Build the image locally
-docker build -t feishin .
-docker run --name feishin -p 9180:9180 feishin
-```
+**Mixes.** Describe a mood and get a queue. The model writes *rules*; the rules
+pick the songs, so a mix can never contain a track your library does not have.
+Naming a game, film or artist searches for it and takes the mood it implies.
 
-#### Docker Compose
+**Taste controls.** *Not Interested* keeps a track out of mixes, stations,
+shuffle and every smart playlist while leaving it playable. *Don't Count Plays*
+keeps it out of the history, for the sleep playlist and the children's songs.
 
-To install via Docker Compose, use the following snippet. This also works on Portainer.
+**Now Playing as a column.** Artwork, controls, lyrics and the queue beside the
+page rather than under it, with the phone's typography. Toggle it off and
+Feishin's bottom bar is still there.
 
-```yaml
-services:
-    feishin:
-        container_name: feishin
-        image: 'ghcr.io/jeffvli/feishin:latest'
-        restart: unless-stopped
-        environment:
-            - SERVER_NAME=jellyfin # pre-defined server name
-            - SERVER_LOCK=true # When true AND name/type/url are set, only username/password can be toggled
-            - SERVER_TYPE=jellyfin # the allowed types are: jellyfin, navidrome, subsonic. These values are case insensitive
-            - SERVER_URL= # http://address:port or https://address:port
-            - REMOTE_URL= # http://address or https://address
-            - LEGACY_AUTHENTICATION=false # When SERVER_LOCK is true, sets the legacy (plaintext) authentication flag for Subsonic/OpenSubsonic servers
-            - ANALYTICS_DISABLED=true # Set to true to disable Umami analytics tracking
-        ports:
-            - 9180:9180
-            # Alternatively, to restrict to only localhost, - 127.0.0.1:9180:8190
-```
+**Resume in one tap.** Home opens on the last things you were in, and on a
+"pick up" tile when your phone was playing more recently — same queue, same
+position.
 
-### Configuration
+**Import from Spotify.** Paste a playlist link, or an Exportify CSV, and see what
+your server has and what it lacks. Matching rules are shared with the phone and
+the sidecar, checked against one table of cases.
 
-1. Upon startup you will be greeted with a prompt to select the path to your MPV binary. If you do not have MPV installed, you can download it [here](https://mpv.io/installation/) or install it using any package manager supported by your OS. After inputting the path, restart the app.
+**Silence trimming.** Where the sidecar has measured a file, only the sounding
+part plays, so the seconds of nothing some recordings carry at either end are
+skipped without a stall at the boundary.
 
-2. After restarting the app, you will be prompted to select a server. Click the `Open menu` button and select `Manage servers`. Click the `Add server` button in the popup and fill out all applicable details. You will need to enter the full URL to your server, including the protocol and port if applicable (e.g. `https://navidrome.my-server.com` or `http://192.168.0.1:4533`).
+## Requirements
 
-- **Navidrome** - For the best experience, select "Save password" when creating the server and configure the `SessionTimeout` setting in your Navidrome config to a larger value (e.g. 72h).
-    - **Linux users** - The default password store uses `libsecret`. `kwallet4/5/6` are also supported, but must be explicitly set in Settings > Window > Passwords/secret store.
+- A Jellyfin server. Developed against 10.11.
+- The [Aoide sidecar](https://github.com/Virel0/aoide-sidecar) plugin on it, for
+  sync, taste flags, Spotify matching and silence measurement. Without it Aoide
+  still plays music and keeps playlists locally.
+- mpv, for gapless playback and the wider format support. The Arch package
+  depends on it; the Flatpak carries its own.
 
-3. _Optional_ - If you want to host Feishin on a subpath (not `/`), then pass in the following environment variable: `PUBLIC_PATH=PATH`. For example, to host on `/feishin`, pass in `PUBLIC_PATH=/feishin`.
+## Packaging
 
-4. _Optional_ - To hard code the server url, pass the following environment variables: `SERVER_NAME`, `SERVER_TYPE` (one of `jellyfin` or `navidrome` or `subsonic`), `SERVER_URL`. To prevent users from changing these settings, pass `SERVER_LOCK=true`. This can only be set if all three of the previous values are set. When `SERVER_LOCK=true`, you can also set `LEGACY_AUTHENTICATION=true` or `LEGACY_AUTHENTICATION=false` to configure the legacy authentication flag for the server (only applicable for Subsonic/OpenSubsonic servers).
+| Where | What |
+|---|---|
+| [`packaging/arch`](packaging/arch) | Build and install from a checkout |
+| [`packaging/arch/release`](packaging/arch/release) | The package CI builds for a tag, and the pacman repository |
+| [`packaging/aur`](packaging/aur) | An AUR package, for whenever AUR registration reopens |
+| [`packaging/flatpak`](packaging/flatpak) | The Flatpak, with mpv built into the sandbox |
 
-5. _Optional_ - If your server uses a separate public-facing URL than what integrating applications use internally to communicate with your server, such as a separate Navidrome `ShareURL`, set `REMOTE_URL` to said public-facing URL.
-
-6. _Optional_ - To disable Umami analytics tracking in the Docker/web version, set the environment variable `ANALYTICS_DISABLED=true`. When enabled, the analytics script will not be loaded and all tracking will be disabled.
-
-7. _Optional_ - App settings (theme, language, sidebar options, etc.) can be overridden with environment variables on first run. The variables use the `FS_` prefix (e.g. `FS_GENERAL_THEME=defaultDark`, `FS_GENERAL_LANGUAGE=de`). See [the settings environment variable documentation](docs/ENV_SETTINGS.md) for the full list.
-
-## FAQ
-
-### MPV is either not working or is rapidly switching between pause/play states
-
-First thing to do is check that your MPV binary path is correct. Navigate to the settings page and re-set the path and restart the app. If your issue still isn't resolved, try reinstalling MPV. Known working versions include `v0.35.x` and `v0.36.x`. `v0.34.x` is a known broken version.
-
-### What music servers does Feishin support?
-
-Feishin supports any music server that implements a [Navidrome](https://www.navidrome.org/), [Jellyfin](https://jellyfin.org/), or [OpenSubsonic compatible](https://opensubsonic.netlify.app/) API.
-
-- [Navidrome](https://github.com/navidrome/navidrome)
-- [Jellyfin](https://github.com/jellyfin/jellyfin)
-- [OpenSubsonic](https://opensubsonic.netlify.app/) compatible servers, such as...
-    - [Airsonic-Advanced](https://github.com/airsonic-advanced/airsonic-advanced)
-    - [Ampache](https://ampache.org)
-    - [Astiga](https://asti.ga/)
-    - [Funkwhale](https://www.funkwhale.audio/)
-    - [Gonic](https://github.com/sentriz/gonic)
-    - [LMS](https://github.com/epoupon/lms)
-    - [Nextcloud Music](https://apps.nextcloud.com/apps/music)
-    - [Supysonic](https://github.com/spl0k/supysonic)
-    - [Qm-Music](https://github.com/chenqimiao/qm-music)
-    - More (?)
-
-- [Plex](https://www.plex.tv/media-server-downloads)
-    - [Feishin fork by lux032](https://github.com/lux032/feishin) - Plex is not natively supported. Use the fork by lux032 to use Plex with Feishin.
-
-### I have the issue "The SUID sandbox helper binary was found, but is not configured correctly" on Linux
-
-This happens when you have user (unprivileged) namespaces disabled (`sysctl kernel.unprivileged_userns_clone` returns 0). You can fix this by either enabling unprivileged namespaces, or by making the `chrome-sandbox` Setuid.
-
-```bash
-chmod 4755 chrome-sandbox
-sudo chown root:root chrome-sandbox
-```
-
-Ubuntu 24.04 specifically introduced breaking changes that affect how namespaces work. Please see https://discourse.ubuntu.com/t/ubuntu-24-04-lts-noble-numbat-release-notes/39890#:~:text=security%20improvements%20 for possible fixes.
-
-### How can I add custom themes?
-
-On the desktop app, you can add custom themes by dropping JSON files into the Themes folder (Settings → General → Theme → Open Folder). See [the custom themes documentation](docs/CUSTOM_THEMES.md) for the file format and examples.
+Pushing a tag `v*` builds the Arch package and creates the release. The Flatpak
+is attached by running the **Flatpak** workflow with that tag, because GitHub
+will not start one workflow from a release another workflow's token created.
 
 ## Development
 
-Built and tested using Node `v23.11.0`.
+Built with [electron-vite](https://github.com/alex8088/electron-vite) on Node 23.
 
-This project is built off of [electron-vite](https://github.com/alex8088/electron-vite)
+```sh
+pnpm run dev          # development server
+pnpm run build        # build for desktop
+pnpm run typecheck    # types
+pnpm run lint         # typecheck, eslint, stylelint
+pnpm test             # the suite
+```
 
-- `pnpm run dev` - Start the development server
-- `pnpm run dev:watch` - Start the development server in watch mode (for main / preload HMR)
-- `pnpm run start` - Starts the app in production preview mode
-- `pnpm run build` - Builds the app for desktop
-- `pnpm run build:electron` - Build the electron app (main, preload, and renderer)
-- `pnpm run build:remote` - Build the remote app (remote)
-- `pnpm run build:web` - Build the standalone web app (renderer)
-- `pnpm run package` - Package the project
-- `pnpm run package:dev` - Package the project for development locally
-- `pnpm run package:linux` - Package the project for Linux locally
-- `pnpm run package:mac` - Package the project for Mac locally
-- `pnpm run package:win` - Package the project for Windows locally
-- `pnpm run publish:linux` - Publish the project for Linux
-- `pnpm run publish:linux:beta` - Publish the project for Linux (beta channel)
-- `pnpm run publish:linux-arm64` - Publish the project for Linux ARM64
-- `pnpm run publish:linux-arm64:beta` - Publish the project for Linux ARM64 (beta channel)
-- `pnpm run publish:mac` - Publish the project for Mac
-- `pnpm run publish:mac:beta` - Publish the project for Mac (beta channel)
-- `pnpm run publish:win` - Publish the project for Windows
-- `pnpm run publish:win:beta` - Publish the project for Windows (beta channel)
-- `pnpm run typecheck` - Type check the project
-- `pnpm run typecheck:node` - Type check the project with tsconfig.node.json
-- `pnpm run typecheck:web` - Type check the project with tsconfig.web.json
-- `pnpm run lint` - Lint the project
-- `pnpm run lint:fix` - Lint the project and fix linting errors
-- `pnpm run i18next` - Generate i18n files
+Aoide's own code lives under `src/main/features/aoide`, `src/renderer/aoide` and
+`src/shared/aoide`, in its own files wherever possible so an upstream merge has
+little to reconcile. Rules that both apps must agree on — the play definition,
+smart-playlist rules, import matching — live in `src/shared/aoide` and are
+mirrored in the iOS app, each side checked against the same cases.
 
-## Translation
+## FAQ
 
-This project uses [Weblate](https://hosted.weblate.org/projects/feishin/) for translations. If you would like to contribute, please visit the link and submit a translation.
+**MPV is not working, or pause/play flickers.** Check the binary path in
+Settings and restart. Known-good versions are 0.35 and later; 0.34 is broken.
+Inside the Flatpak, mpv is bundled at `/app/bin/mpv` and needs no setting.
+
+**Which servers are supported?** Jellyfin. Feishin's Navidrome and OpenSubsonic
+support is still in the code but is not what Aoide is built or tested against,
+and the sync features need the Jellyfin sidecar.
+
+**"The SUID sandbox helper binary was found, but is not configured correctly".**
+The packaged builds handle this. Running an unpackaged build on a kernel with
+unprivileged user namespaces disabled needs `chmod 4755` on `chrome-sandbox`.
+
+**Custom themes.** Feishin's theme support is intact; drop a theme file in the
+themes directory shown in Settings.
+
+## Thanks
+
+To [jeffvli](https://github.com/jeffvli) and Feishin's contributors, whose work
+this is built on, and to the Jellyfin project.
 
 ## License
 
-[GNU General Public License v3.0 ©](https://github.com/jeffvli/feishin/blob/dev/LICENSE)
+GPL-3.0, as Feishin is. Distributing a build obliges you to offer the source.
