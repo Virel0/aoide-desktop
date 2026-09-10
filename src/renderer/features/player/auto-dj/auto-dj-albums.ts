@@ -18,9 +18,14 @@ export type AutoDjAlbumCollectArgs = {
     albumStrategy: AutoDJStrategy;
     allowDuplicates: boolean;
     currentSong: QueueSong;
-    itemCount: number;
     musicFolderId: string | string[] | undefined;
     onlySimilar: boolean;
+    /**
+     * How many to collect — several times what the listener asked for, because
+     * what comes back is a pool for `chooseAlbumsByTaste` to pick from rather
+     * than the answer. See `infinity-taste.ts`.
+     */
+    poolCount: number;
     queryClient: QueryClient;
     queueAlbumIdSet: Set<string>;
     server: null | ServerListItem | undefined;
@@ -56,7 +61,7 @@ const collectAlbumsLibraryRandom = async (args: AutoDjAlbumCollectArgs): Promise
     const page = await args.queryClient.fetchQuery({
         ...albumQueries.list({
             query: {
-                limit: Math.max(args.itemCount, 1),
+                limit: Math.max(args.poolCount, 1),
                 musicFolderId: args.musicFolderId,
                 sortBy: AlbumListSort.RANDOM,
                 sortOrder: SortOrder.ASC,
@@ -72,19 +77,19 @@ const collectAlbumsLibraryRandom = async (args: AutoDjAlbumCollectArgs): Promise
         .filter(
             (albumId) => albumId && (args.allowDuplicates || !args.queueAlbumIdSet.has(albumId)),
         );
-    return shuffle(ids).slice(0, args.itemCount);
+    return shuffle(ids).slice(0, args.poolCount);
 };
 
 const collectAlbumsSimilar = async (args: AutoDjAlbumCollectArgs): Promise<string[]> => {
     const selectedAlbumIds: string[] = [];
     const selectedAlbumIdSet = new Set<string>();
-    const remainingCount = () => args.itemCount - selectedAlbumIds.length;
+    const remainingCount = () => args.poolCount - selectedAlbumIds.length;
 
     if (args.trySimilarSongs && args.currentSong?.id) {
         const similarSongsFromSimilarApi = await args.queryClient.fetchQuery({
             ...songsQueries.similar({
                 query: {
-                    count: args.itemCount * 4,
+                    count: args.poolCount * 4,
                     songId: args.currentSong.id,
                 },
                 serverId: args.serverId,

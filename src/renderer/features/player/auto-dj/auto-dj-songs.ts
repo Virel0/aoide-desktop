@@ -16,9 +16,14 @@ import {
 export type AutoDjSongCollectArgs = {
     allowDuplicates: boolean;
     currentSong: QueueSong;
-    itemCount: number;
     musicFolderId: string | string[] | undefined;
     onlySimilar: boolean;
+    /**
+     * How many to collect — several times what the listener asked for, because
+     * what comes back is a pool for `chooseSongsByTaste` to pick from rather
+     * than the answer. See `infinity-taste.ts`.
+     */
+    poolCount: number;
     queryClient: QueryClient;
     queueSongIdSet: Set<string>;
     server: null | ServerListItem | undefined;
@@ -55,7 +60,7 @@ const collectSongsLibraryRandom = async (args: AutoDjSongCollectArgs): Promise<S
     const randomSongs = await args.queryClient.fetchQuery({
         ...songsQueries.random({
             query: {
-                limit: Math.max(args.itemCount * 3, 50),
+                limit: Math.max(args.poolCount * 3, 50),
                 played: Played.All,
             },
             serverId: args.serverId,
@@ -67,19 +72,19 @@ const collectSongsLibraryRandom = async (args: AutoDjSongCollectArgs): Promise<S
         (song) => args.allowDuplicates || !args.queueSongIdSet.has(song.id),
     );
     const shuffled = shuffleInPlace(pool);
-    return shuffled.slice(0, args.itemCount);
+    return shuffled.slice(0, args.poolCount);
 };
 
 const collectSongsSimilar = async (args: AutoDjSongCollectArgs): Promise<Song[]> => {
     const selected: Song[] = [];
     const selectedSongIds = new Set<string>();
-    const remainingCount = () => args.itemCount - selected.length;
+    const remainingCount = () => args.poolCount - selected.length;
 
     if (args.trySimilarSongs) {
         const similarSongs = await args.queryClient.fetchQuery({
             ...songsQueries.similar({
                 query: {
-                    count: args.itemCount,
+                    count: args.poolCount,
                     songId: args.currentSong?.id,
                 },
                 serverId: args.serverId,

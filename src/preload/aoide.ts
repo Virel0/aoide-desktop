@@ -24,6 +24,7 @@ import type { Activity } from '/@/shared/aoide/activity';
 import type { FinishCounts } from '/@/shared/aoide/finish-rate';
 import type { SmartRules } from '/@/shared/aoide/smart-rules';
 import type { SyncOp } from '/@/shared/aoide/sync-types';
+import type { TasteProfileWire } from '/@/shared/aoide/taste-ranking';
 import type { TrimPlan } from '/@/shared/aoide/trim-plan';
 
 import { ipcRenderer } from 'electron';
@@ -135,6 +136,20 @@ export const aoide = {
         /** Plays over `[from, to)`, as the Replay screen shows them. */
         recap: (from: number, to: number): Promise<Recap> =>
             ipcRenderer.invoke('aoide:history-recap', from, to),
+
+        /**
+         * Genre and artist weights, and what was heard lately, over listens
+         * started at or after `since`. One crossing for all three: Infinity
+         * asks once per top-up and wants the whole profile before it can
+         * choose anything.
+         *
+         * The wire form, not the runtime one — `recent` is an array here and
+         * `parseTasteProfile` is what turns it back into a set. A `Set` does
+         * not survive this bridge intact, and a profile that arrived as an
+         * empty object would silently mean "no history".
+         */
+        tasteProfile: (since: number): Promise<TasteProfileWire> =>
+            ipcRenderer.invoke('aoide:history-taste-profile', since),
     },
 
     images: {

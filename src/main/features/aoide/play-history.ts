@@ -1,5 +1,6 @@
 import type { Activity } from '/@/shared/aoide/activity';
 import type { FinishCounts } from '/@/shared/aoide/finish-rate';
+import type { TasteProfileWire } from '/@/shared/aoide/taste-ranking';
 import type { DatabaseSync } from 'node:sqlite';
 
 import { randomUUID } from 'node:crypto';
@@ -597,6 +598,65 @@ export class PlayHistory {
     }
 
     /**
+     * What this listener has actually been listening to, as numbers Infinity
+     * can sort a pool by.
+     *
+     * Three rules, all of them the phone's `CurationStore.tasteProfile`:
+     *
+     * 1. **Only listens that finished build the weights.** Jellyfin's own idea
+     *    of a favourite counts every start, so it includes everything ever
+     *    skipped past; the whole reason to read the local history instead is
+     *    that it knows the difference. `IS_FINISH` is `finish-rate.ts`'s own
+     *    predicate rather than a second spelling of it.
+     * 2. **Everything played lately counts as heard**, finished or not — a song
+     *    skipped an hour ago is still a song you have just heard, and the point
+     *    of the recency penalty is that it does not come round again this
+     *    evening.
+     * 3. **Normalised against the strongest, not the total.** What is wanted is
+     *    "how much of a favourite is this", so a listener with two genres and a
+     *    listener with twenty both have a 1.
+     *
+     * Artists are keyed on the album artist where the cache knows one. The
+     * phone's cache holds a single artist per track and it is already the
+     * album's, so coalescing here is what makes the two profiles mean the same
+     * thing — and it is the same reason a recap groups on it: the track artist
+     * alone splits a compilation into one favourite per guest.
+     *
+     * `since` is a floor on `startedAt`, because taste moves and a year of
+     * listening describes somebody who no longer exists. The caller chooses the
+     * window; this only enforces it.
+     */
+    tasteProfile(
+        since = 0,
+        depth = TASTE_PROFILE_DEPTH,
+        recentDepth = TASTE_RECENT_DEPTH,
+    ): TasteProfileWire {
+        const rows = this.db
+            .prepare(
+                `SELECT ${ALBUM_ARTIST} AS artist, t.genres AS genres
+                 ${EVENTS_WITH_TRACK}
+                 WHERE e.startedAt >= ? AND ${IS_FINISH}
+                 ORDER BY e.startedAt DESC
+                 LIMIT ?`,
+            )
+            .all(since, depth) as Array<{ artist: null | string; genres: null | string }>;
+
+        const artists = new Map<string, number>();
+        const genres = new Map<string, number>();
+
+        for (const row of rows) {
+            if (row.artist) bump(artists, row.artist);
+            for (const genre of cachedGenres(row.genres)) bump(genres, genre);
+        }
+
+        return {
+            artists: normalised(artists),
+            genres: normalised(genres),
+            recent: this.recentlyPlayed(recentDepth),
+        };
+    }
+
+    /**
      * Whether the listener has asked for this track's plays not to be counted.
      *
      * Read off `track_flags` directly — the same rows `TrackFlags` writes —
@@ -678,3 +738,64 @@ const QUALIFIES_AS_PLAY = countsAsPlaySql('t', 'e');
 const QUALIFIES_AS_SKIP = countsAsSkipSql('t', 'e');
 
 const placeholders = (count: number): string => new Array(count).fill('?').join(', ');
+
+/**
+ * How many recent finished listens the taste profile is built from.
+ *
+ * The phone's number. Deep enough that a favourite artist outweighs an evening
+ * of one album, shallow enough that last winter is not still voting.
+ */
+const TASTE_PROFILE_DEPTH = 200;
+
+/**
+ * How many of the most recent listens count as "just heard".
+ *
+ * Also the phone's. Roughly an evening: long enough that Infinity does not
+ * circle back within one sitting, short enough that a song is allowed to return
+ * the next day.
+ */
+const TASTE_RECENT_DEPTH = 40;
+
+/** One more listen for a name, lower-cased so the tag's capitalisation is nothing. */
+const bump = (counts: Map<string, number>, name: string): void => {
+    const key = name.toLowerCase();
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+};
+
+/**
+ * The genres on a cached track, as the cache stores them: a JSON array in a
+ * TEXT column, written by `Playlists.cacheTracks`.
+ *
+ * Anything else is no genres rather than a throw. The column is filled from
+ * whatever Jellyfin said at cache time and read here inside a query that a
+ * queue is waiting on; one malformed row is not a reason for the music to stop.
+ */
+const cachedGenres = (stored: null | string): string[] => {
+    if (!stored) return [];
+
+    try {
+        const parsed: unknown = JSON.parse(stored);
+        if (!Array.isArray(parsed)) return [];
+        return parsed.filter((genre) => typeof genre === 'string' && genre.length > 0);
+    } catch {
+        return [];
+    }
+};
+
+/**
+ * Counts as weights against the strongest of them, which is what makes the
+ * numbers comparable between one listener and another rather than between one
+ * genre and the size of somebody's evening.
+ */
+const normalised = (counts: Map<string, number>): Record<string, number> => {
+    let top = 0;
+    for (const count of counts.values()) {
+        if (count > top) top = count;
+    }
+
+    if (top <= 0) return {};
+
+    const weights: Record<string, number> = {};
+    for (const [key, count] of counts) weights[key] = count / top;
+    return weights;
+};

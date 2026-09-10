@@ -1151,3 +1151,144 @@ describe('finish rates for an artist', () => {
         });
     });
 });
+
+/** A cached track with genres, which is the other half of what a taste profile reads. */
+const cacheTrackTagged = (
+    jellyfinId: string,
+    artist: string,
+    albumArtist: null | string,
+    genres: string,
+): void => {
+    database.db
+        .prepare(
+            `INSERT INTO tracks (jellyfinId, contentKey, title, artist, album, albumArtist, genres, durationMs, lastSeenAt)
+             VALUES (?, ?, ?, ?, 'An Album', ?, ?, 200000, ?)`,
+        )
+        .run(jellyfinId, jellyfinId, jellyfinId, artist, albumArtist, genres, now);
+};
+
+const tagged = (jellyfinId: string, artist: string, ...genres: string[]): void =>
+    cacheTrackTagged(jellyfinId, artist, artist, JSON.stringify(genres));
+
+describe('the taste profile', () => {
+    it('builds its weights out of what was finished', () => {
+        tagged('m1', 'Sabaton', 'Metal', 'Power Metal');
+        tagged('m2', 'Sabaton', 'Metal');
+        tagged('e1', 'Perturbator', 'Electronic');
+
+        finished('m1');
+        finished('m2');
+        finished('e1');
+
+        const profile = history.tasteProfile();
+
+        expect(profile.genres.metal).toBe(1);
+        expect(profile.genres.electronic).toBe(0.5);
+        expect(profile.artists.sabaton).toBe(1);
+        expect(profile.artists.perturbator).toBe(0.5);
+    });
+
+    // The whole reason to read the local history instead of asking Jellyfin,
+    // which counts a four-second skip as a play and would report this listener's
+    // favourite genre as the one they cannot get through.
+    it('does not make a favourite out of what is always skipped', () => {
+        tagged('s1', 'Skipped', 'Skipped Genre');
+        tagged('s2', 'Skipped', 'Skipped Genre');
+        tagged('k1', 'Kept', 'Kept Genre');
+
+        abandoned('s1', 3_000);
+        abandoned('s2', 3_000);
+        finished('k1');
+
+        const profile = history.tasteProfile();
+
+        expect(profile.genres['skipped genre']).toBeUndefined();
+        expect(profile.artists.skipped).toBeUndefined();
+        expect(profile.genres['kept genre']).toBe(1);
+    });
+
+    // Recency is about what was on, not about what was enjoyed: a song skipped
+    // an hour ago is still a song you have just heard.
+    it('counts whatever was played lately as heard, skipped or not', () => {
+        tagged('skipped-track', 'Whoever', 'A Genre');
+        abandoned('skipped-track', 3_000);
+
+        expect(history.tasteProfile().recent).toContain('skipped-track');
+    });
+
+    // Against the strongest, not the total. Two thirds and one third would say
+    // this listener half-likes their favourite genre.
+    it('normalises against the strongest rather than the total', () => {
+        tagged('a1', 'One', 'Loved');
+        tagged('a2', 'One', 'Loved');
+        tagged('b1', 'Two', 'Liked');
+
+        finished('a1');
+        finished('a2');
+        finished('b1');
+
+        expect(history.tasteProfile().genres).toEqual({ liked: 0.5, loved: 1 });
+    });
+
+    // The phone's cache holds one artist per track and it is the album's, so
+    // this is what makes the two profiles mean the same thing — and it keeps a
+    // compilation from filing three finished listens under three strangers.
+    it('keys artists on the album artist where the cache has one', () => {
+        cacheTrackTagged('guest', 'Her feat. Him', 'Her', '[]');
+        finished('guest');
+
+        const profile = history.tasteProfile();
+
+        expect(profile.artists.her).toBe(1);
+        expect(profile.artists['her feat. him']).toBeUndefined();
+    });
+
+    it('falls back to the track artist when the cache has no album artist', () => {
+        cacheTrackTagged('lonely', 'Only Her', null, '[]');
+        finished('lonely');
+
+        expect(history.tasteProfile().artists['only her']).toBe(1);
+    });
+
+    // Taste moves. A window is the caller's to choose, and this is the floor
+    // being enforced rather than merely offered.
+    it('ignores listens from before the window', () => {
+        tagged('old', 'Forgotten', 'Old Genre');
+        tagged('new', 'Current', 'New Genre');
+
+        finished('old', 200_000, now - 1);
+        finished('new', 200_000, now);
+
+        expect(history.tasteProfile(now).genres).toEqual({ 'new genre': 1 });
+    });
+
+    // `IS_FINISH` is `finish-rate.ts`'s predicate and it guards on the outcome,
+    // not only on the flag: a row synced from elsewhere carrying a verdict and
+    // no end time is not a listen this device saw finish.
+    it('ignores a completed flag on an event that never ended', () => {
+        tagged('half-open', 'Nobody', 'Unfinished');
+        insertEvent({
+            completed: true,
+            endedAt: null,
+            jellyfinId: 'half-open',
+            msPlayed: 200_000,
+            startedAt: now,
+        });
+
+        expect(history.tasteProfile().genres).toEqual({});
+    });
+
+    it('takes no genres from a row whose genres are not a list of strings', () => {
+        cacheTrackTagged('broken', 'Nobody', 'Nobody', 'not json at all');
+        cacheTrackTagged('fine', 'Nobody', 'Nobody', '["Good Genre"]');
+
+        finished('broken');
+        finished('fine');
+
+        expect(history.tasteProfile().genres).toEqual({ 'good genre': 1 });
+    });
+
+    it('says nothing at all when nothing has been listened to', () => {
+        expect(history.tasteProfile()).toEqual({ artists: {}, genres: {}, recent: [] });
+    });
+});

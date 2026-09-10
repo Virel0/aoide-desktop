@@ -391,6 +391,22 @@ handle('aoide:history-finish-rates', ({ history }, jellyfinIds: string[]) =>
 );
 
 /**
+ * What this listener finishes, as weights Infinity can sort a pool by.
+ *
+ * One call for the whole profile: it is three aggregates over the same history
+ * and the renderer wants all three at once, so splitting them would be three
+ * crossings for one decision about what to play next.
+ *
+ * `since` is bounded here rather than trusted. It arrives from a renderer that
+ * computes it from the wall clock, and a NaN would reach SQLite as a bind that
+ * matches nothing — an empty profile, silently, which reads exactly like a new
+ * install. Zero is the honest floor: everything ever listened to.
+ */
+handle('aoide:history-taste-profile', ({ history }, since: unknown) =>
+    history.tasteProfile(Number.isFinite(since) ? Math.max(0, Math.trunc(Number(since))) : 0),
+);
+
+/**
  * The same two counts for everything by one artist, answered from the local
  * track cache by name — the renderer has albums, not a list of track ids, and
  * collecting one would be a Jellyfin round trip per album before any number

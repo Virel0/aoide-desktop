@@ -1502,6 +1502,64 @@ describe('the finish rate, surfaced where you browse', () => {
     });
 });
 
+describe('Infinity picks out of the pool rather than taking it', () => {
+    const hook = readFileSync(
+        join(import.meta.dirname, '../../features/player/hooks/use-auto-dj.ts'),
+        'utf8',
+    );
+    const songs = readFileSync(
+        join(import.meta.dirname, '../../features/player/auto-dj/auto-dj-songs.ts'),
+        'utf8',
+    );
+    const albums = readFileSync(
+        join(import.meta.dirname, '../../features/player/auto-dj/auto-dj-albums.ts'),
+        'utf8',
+    );
+    const preload = readFileSync(join(import.meta.dirname, '../../../preload/aoide.ts'), 'utf8');
+    const main = readFileSync(
+        join(import.meta.dirname, '../../../main/features/aoide/index.ts'),
+        'utf8',
+    );
+
+    // The change, in one line each: the strategies are asked for a pool and the
+    // ranking is what turns it into the handful the listener asked for. A hook
+    // that collected `itemCount` and ranked it would be Feishin's behaviour with
+    // an extra query in front of it.
+    it('asks the strategies for a pool and ranks it down to the item count', () => {
+        expect(hook).toContain('poolCount: infinityPoolCount(settings.itemCount)');
+        expect(hook).toContain('chooseSongsByTaste(');
+        expect(hook).toContain('chooseAlbumsByTaste(');
+        expect(songs).not.toMatch(/\bargs\.itemCount\b/);
+        expect(albums).not.toMatch(/\bargs\.itemCount\b/);
+    });
+
+    // A record is judged by what is on it. The tracklists have to be fetched
+    // before anything can be chosen, and one request covers the whole pool.
+    it('fetches the pool’s tracklists before ranking albums', () => {
+        expect(hook).toContain('albumPoolTracks(');
+        expect(hook).toContain('albumIds,');
+        expect(hook.match(/songsQueries\.list\(/g)).toHaveLength(1);
+    });
+
+    it('is published by preload and handled by main', () => {
+        expect(preload).toContain("ipcRenderer.invoke('aoide:history-taste-profile'");
+        expect(main).toContain("'aoide:history-taste-profile'");
+    });
+
+    // Every setting the feature already had still reaches the strategies. The
+    // renaming of one field is the only thing that changed about this call.
+    it('keeps every existing setting working', () => {
+        for (const setting of [
+            'allowDuplicates: settings.allowDuplicates',
+            'onlySimilar: settings.onlySimilar',
+            'settings.timing',
+            "settings.mode === 'albums'",
+        ]) {
+            expect(hook).toContain(setting);
+        }
+    });
+});
+
 describe('the queue store keeps the manual lane', () => {
     const source = readFileSync(join(import.meta.dirname, '../../store/player.store.ts'), 'utf8');
 
