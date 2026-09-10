@@ -60,22 +60,18 @@ export const AudioSettings = memo(() => {
 
     const audioDevices = useAudioDevices();
 
-    // Both of the groups below act on the Web Audio graph and do nothing
+    // The sample rate and ReplayGain act on the Web Audio graph and do nothing
     // without it, which is the gate the MPV panel used to apply to them from
-    // one level up.
+    // one level up before they moved here.
     const hasAudioGraph = settings.webAudio && 'AudioContext' in window;
 
-    // Both groups below used to live in the MPV panel, which rendered them for
-    // web-player users too. They are the web player's outright now: the sample
-    // rate is the one the AudioContext is built with, and ReplayGain is a
-    // factor into each slot's gain node.
     const setAudioProperty = (
-        setting: keyof SettingsState['playback']['mpvProperties'],
+        setting: keyof SettingsState['playback']['audioProperties'],
         value: unknown,
     ) => {
         setSettings({
             playback: {
-                mpvProperties: {
+                audioProperties: {
                     [setting]: value,
                 },
             },
@@ -100,7 +96,7 @@ export const AudioSettings = memo(() => {
         {
             control: (
                 <NumberInput
-                    defaultValue={settings.mpvProperties.audioSampleRateHz || undefined}
+                    defaultValue={settings.audioProperties.audioSampleRateHz || undefined}
                     max={192000}
                     min={0}
                     onBlur={(e) => {
@@ -182,7 +178,7 @@ export const AudioSettings = memo(() => {
                             value: 'album',
                         },
                     ]}
-                    defaultValue={settings.mpvProperties.replayGainMode}
+                    defaultValue={settings.audioProperties.replayGainMode}
                     onChange={(e) => setAudioProperty('replayGainMode', e)}
                 />
             ),
@@ -196,7 +192,7 @@ export const AudioSettings = memo(() => {
         {
             control: (
                 <NumberInput
-                    defaultValue={settings.mpvProperties.replayGainPreampDB}
+                    defaultValue={settings.audioProperties.replayGainPreampDB}
                     onChange={(e) => setAudioProperty('replayGainPreampDB', Number(e) || 0)}
                     width={75}
                 />
@@ -211,7 +207,7 @@ export const AudioSettings = memo(() => {
         {
             control: (
                 <Switch
-                    defaultChecked={settings.mpvProperties.replayGainClip}
+                    defaultChecked={settings.audioProperties.replayGainClip}
                     onChange={(e) => setAudioProperty('replayGainClip', e.currentTarget.checked)}
                 />
             ),
@@ -225,7 +221,7 @@ export const AudioSettings = memo(() => {
         {
             control: (
                 <NumberInput
-                    defaultValue={settings.mpvProperties.replayGainFallbackDB}
+                    defaultValue={settings.audioProperties.replayGainFallbackDB}
                     onBlur={(e) =>
                         setAudioProperty('replayGainFallbackDB', Number(e.currentTarget.value))
                     }

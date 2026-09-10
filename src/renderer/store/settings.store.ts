@@ -297,11 +297,18 @@ const TranscodingConfigSchema = z.object({
     format: z.string().optional(),
 });
 
-const MpvSettingsSchema = z.object({
-    audioExclusiveMode: z.enum(['no', 'yes']),
-    audioFormat: z.enum(['float', 's16', 's32']).optional(),
+/**
+ * The rate the AudioContext is built with, and ReplayGain.
+ *
+ * Named for mpv until the backend went, which is why these two unrelated
+ * things share an object: mpv took them as properties and everything it took
+ * as a property lived here. They are the web player's now — the rate is the
+ * argument to `new AudioContext`, ReplayGain a factor into each slot's gain
+ * node — and the mpv-only members (gapless-audio, audio-exclusive,
+ * audio-format) went with it.
+ */
+const AudioPropertiesSchema = z.object({
     audioSampleRateHz: z.number().optional(),
-    gaplessAudio: z.enum(['no', 'weak', 'yes']),
     replayGainClip: z.boolean(),
     replayGainFallbackDB: z.number().optional(),
     replayGainMode: z.enum(['album', 'no', 'track']),
@@ -724,11 +731,11 @@ const PlayerFilterSchema = z.object({
 const PlaybackSettingsSchema = z.object({
     audioDeviceId: z.string().nullable().optional(),
     audioFadeOnStatusChange: z.boolean(),
+    audioProperties: AudioPropertiesSchema,
     compressor: CompressorSettingsSchema,
     equalizer: EqSettingsSchema,
     filters: z.array(PlayerFilterSchema),
     mediaSession: z.boolean(),
-    mpvProperties: MpvSettingsSchema,
     preservePitch: z.boolean(),
     scrobble: ScrobbleSettingsSchema,
     transcode: TranscodingConfigSchema,
@@ -2062,6 +2069,13 @@ const initialState: SettingsState = {
     playback: {
         audioDeviceId: undefined,
         audioFadeOnStatusChange: true,
+        audioProperties: {
+            audioSampleRateHz: 0,
+            replayGainClip: true,
+            replayGainFallbackDB: undefined,
+            replayGainMode: 'no',
+            replayGainPreampDB: 0,
+        },
         compressor: {
             attack: 20,
             enabled: false,
@@ -2091,16 +2105,6 @@ const initialState: SettingsState = {
         },
         filters: [],
         mediaSession: false,
-        mpvProperties: {
-            audioExclusiveMode: 'no',
-            audioFormat: undefined,
-            audioSampleRateHz: 0,
-            gaplessAudio: 'weak',
-            replayGainClip: true,
-            replayGainFallbackDB: undefined,
-            replayGainMode: 'no',
-            replayGainPreampDB: 0,
-        },
         preservePitch: true,
         scrobble: {
             enabled: true,
@@ -2283,7 +2287,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                         },
                         resetSampleRate: () => {
                             set((state) => {
-                                state.playback.mpvProperties.audioSampleRateHz = 0;
+                                state.playback.audioProperties.audioSampleRateHz = 0;
                             });
                         },
                         setAlbumGroupItems: (items: SortableItem<AlbumGroupItem>[]) => {
@@ -2904,10 +2908,45 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     }
                 }
 
+                if (version < 34) {
+                    // The MPV backend went. Two of the settings it owned are
+                    // the web player's — the sample rate and ReplayGain — so
+                    // they are carried across the rename rather than reset;
+                    // someone who had ReplayGain on album mode should not have
+                    // to find it again. The members only mpv could act on
+                    // (gapless-audio, audio-exclusive, audio-format) are not
+                    // copied, and the rest of its keys are deleted so an
+                    // exported settings file does not carry them forward.
+                    const playback = state.playback as typeof state.playback & {
+                        mpvAudioDeviceId?: null | string;
+                        mpvExtraParameters?: string[];
+                        mpvProperties?: Partial<SettingsState['playback']['audioProperties']>;
+                        type?: string;
+                    };
+                    const previous = playback.mpvProperties;
+                    const fallback = initialState.playback.audioProperties;
+
+                    playback.audioProperties = {
+                        audioSampleRateHz:
+                            previous?.audioSampleRateHz ?? fallback.audioSampleRateHz,
+                        replayGainClip: previous?.replayGainClip ?? fallback.replayGainClip,
+                        replayGainFallbackDB:
+                            previous?.replayGainFallbackDB ?? fallback.replayGainFallbackDB,
+                        replayGainMode: previous?.replayGainMode ?? fallback.replayGainMode,
+                        replayGainPreampDB:
+                            previous?.replayGainPreampDB ?? fallback.replayGainPreampDB,
+                    };
+
+                    delete playback.mpvProperties;
+                    delete playback.mpvAudioDeviceId;
+                    delete playback.mpvExtraParameters;
+                    delete playback.type;
+                }
+
                 return persistedState;
             },
             name: 'store_settings',
-            version: 33,
+            version: 34,
         },
     ),
 );
@@ -2949,8 +2988,8 @@ export const useLayoutHotkeyBindings = () =>
         shallow,
     );
 
-export const useMpvSettings = () =>
-    useSettingsStore((state) => state.playback.mpvProperties, shallow);
+export const useAudioProperties = () =>
+    useSettingsStore((state) => state.playback.audioProperties, shallow);
 
 export const useLyricsSettings = () => useSettingsStore((state) => state.lyrics, shallow);
 

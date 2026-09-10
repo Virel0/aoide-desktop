@@ -110,7 +110,7 @@ export const AudioPlayers = () => {
 
     const {
         audioDeviceId,
-        mpvProperties: { audioSampleRateHz },
+        audioProperties: { audioSampleRateHz },
         webAudio,
     } = usePlaybackSettings();
     const { setWebAudio, webAudio: audioContext } = useWebAudio();
