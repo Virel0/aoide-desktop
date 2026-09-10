@@ -1074,6 +1074,120 @@ describe('taste flags: the phone’s "Not Interested" and "Don’t Count Plays"'
     });
 });
 
+describe('the exact join: a buffer deck takes the boundary, or the elements keep it', () => {
+    const webPlayer = readFileSync(
+        join(import.meta.dirname, '../../features/player/audio-player/web-player.tsx'),
+        'utf8',
+    );
+    const hook = sourceOf('playback/use-buffer-deck.ts');
+    const deck = sourceOf('playback/buffer-deck.ts');
+    const trimPlayers = sourceOf('playback/use-trim-players.ts');
+
+    // The whole feature is one ref: while it is set, every other handover in
+    // the web player has to keep its hands off the elements.
+    it('the web player hands the deck the boundary and stands down while it has it', () => {
+        expect(webPlayer).toContain('const deckOwnsBoundary = useRef(false)');
+        expect(webPlayer).toContain('ownsRef: deckOwnsBoundary');
+        expect(webPlayer).toContain('if (deckOwnsBoundary.current) {');
+        // Both slots, and before the crossfade and gapless handlers rather
+        // than after them.
+        expect(webPlayer.match(/if \(deckOwnsBoundary\.current\) \{/g)).toHaveLength(2);
+        for (const slot of [1, 2]) {
+            const gate = webPlayer.indexOf(`deck.onElementProgress(${slot})`);
+            const trim = webPlayer.indexOf(`trim.onProgress${slot}(e.playedSeconds)`);
+            const handlers = webPlayer.indexOf(`nextPlayer: playerRef.current.player${3 - slot}()`);
+            expect(gate).toBeGreaterThan(-1);
+            expect(trim).toBeGreaterThan(gate);
+            expect(handlers).toBeGreaterThan(trim);
+        }
+    });
+
+    // A committed join advances the queue on the audio clock. The element
+    // reaching its own end is the same handover by a slower route, and running
+    // both is a track skipped.
+    it('the element’s ended event is offered to the deck first', () => {
+        expect(webPlayer).toContain('if (deck.onElementEnded(1)) {');
+        expect(webPlayer).toContain('if (deck.onElementEnded(2)) {');
+        expect(trimPlayers).toContain('holdEndRef?: RefObject<boolean>');
+    });
+
+    // The element is paused while the deck plays, so its progress events stop.
+    // Both of the web player's timestamp sources have to know that.
+    it('the timestamp comes off the deck’s clock while the deck is playing', () => {
+        expect(webPlayer).toContain('if (num === 1 && !deck.engaged) {');
+        expect(webPlayer).toContain('if (num === 2 && !deck.engaged) {');
+        expect(webPlayer).toContain(
+            'if (localPlayerStatus !== PlayerStatus.PLAYING || deck.engaged) {',
+        );
+        expect(hook).toContain('setTimestamp(position)');
+    });
+
+    // Only the handovers that have no overlap in them. A blend is the
+    // crossfade's, and Repeat One is an element looping on itself.
+    it('takes gapless and cut, and leaves a blend to the crossfade', () => {
+        expect(hook).toContain("state.mix.kind === 'gapless' || state.mix.kind === 'cut'");
+        expect(hook).toContain('state.transitionType === PlayerStyle.GAPLESS');
+        expect(hook).toContain('state.repeat !== PlayerRepeat.ONE');
+        expect(hook).toContain("const blending = args.mix?.kind === 'blend'");
+    });
+
+    // Anything that is not playing straight forwards puts the element back
+    // where the buffer had got to.
+    it('hands the track back on a pause, a seek, a skip or a queue that moved', () => {
+        expect(hook).toContain('onPlayerSeekToTimestamp: () => {');
+        expect(hook).toContain('onPlayerStatus: (properties) => {');
+        expect(hook).toContain('onQueueCleared: () => relinquish()');
+        expect(hook).toContain('if (deckRef.current?.currentId() !== currentId)');
+        expect(hook).toContain("elementFor(num)?.ref?.seekTo(position, 'seconds')");
+    });
+
+    // Three ways the handover can go wrong that cost nothing to guard and
+    // would be silent if they came back.
+    it('does not drop a buffer’s timestamp into the track a skip moved to', () => {
+        expect(hook).toContain(
+            'const sameTrack = deck.currentId() === latest.current.currentSong?._uniqueId',
+        );
+        expect(hook).toContain('if (seek && sameTrack && position !== null)');
+    });
+
+    it('gives both slots their volume back, having muted one of them', () => {
+        expect(hook).toContain('elementFor(incomingSlot)?.setVolume(0)');
+        expect(hook).toContain('playerRef.current?.setVolume(volume)');
+    });
+
+    // react-player calls play() on the newly audible element in the commit
+    // after the queue advances, and a track left running reaches its own
+    // `ended` and advances the queue a second time.
+    it('holds the muted element paused across the commit that re-renders it', () => {
+        expect(hook).toContain('useLayoutEffect(() => {');
+        expect(hook).toContain('if (element && !element.paused) element.pause()');
+        expect(hook).toContain(
+            'if (usePlayerStoreBase.getState().player.status !== PlayerStatus.PLAYING) {',
+        );
+    });
+
+    // The deck's own decisions are all in the pure module; nothing here
+    // restates them.
+    it('the wiring asks the arithmetic rather than repeating it', () => {
+        expect(hook).toContain('planJoin({');
+        expect(hook).toContain('shouldDecode(boundary - now)');
+        expect(hook).toContain('outgoingEndSec(trimmedEnd, element.duration)');
+        expect(deck).toContain('fitsInMemory(durationSec, this.context.sampleRate)');
+        expect(hook).not.toMatch(/0\.116[\s\S]{0,40}0\.065/);
+    });
+
+    // Into the slot's own gain node, which is where ReplayGain, Aoide's
+    // levelling and the visualiser already are.
+    it('routes the buffer through the graph the elements already use', () => {
+        expect(deck).toContain('const sink = this.gains[gainIndex]');
+        expect(deck).toContain('gain.connect(sink)');
+        expect(deck).toContain('node.connect(gain)');
+        expect(deck).toContain('node.start(startAtContextTime, offsetSec)');
+        expect(deck).toContain('outgoing.node.stop(startAtContextTime)');
+        expect(hook).toContain('gainIndex: incomingSlot - 1');
+    });
+});
+
 describe('silence trimming: the player consults the trim plan, the setting gates it', () => {
     const webPlayer = readFileSync(
         join(import.meta.dirname, '../../features/player/audio-player/web-player.tsx'),
@@ -1095,7 +1209,9 @@ describe('silence trimming: the player consults the trim plan, the setting gates
     // The web player: a hook over its two slots, fed from the same progress
     // samples it scrobbles and crossfades from.
     it('the web player feeds both slots’ progress to the trim hook', () => {
-        expect(webPlayer).toContain('useTrimPlayers({ num, player1, player2, playerRef })');
+        expect(webPlayer).toContain(
+            'useTrimPlayers({ holdEndRef: deckOwnsBoundary, num, player1, player2, playerRef })',
+        );
         expect(webPlayer).toContain('trim.onProgress1(e.playedSeconds)');
         expect(webPlayer).toContain('trim.onProgress2(e.playedSeconds)');
     });
@@ -1112,7 +1228,7 @@ describe('silence trimming: the player consults the trim plan, the setting gates
     // `handleOnEndedPlayerN` is restated. Only the audible slot may do it.
     it('ends a track through the element’s own ended event, only from the audible slot', () => {
         expect(players).toContain('element.currentTime = element.duration');
-        expect(players).toContain('if (slot !== num) return;');
+        expect(players).toContain('if (slot !== num || holdEndRef?.current) return;');
         expect(players).not.toMatch(/\bmediaAutoNext\s*\(/);
     });
 

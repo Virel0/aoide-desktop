@@ -8,6 +8,12 @@ import { initialTracker, step, TrimAction } from '/@/renderer/aoide/features/pla
 import { trimFor } from '/@/shared/aoide/trim-plan';
 
 interface TrimPlayersArgs {
+    /**
+     * The buffer deck has the boundary in front of it and will advance the
+     * queue itself, on the audio clock. Ending the track here as well would
+     * advance it twice, which is a track skipped.
+     */
+    holdEndRef?: RefObject<boolean>;
     /** Which slot is the audible one. Only it may end a track. */
     num: 1 | 2;
     player1: QueueSong | undefined;
@@ -36,7 +42,13 @@ interface TrimPlayersArgs {
  * for a gapless handover, is seeked too, so it is sitting on the first note
  * when it becomes audible.
  */
-export const useTrimPlayers = ({ num, player1, player2, playerRef }: TrimPlayersArgs) => {
+export const useTrimPlayers = ({
+    holdEndRef,
+    num,
+    player1,
+    player2,
+    playerRef,
+}: TrimPlayersArgs) => {
     const bounds1 = useSoundBounds(player1?.id);
     const bounds2 = useSoundBounds(player2?.id);
 
@@ -67,13 +79,13 @@ export const useTrimPlayers = ({ num, player1, player2, playerRef }: TrimPlayers
                 return;
             }
 
-            if (slot !== num) return;
+            if (slot !== num || holdEndRef?.current) return;
             const element = ref.getInternalPlayer() as HTMLMediaElement | null | undefined;
             if (element && Number.isFinite(element.duration)) {
                 element.currentTime = element.duration;
             }
         },
-        [num, playerRef],
+        [holdEndRef, num, playerRef],
     );
 
     const onProgress1 = useCallback(
@@ -94,9 +106,17 @@ export const useTrimPlayers = ({ num, player1, player2, playerRef }: TrimPlayers
         [act, plan2],
     );
 
-    // Where each slot's track actually stops, for whoever has to line something
-    // up with the end of it. Null when the track plays to its own end, which is
-    // every track with trimming switched off — the caller then has the
-    // element's own duration and nothing to correct.
-    return { end1: plan1?.endSec ?? null, end2: plan2?.endSec ?? null, onProgress1, onProgress2 };
+    // Where each slot's sound actually is, for whoever has to line something up
+    // with either end of it. A null end is a track that plays to its own end,
+    // which is every track with trimming switched off — the caller then has the
+    // element's own duration and nothing to correct. A start of zero is a track
+    // with nothing to skip, so a caller can use it unconditionally.
+    return {
+        end1: plan1?.endSec ?? null,
+        end2: plan2?.endSec ?? null,
+        onProgress1,
+        onProgress2,
+        start1: plan1?.startSec ?? 0,
+        start2: plan2?.startSec ?? 0,
+    };
 };

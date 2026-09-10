@@ -4,6 +4,7 @@ import type ReactPlayer from 'react-player';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useBufferDeck } from '/@/renderer/aoide/features/playback/use-buffer-deck';
 import { useLoudnessGain } from '/@/renderer/aoide/features/playback/use-loudness-gain';
 import { useMixTransition } from '/@/renderer/aoide/features/playback/use-mix-transition';
 import { useTrimPlayers } from '/@/renderer/aoide/features/playback/use-trim-players';
@@ -50,7 +51,11 @@ export function WebPlayer() {
     const isMuted = usePlayerMuted();
     const volume = usePlayerVolume();
     const { audioFadeOnStatusChange, transcode } = usePlaybackSettings();
-    const trim = useTrimPlayers({ num, player1, player2, playerRef });
+    // Set while the buffer deck has the boundary in front of it. Read by the
+    // trim tracker and by the transition handlers below, all of which have to
+    // stand down when a join has been committed to the audio clock.
+    const deckOwnsBoundary = useRef(false);
+    const trim = useTrimPlayers({ holdEndRef: deckOwnsBoundary, num, player1, player2, playerRef });
     // Aoide's loudness normalisation, as a factor into each slot's existing
     // gain node — the same node ReplayGain uses, so the two multiply.
     const loudness1 = useLoudnessGain(player1);
@@ -58,6 +63,29 @@ export function WebPlayer() {
     // Aoide's Crossfade: one plan for the handover in front of us, or null when
     // the mixer is off and Feishin's own transition settings still decide.
     const mix = useMixTransition(currentSong, nextSong);
+
+    const player1Url = useSongUrl(player1, num === 1, transcode);
+    const player2Url = useSongUrl(player2, num === 2, transcode);
+
+    // Aoide's exact join. It only takes a boundary it can be sample-accurate
+    // about; everything below is what happens when it does not.
+    const deck = useBufferDeck({
+        audioFadeOnStatusChange,
+        currentSong,
+        isMuted,
+        mix,
+        nextSong,
+        num,
+        ownsRef: deckOwnsBoundary,
+        player1Url,
+        player2Url,
+        playerRef,
+        repeat,
+        transitionType,
+        trim,
+        volume,
+        webAudio,
+    });
 
     const [localPlayerStatus, setLocalPlayerStatus] = useState<PlayerStatus>(status);
     const [isTransitioning, setIsTransitioning] = useState<boolean | string>(false);
@@ -139,9 +167,12 @@ export function WebPlayer() {
                 return;
             }
 
-            if (num === 1) {
+            if (num === 1 && !deck.engaged) {
                 setTimestamp(e.playedSeconds);
             }
+            // Before the trim tracker, so a committed join has already claimed
+            // the boundary by the time the tracker would end the track itself.
+            deck.onElementProgress(1);
             trim.onProgress1(e.playedSeconds);
 
             if (repeat === PlayerRepeat.ONE) {
@@ -150,6 +181,15 @@ export function WebPlayer() {
             }
 
             if (usePlayerStoreBase.getState().player.status !== PlayerStatus.PLAYING) {
+                return;
+            }
+
+            // The deck has the handover, to the sample. Nothing here may
+            // pre-start an element on top of it.
+            if (deckOwnsBoundary.current) {
+                if (isTransitioning) {
+                    setIsTransitioning(false);
+                }
                 return;
             }
 
@@ -203,6 +243,7 @@ export function WebPlayer() {
         [
             crossfadeDuration,
             crossfadeStyle,
+            deck,
             handleRepeatOne,
             isTransitioning,
             mix,
@@ -222,9 +263,12 @@ export function WebPlayer() {
                 return;
             }
 
-            if (num === 2) {
+            if (num === 2 && !deck.engaged) {
                 setTimestamp(e.playedSeconds);
             }
+            // Before the trim tracker, so a committed join has already claimed
+            // the boundary by the time the tracker would end the track itself.
+            deck.onElementProgress(2);
             trim.onProgress2(e.playedSeconds);
 
             if (repeat === PlayerRepeat.ONE) {
@@ -233,6 +277,15 @@ export function WebPlayer() {
             }
 
             if (usePlayerStoreBase.getState().player.status !== PlayerStatus.PLAYING) {
+                return;
+            }
+
+            // The deck has the handover, to the sample. Nothing here may
+            // pre-start an element on top of it.
+            if (deckOwnsBoundary.current) {
+                if (isTransitioning) {
+                    setIsTransitioning(false);
+                }
                 return;
             }
 
@@ -286,6 +339,7 @@ export function WebPlayer() {
         [
             crossfadeDuration,
             crossfadeStyle,
+            deck,
             handleRepeatOne,
             isTransitioning,
             mix,
@@ -300,6 +354,13 @@ export function WebPlayer() {
     );
 
     const handleOnEndedPlayer1 = useCallback(() => {
+        // A committed join advances the queue itself, on the audio clock. The
+        // element reaching its own end is the same handover arriving by a
+        // slower route, and doing it twice is a track skipped.
+        if (deck.onElementEnded(1)) {
+            return;
+        }
+
         const promise = new Promise((resolve) => {
             mediaAutoNext();
             resolve(true);
@@ -318,9 +379,16 @@ export function WebPlayer() {
             }
             setIsTransitioning(false);
         });
-    }, [mediaAutoNext, volume]);
+    }, [deck, mediaAutoNext, volume]);
 
     const handleOnEndedPlayer2 = useCallback(() => {
+        // A committed join advances the queue itself, on the audio clock. The
+        // element reaching its own end is the same handover arriving by a
+        // slower route, and doing it twice is a track skipped.
+        if (deck.onElementEnded(2)) {
+            return;
+        }
+
         const promise = new Promise((resolve) => {
             mediaAutoNext();
             resolve(true);
@@ -337,7 +405,7 @@ export function WebPlayer() {
             }
             setIsTransitioning(false);
         });
-    }, [mediaAutoNext, volume]);
+    }, [deck, mediaAutoNext, volume]);
 
     const player = usePlayer();
 
@@ -443,7 +511,9 @@ export function WebPlayer() {
     }, []);
 
     useEffect(() => {
-        if (localPlayerStatus !== PlayerStatus.PLAYING) {
+        // While the deck is playing there is no element to read a timestamp
+        // off — it is paused, and the deck posts its own on the audio clock.
+        if (localPlayerStatus !== PlayerStatus.PLAYING || deck.engaged) {
             return;
         }
 
@@ -468,7 +538,7 @@ export function WebPlayer() {
         }, 500);
 
         return () => clearInterval(interval);
-    }, [localPlayerStatus, num, setTimestamp, transitionType]);
+    }, [deck.engaged, localPlayerStatus, num, setTimestamp, transitionType]);
 
     const calculateReplayGain = useCallback(
         (song: QueueSong): number => {
@@ -555,9 +625,6 @@ export function WebPlayer() {
             console.error('Error setting gain', error);
         }
     }, [calculateReplayGain, loudness2, player2, player2Source, webAudio]);
-
-    const player1Url = useSongUrl(player1, num === 1, transcode);
-    const player2Url = useSongUrl(player2, num === 2, transcode);
 
     const handlePlayer1Start = useCallback(
         async (player: ReactPlayer) => {
