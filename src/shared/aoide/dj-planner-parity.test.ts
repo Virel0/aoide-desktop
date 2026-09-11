@@ -6,8 +6,7 @@ import { DJStyle, planMix } from './dj-planner';
 import { scoreTotal } from './mix-score';
 
 /**
- * The same thirty-nine pairs the iOS app plans, with the same thirty-nine
- * plans.
+ * The same forty pairs the iOS app plans, with the same forty plans.
  *
  * "Both apps mix the same way" is a claim, and this table is the only thing
  * that makes it one: it is duplicated verbatim in `DJPlannerParityTests` in
@@ -133,6 +132,12 @@ const buildThenDrop = arrangement([
     ['build', 32, 0.4],
     ['drop', 96, 0.9],
 ]);
+/** A loud drop throughout, sung from bar 80 to bar 90 and nowhere else. */
+const singsAtEighty = arrangement([['drop', 128, 1]], {
+    vocals: [{ endMs: bar * 90, startMs: bar * 80 }],
+});
+/** A silent drop throughout: the worst energy match for the one above. */
+const quietDrop = arrangement([['drop', 128, 0]]);
 const singingThroughout = arrangement(
     [
         ['build', 32, 0.4],
@@ -626,6 +631,19 @@ const TABLE: ParityCase[] = [
         total: 0.7649999999999999,
         why: 'and so is the incoming one',
     },
+    {
+        bars: null,
+        plan: {
+            incoming: {
+                ...grid({ key: '10B' }),
+                segments: [{ ...grid().segments[0], bpm: 128 / 1.03 }],
+            },
+            incomingArrangement: quietDrop,
+            outgoing: grid({ key: '3B' }),
+            outgoingArrangement: singsAtEighty,
+        },
+        why: 'a score refused at thirty-two bars refuses the entry, though sixteen would have been clean',
+    },
 ];
 
 describe('DJ planner parity', () => {
@@ -647,6 +665,6 @@ describe('DJ planner parity', () => {
     });
 
     it('answers every case in the table', () => {
-        expect(TABLE).toHaveLength(39);
+        expect(TABLE).toHaveLength(40);
     });
 });

@@ -516,6 +516,57 @@ describe('what a mix can see, now that it can see the music', () => {
         expect(plan?.incomingStartMs).toBeCloseTo(0, 2);
     });
 
+    // The phone's planner gives up on an entry the moment a length scores
+    // nothing, rather than trying the shorter lengths — and the score can
+    // change with the length, because the singing check covers exactly the
+    // stretch that would overlap. Here the outgoing record sings between
+    // bars 80 and 90: a thirty-two-bar overlap from bar 80 hears it and,
+    // with a clash, a strained bend and a bad energy match, scores 0.315;
+    // sixteen from bar 96 would not hear it and would score 0.375, eight
+    // bars. The phone refuses; so does this.
+    it('a score refused at one length refuses the entry outright', () => {
+        const singsAtEighty: Arrangement = {
+            phraseAnchorMs: 0,
+            phraseBars: 16,
+            sections: [{ endMs: bar * 128, energy: 1, kind: 'drop', startMs: 0 }],
+            vocals: [{ endMs: bar * 90, startMs: bar * 80 }],
+        };
+        const quietDrop: Arrangement = {
+            phraseAnchorMs: 0,
+            phraseBars: 16,
+            sections: [{ endMs: bar * 128, energy: 0, kind: 'drop', startMs: 0 }],
+            vocals: [],
+        };
+        const refused = planMix({
+            incoming: {
+                ...grid(),
+                key: '10B',
+                segments: [{ ...grid().segments[0], bpm: 128 / 1.03 }],
+            },
+            incomingArrangement: quietDrop,
+            outgoing: { ...grid(), key: '3B' },
+            outgoingArrangement: singsAtEighty,
+        });
+        expect(refused).toBeNull();
+        // The same pair with the singing after the mix-out point is the
+        // eight bars the shorter length would have earned.
+        const singsAfter: Arrangement = {
+            ...singsAtEighty,
+            vocals: [{ endMs: bar * 128, startMs: bar * 120 }],
+        };
+        const allowed = planMix({
+            incoming: {
+                ...grid(),
+                key: '10B',
+                segments: [{ ...grid().segments[0], bpm: 128 / 1.03 }],
+            },
+            incomingArrangement: quietDrop,
+            outgoing: { ...grid(), key: '3B' },
+            outgoingArrangement: singsAfter,
+        });
+        expect(allowed?.bars).toBe(8);
+    });
+
     // A score that earns nothing at one entry does not stop another entry
     // being tried.
     it('an entry the score refuses does not refuse the record', () => {
