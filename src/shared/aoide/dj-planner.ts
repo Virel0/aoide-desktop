@@ -328,6 +328,10 @@ const planEntry = (args: {
         // singing — gets the filter fade. Nothing to hide gets the blend.
         const anyoneSings = outgoingSings === true || incomingSings === true;
         const style: DJStyle = keysClash || anyoneSings ? 'filterFade' : 'blend';
+        // A filter fade is capped like a clash: thirty-two bars of a voice
+        // being slowly filtered under another record is thirty-two bars of
+        // clash. Eight is long enough for the sweep to read as a move.
+        if (style !== 'blend' && bars > MINIMUM_BARS) continue;
 
         return {
             bars,

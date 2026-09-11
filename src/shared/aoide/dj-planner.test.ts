@@ -456,7 +456,8 @@ describe('what a mix can see, now that it can see the music', () => {
         expect(clash?.bars).toBe(MINIMUM_BARS);
 
         // One of them singing, keys fine: also the filter fade — the voice is
-        // the thing to keep out from under the other record — but not capped.
+        // the thing to keep out from under the other record — and capped too,
+        // since a long filter fade of a voice is a long clash.
         const singing = arrangement(
             [
                 ['build', 32, 0.4],
@@ -473,7 +474,7 @@ describe('what a mix can see, now that it can see the music', () => {
             outgoingArrangement: singing,
         });
         expect(voice?.style).toBe('filterFade');
-        expect(voice!.bars).toBeGreaterThan(MINIMUM_BARS);
+        expect(voice?.bars).toBe(MINIMUM_BARS);
         // And the same the other way round.
         const incomingVoice = planMix({
             incoming: { ...grid(), key: '9A' },

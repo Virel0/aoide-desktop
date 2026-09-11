@@ -617,10 +617,10 @@ const TABLE: ParityCase[] = [
         why: 'clashing keys are a capped filter fade',
     },
     {
-        bars: 32,
+        bars: 8,
         incomingRate: 1,
         incomingStartMs: 0,
-        outgoingStartMs: 150_000,
+        outgoingStartMs: 195_000,
         plan: {
             incoming: grid({ key: '9A' }),
             incomingArrangement: buildThenDrop,
@@ -629,13 +629,13 @@ const TABLE: ParityCase[] = [
         },
         style: 'filterFade',
         total: 0.7649999999999999,
-        why: 'the outgoing record singing is a filter fade, uncapped',
+        why: 'the outgoing record singing is a filter fade, capped at eight',
     },
     {
-        bars: 32,
+        bars: 8,
         incomingRate: 1,
         incomingStartMs: 0,
-        outgoingStartMs: 150_000,
+        outgoingStartMs: 195_000,
         plan: {
             incoming: grid({ key: '9A' }),
             incomingArrangement: singingThroughout,
