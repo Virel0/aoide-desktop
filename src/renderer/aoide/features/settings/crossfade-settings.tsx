@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useAoideAutoDjEnabled } from '/@/renderer/aoide/features/playback/use-auto-dj';
 import {
     useAoideAlbumLockEnabled,
     useAoideCrossfadeEnabled,
@@ -15,18 +16,23 @@ import { Switch } from '/@/shared/components/switch/switch';
 import { Text } from '/@/shared/components/text/text';
 
 /**
- * Whether one song is faded into the next, and whether records are exempt.
+ * Whether one song is faded into the next, whether records are exempt, and
+ * whether a pair the server has gridded is mixed rather than faded.
  *
- * Beside Auto DJ, because they are the two halves of the same job: Crossfade
- * decides how one song becomes the next, Auto DJ decides that there is a next
- * one. The footer says what the fade costs, because a fade that starts the
- * next song early is a fade that shortens the one before it, and someone who
- * turns this on without knowing that will hear it as tracks being cut off.
+ * Beside Infinity, because they are the two halves of the same job: these
+ * decide how one song becomes the next, Infinity decides that there is a next
+ * one. Auto DJ sits under Crossfade because it is the same decision made with
+ * more knowledge — a beat-matched, bar-aligned, bass-swapped hand-over where
+ * the server has measured both records, and a crossfade everywhere else. The
+ * footer says what the fade costs, because a fade that starts the next song
+ * early is a fade that shortens the one before it, and someone who turns this
+ * on without knowing that will hear it as tracks being cut off.
  */
 export const CrossfadeSettings = memo(() => {
     const { t } = useTranslation();
     const crossfade = useAoideCrossfadeEnabled();
     const albumLock = useAoideAlbumLockEnabled();
+    const autoDj = useAoideAutoDjEnabled();
     const { setSettings } = useSettingsStoreActions();
 
     if (!isAoideAvailable()) return null;
@@ -57,6 +63,19 @@ export const CrossfadeSettings = memo(() => {
             ),
             description: t('aoide.settings.albumLock', { context: 'description' }),
             title: t('aoide.settings.albumLock'),
+        },
+        {
+            control: (
+                <Switch
+                    aria-label={t('aoide.settings.autoDj')}
+                    checked={autoDj}
+                    onChange={(e) => {
+                        setSettings({ general: { aoideAutoDj: e.currentTarget.checked } });
+                    }}
+                />
+            ),
+            description: t('aoide.settings.autoDj', { context: 'description' }),
+            title: t('aoide.settings.autoDj'),
         },
     ];
 

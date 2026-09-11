@@ -102,6 +102,9 @@
         },
         "nowPlaying": {
             "lyrics": "Lyrics",
+            "mixReady_one": "Mix ready · {{count}} bar",
+            "mixReady_other": "Mix ready · {{count}} bars",
+            "mixing": "Mixing",
             "noLyrics": "No lyrics for this track",
             "nothingPlaying": "Nothing playing",
             "queue": "Queue"
@@ -179,6 +182,8 @@
             "crossfade_footer": "A fade begins before the current song ends, so the last few seconds of one track play under the first few of the next rather than after them.",
             "albumLock": "Keep albums whole",
             "albumLock_description": "Two tracks of one record, played in order, hand over untouched — a record written to run continuously still does. Leave this on and Crossfade is safe to leave on with it.",
+            "autoDj": "Auto DJ",
+            "autoDj_description": "Mixes one song into the next like a DJ would when the sidecar has measured both: beats matched, bars lined up, the bass handed from one record to the other on a downbeat, for eight to thirty-two bars. Only pairs the server has gridded and read, at tempi within six per cent of each other, and never two singers at once — everything else crossfades as it does now. The song coming in is bent to the tempo of the one playing and eases back to its own afterwards; its pitch is held.",
             "hiddenFromMixes": "Hidden from mixes",
             "hiddenFromMixes_description": "Tracks you marked Not Interested stay out of mixes and stations; tracks marked Don't Count Plays are played without being recorded. Both are synced with your other Aoide devices. Clear one here to have it offered and counted again."
         },

@@ -16,6 +16,10 @@ import {
     DEFAULT_AOIDE_NOW_PLAYING_COLUMN,
 } from '/@/renderer/aoide/features/now-playing/now-playing-column';
 import {
+    AoideAutoDjSchema,
+    DEFAULT_AOIDE_AUTO_DJ,
+} from '/@/renderer/aoide/features/playback/auto-dj';
+import {
     AoideAlbumLockSchema,
     AoideCrossfadeSchema,
     DEFAULT_AOIDE_ALBUM_LOCK,
@@ -405,6 +409,7 @@ export const GeneralSettingsSchema = z.object({
     albumGroupShowFavoriteRating: z.boolean(),
     albumGroupVerticalLayout: z.boolean(),
     aoideAlbumLock: AoideAlbumLockSchema,
+    aoideAutoDj: AoideAutoDjSchema,
     aoideCrossfade: AoideCrossfadeSchema,
     aoideLoudnessNormalisation: AoideLoudnessNormalisationSchema,
     aoideNowPlayingColumn: AoideNowPlayingColumnSchema,
@@ -980,6 +985,7 @@ const initialState: SettingsState = {
         albumGroupShowFavoriteRating: true,
         albumGroupVerticalLayout: true,
         aoideAlbumLock: DEFAULT_AOIDE_ALBUM_LOCK,
+        aoideAutoDj: DEFAULT_AOIDE_AUTO_DJ,
         aoideCrossfade: DEFAULT_AOIDE_CROSSFADE,
         aoideLoudnessNormalisation: DEFAULT_AOIDE_LOUDNESS_NORMALISATION,
         aoideNowPlayingColumn: DEFAULT_AOIDE_NOW_PLAYING_COLUMN,

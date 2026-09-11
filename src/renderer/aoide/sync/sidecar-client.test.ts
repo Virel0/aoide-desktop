@@ -773,3 +773,297 @@ describe('audioAnalysis against the sidecar’s own documented payload', () => {
         expect(answer.pending).toEqual(['9c0e']);
     });
 });
+
+describe('beatGrids, against the sidecar’s own documented payload', () => {
+    const GRID = {
+        beatsPerBar: 4,
+        downbeatIndex: 0,
+        key: '8A',
+        keyConfidence: 0.71,
+        mixInMs: 15431,
+        mixOutMs: 187431,
+        segments: [
+            { anchorMs: 495.3, beats: 456, bpm: 128.0, endMs: 214000, residualMs: 3.9, startMs: 0 },
+        ],
+    };
+
+    it('asks by id and keeps grids, "no grid worth having" and "pending" apart', async () => {
+        const { calls, impl } = stubFetch([
+            () => json(200, { grids: { '3b1c': GRID, a71f: null }, pending: ['9c0e'] }),
+        ]);
+
+        const answer = await client(impl).beatGrids(['3b1c', 'a71f', '9c0e']);
+
+        expect(calls[0].method).toBe('GET');
+        expect(calls[0].url).toBe(
+            'https://example.invalid/aoide/beat-grid?ids=' + encodeURIComponent('3b1c,a71f,9c0e'),
+        );
+        expect(calls[0].headers.Authorization).toBe('MediaBrowser Token="secret-token"');
+        expect(answer).toEqual({
+            absent: false,
+            grids: { '3b1c': GRID, a71f: null },
+            pending: ['9c0e'],
+        });
+        // Present as a key, null as a value. If this vanishes the client asks
+        // about the track forever.
+        expect('a71f' in answer.grids).toBe(true);
+    });
+
+    it('sends at most two hundred ids per request and gathers the answers', async () => {
+        const ids = Array.from({ length: 401 }, (_, i) => `t${i}`);
+        const { calls, impl } = stubFetch([
+            () => json(200, { grids: { t0: null }, pending: ['t1'] }),
+            () => json(200, { grids: { t200: GRID } }),
+            () => json(200, { grids: {}, pending: [] }),
+        ]);
+
+        const answer = await client(impl).beatGrids(ids);
+
+        expect(calls).toHaveLength(3);
+        const sent = calls.map(
+            (call) => decodeURIComponent(call.url.split('ids=')[1]).split(',').length,
+        );
+        expect(sent).toEqual([200, 200, 1]);
+        expect(answer.grids).toEqual({ t0: null, t200: GRID });
+        expect(answer.pending).toEqual(['t1']);
+    });
+
+    // A sidecar older than 1.13.0.0. Not an error, never a toast: nothing mixes.
+    it('reads a 404 as "no grids for anyone", at once, without throwing', async () => {
+        const ids = Array.from({ length: 300 }, (_, i) => `t${i}`);
+        const { calls, impl } = stubFetch([() => new Response('Not Found', { status: 404 })]);
+
+        const answer = await client(impl).beatGrids(ids);
+
+        expect(answer).toEqual({ absent: true, grids: {}, pending: [] });
+        expect(calls).toHaveLength(1);
+    });
+
+    it('throws for any other failure, so the caller crossfades', async () => {
+        const { impl } = stubFetch([() => new Response('down', { status: 503 })]);
+        const error = await expectSyncError(client(impl).beatGrids(['a']));
+        expect(error.kind).toBe('serverFault');
+    });
+
+    // The drifting fixture: segments with no meter and no mix points is a
+    // real answer, and every field is nullable on its own.
+    it('keeps a fit whose meter could not be established', async () => {
+        const { impl } = stubFetch([
+            () =>
+                json(200, {
+                    grids: {
+                        drifting: {
+                            beatsPerBar: null,
+                            downbeatIndex: null,
+                            mixInMs: null,
+                            mixOutMs: null,
+                            segments: [
+                                {
+                                    anchorMs: 120,
+                                    beats: 52,
+                                    bpm: 105,
+                                    endMs: 30000,
+                                    residualMs: 261,
+                                    startMs: 0,
+                                },
+                            ],
+                        },
+                    },
+                }),
+        ]);
+
+        const answer = await client(impl).beatGrids(['drifting']);
+
+        expect(answer.grids.drifting).toEqual({
+            beatsPerBar: null,
+            downbeatIndex: null,
+            key: null,
+            keyConfidence: null,
+            mixInMs: null,
+            mixOutMs: null,
+            segments: [
+                { anchorMs: 120, beats: 52, bpm: 105, endMs: 30000, residualMs: 261, startMs: 0 },
+            ],
+        });
+    });
+
+    it('reads a grid with no readable segment as no grid, and a non-row as nothing', async () => {
+        const { impl } = stubFetch([
+            () =>
+                json(200, {
+                    grids: {
+                        bad: 'gridded',
+                        empty: { beatsPerBar: 4, segments: [] },
+                        noSegments: { beatsPerBar: 4 },
+                        partial: {
+                            beatsPerBar: 4.5,
+                            key: '',
+                            segments: [
+                                {
+                                    anchorMs: 'soon',
+                                    bpm: 128,
+                                    endMs: 1000,
+                                    residualMs: 4,
+                                    startMs: 0,
+                                },
+                                { anchorMs: 0, bpm: 0, endMs: 1000, residualMs: 4, startMs: 0 },
+                                {
+                                    anchorMs: 0,
+                                    beats: 2.5,
+                                    bpm: 128,
+                                    endMs: 1000,
+                                    residualMs: 4,
+                                    startMs: 0,
+                                },
+                            ],
+                        },
+                    },
+                    pending: [7, 'p'],
+                }),
+        ]);
+
+        const answer = await client(impl).beatGrids(['bad', 'empty', 'noSegments', 'partial', 'p']);
+
+        expect(answer.grids).toEqual({
+            empty: null,
+            partial: {
+                // A meter that is not a whole number is not a meter.
+                beatsPerBar: null,
+                downbeatIndex: null,
+                key: null,
+                keyConfidence: null,
+                mixInMs: null,
+                mixOutMs: null,
+                // Only the readable segment survives, with a beat count it
+                // could not read set aside.
+                segments: [
+                    { anchorMs: 0, beats: 0, bpm: 128, endMs: 1000, residualMs: 4, startMs: 0 },
+                ],
+            },
+        });
+        expect(answer.pending).toEqual(['p']);
+    });
+
+    it('asks nothing for no ids', async () => {
+        const { calls, impl } = stubFetch([() => json(200, {})]);
+        expect(await client(impl).beatGrids([])).toEqual({ absent: false, grids: {}, pending: [] });
+        expect(calls).toHaveLength(0);
+    });
+});
+
+describe('arrangements, against the sidecar’s own documented payload', () => {
+    const ARRANGEMENT = {
+        phraseAnchorMs: 23.4,
+        phraseBars: 16,
+        sections: [
+            { endMs: 29993, energy: 0.0, kind: 'intro', startMs: 0 },
+            { endMs: 119993, energy: 0.91, kind: 'drop', startMs: 29993 },
+            { endMs: 149993, energy: 0.46, kind: 'breakdown', startMs: 119993 },
+            { endMs: 179993, energy: 1.0, kind: 'drop', startMs: 149993 },
+            { endMs: 210000, energy: 0.31, kind: 'outro', startMs: 179993 },
+        ],
+        vocals: [{ endMs: 80062, startMs: 39636 }],
+    };
+
+    it('asks by id and keeps arrangements, "nothing to say" and "pending" apart', async () => {
+        const { calls, impl } = stubFetch([
+            () =>
+                json(200, { arrangements: { '3b1c': ARRANGEMENT, a71f: null }, pending: ['9c0e'] }),
+        ]);
+
+        const answer = await client(impl).arrangements(['3b1c', 'a71f', '9c0e']);
+
+        expect(calls[0].url).toBe(
+            'https://example.invalid/aoide/arrangement?ids=' + encodeURIComponent('3b1c,a71f,9c0e'),
+        );
+        expect(answer).toEqual({
+            absent: false,
+            arrangements: { '3b1c': ARRANGEMENT, a71f: null },
+            pending: ['9c0e'],
+        });
+    });
+
+    it('reads a 404 as "no arrangements for anyone", at once, without throwing', async () => {
+        const { calls, impl } = stubFetch([() => new Response('Not Found', { status: 404 })]);
+        const answer = await client(impl).arrangements(['a', 'b']);
+        expect(answer).toEqual({ absent: true, arrangements: {}, pending: [] });
+        expect(calls).toHaveLength(1);
+    });
+
+    it('throws for any other failure', async () => {
+        const { impl } = stubFetch([() => new Response('down', { status: 503 })]);
+        const error = await expectSyncError(client(impl).arrangements(['a']));
+        expect(error.kind).toBe('serverFault');
+    });
+
+    // The three states of `vocals`, and the one that costs a mix if confused.
+    it('keeps the three states of vocals apart, and reads the unreadable as unknown', async () => {
+        const { impl } = stubFetch([
+            () =>
+                json(200, {
+                    arrangements: {
+                        found: {
+                            sections: [],
+                            vocals: [{ endMs: 2, startMs: 1 }, 'noise', { startMs: 3 }],
+                        },
+                        none: { sections: [], vocals: [] },
+                        unknown: { sections: [] },
+                        unreadable: { sections: [], vocals: 'yes' },
+                    },
+                }),
+        ]);
+
+        const answer = await client(impl).arrangements(['found', 'none', 'unknown', 'unreadable']);
+
+        expect(answer.arrangements.found?.vocals).toEqual([{ endMs: 2, startMs: 1 }]);
+        expect(answer.arrangements.none?.vocals).toEqual([]);
+        expect(answer.arrangements.unknown?.vocals).toBeNull();
+        expect(answer.arrangements.unreadable?.vocals).toBeNull();
+    });
+
+    it('reads a kind it does not know as unknown, and leaves out what is not a section', async () => {
+        const { impl } = stubFetch([
+            () =>
+                json(200, {
+                    arrangements: {
+                        bad: 'measured',
+                        odd: {
+                            phraseAnchorMs: 'soon',
+                            phraseBars: 16.5,
+                            sections: [
+                                { endMs: 10, energy: 0.5, kind: 'bridge', startMs: 0 },
+                                { endMs: 20, kind: 'drop', startMs: 10 },
+                                { endMs: 'later', kind: 'drop', startMs: 20 },
+                                'section',
+                            ],
+                            vocals: null,
+                        },
+                    },
+                }),
+        ]);
+
+        const answer = await client(impl).arrangements(['bad', 'odd']);
+
+        expect(answer.arrangements).toEqual({
+            odd: {
+                phraseAnchorMs: null,
+                phraseBars: null,
+                sections: [
+                    { endMs: 10, energy: 0.5, kind: 'unknown', startMs: 0 },
+                    { endMs: 20, energy: 0, kind: 'drop', startMs: 10 },
+                ],
+                vocals: null,
+            },
+        });
+    });
+
+    it('asks nothing for no ids', async () => {
+        const { calls, impl } = stubFetch([() => json(200, {})]);
+        expect(await client(impl).arrangements([])).toEqual({
+            absent: false,
+            arrangements: {},
+            pending: [],
+        });
+        expect(calls).toHaveLength(0);
+    });
+});

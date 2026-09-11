@@ -1,9 +1,16 @@
+import type {
+    Arrangement,
+    ArrangementReply,
+    ArrangementSection,
+} from '/@/shared/aoide/arrangement';
+import type { BeatGrid, BeatGridReply, BeatGridSegment } from '/@/shared/aoide/beat-grid';
 import type { AudioAnalysis, AudioAnalysisReply } from '/@/shared/aoide/loudness';
 import type { ImportedTrack } from '/@/shared/aoide/playlist-import';
 import type { SoundBounds, SoundBoundsReply } from '/@/shared/aoide/trim-plan';
 
 import { SyncError, syncErrorFromReply } from './errors';
 
+import { SECTION_KINDS } from '/@/shared/aoide/arrangement';
 import {
     isSyncEntity,
     OrphanImage,
@@ -187,6 +194,132 @@ const readAnalysis = (value: unknown): AudioAnalysis | null | undefined => {
     return analysis.bpm === null && analysis.loudnessLufs === null ? null : analysis;
 };
 
+/** `GET /aoide/beat-grid` and `GET /aoide/arrangement` take at most this many ids. */
+export const MEASUREMENT_IDS_PER_REQUEST = 200;
+
+/**
+ * The sidecar's answer about what tracks are made of, plus whether it could
+ * answer at all. `absent` is a 404, read as `SoundBoundsAnswer`'s is: the
+ * endpoint is newer than this sidecar, so nothing mixes and nothing is wrong.
+ */
+export interface ArrangementAnswer extends ArrangementReply {
+    absent: boolean;
+}
+
+/** And about where their beats fall. */
+export interface BeatGridAnswer extends BeatGridReply {
+    absent: boolean;
+}
+
+/** An integer off the wire, or null. */
+const integerOrNull = (value: unknown): null | number =>
+    isFiniteNumber(value) && Number.isInteger(value) ? value : null;
+
+const readSegment = (value: unknown): BeatGridSegment | undefined => {
+    if (!value || typeof value !== 'object') return undefined;
+    const row = value as Record<string, unknown>;
+    if (
+        !isFiniteNumber(row.startMs) ||
+        !isFiniteNumber(row.endMs) ||
+        !isFiniteNumber(row.anchorMs) ||
+        !isFiniteNumber(row.bpm) ||
+        !(row.bpm > 0) ||
+        !isFiniteNumber(row.residualMs)
+    ) {
+        return undefined;
+    }
+    return {
+        anchorMs: row.anchorMs,
+        beats: integerOrNull(row.beats) ?? 0,
+        bpm: row.bpm,
+        endMs: row.endMs,
+        residualMs: row.residualMs,
+        startMs: row.startMs,
+    };
+};
+
+/**
+ * One track's grid off the wire, or undefined for a row that is not one.
+ * Null is kept: it is the server's "measured, no grid worth having" — and a
+ * grid without a single readable segment is the same statement, so it is
+ * stored as one. Every other field is independently nullable, per the
+ * contract, and read field by field: a meter the server could not establish
+ * must not cost the track its fit.
+ */
+export const readBeatGrid = (value: unknown): BeatGrid | null | undefined => {
+    if (value === null) return null;
+    if (!value || typeof value !== 'object') return undefined;
+    const row = value as Record<string, unknown>;
+    if (!Array.isArray(row.segments)) return undefined;
+
+    const segments = row.segments
+        .map(readSegment)
+        .filter((segment): segment is BeatGridSegment => segment !== undefined);
+    if (segments.length === 0) return null;
+
+    return {
+        beatsPerBar: integerOrNull(row.beatsPerBar),
+        downbeatIndex: integerOrNull(row.downbeatIndex),
+        key: typeof row.key === 'string' && row.key.length > 0 ? row.key : null,
+        keyConfidence: numberOrNull(row.keyConfidence),
+        mixInMs: numberOrNull(row.mixInMs),
+        mixOutMs: numberOrNull(row.mixOutMs),
+        segments,
+    };
+};
+
+const readSection = (value: unknown): ArrangementSection | undefined => {
+    if (!value || typeof value !== 'object') return undefined;
+    const row = value as Record<string, unknown>;
+    if (!isFiniteNumber(row.startMs) || !isFiniteNumber(row.endMs)) return undefined;
+    // A kind this client has never heard of is measured and unnamed, which is
+    // exactly what `unknown` means.
+    const kind = SECTION_KINDS.find((known) => known === row.kind) ?? 'unknown';
+    return {
+        endMs: row.endMs,
+        energy: numberOrNull(row.energy) ?? 0,
+        kind,
+        startMs: row.startMs,
+    };
+};
+
+/**
+ * One track's arrangement off the wire, or undefined for a row that is not
+ * one. Null is kept as the server's "measured, nothing to say".
+ *
+ * `vocals` has three states and they are not interchangeable: spans, an empty
+ * list meaning looked and found none, and null meaning it could not be told.
+ * Anything unreadable in that field is read as null — the cautious state —
+ * because a false "instrumental" is two voices over each other.
+ */
+export const readArrangement = (value: unknown): Arrangement | null | undefined => {
+    if (value === null) return null;
+    if (!value || typeof value !== 'object') return undefined;
+    const row = value as Record<string, unknown>;
+    if (!Array.isArray(row.sections)) return undefined;
+
+    const sections = row.sections
+        .map(readSection)
+        .filter((section): section is ArrangementSection => section !== undefined);
+
+    let vocals: Arrangement['vocals'] = null;
+    if (Array.isArray(row.vocals)) {
+        vocals = [];
+        for (const span of row.vocals) {
+            if (!span || typeof span !== 'object') continue;
+            const { endMs, startMs } = span as Record<string, unknown>;
+            if (isFiniteNumber(startMs) && isFiniteNumber(endMs)) vocals.push({ endMs, startMs });
+        }
+    }
+
+    return {
+        phraseAnchorMs: numberOrNull(row.phraseAnchorMs),
+        phraseBars: integerOrNull(row.phraseBars),
+        sections,
+        vocals,
+    };
+};
+
 /** The wire form of an imported track, spelled the way the sidecar reads it. */
 export const matchRequestBody = (tracks: ImportedTrack[]) =>
     tracks.map((track) => ({
@@ -211,6 +344,27 @@ export class SidecarClient {
         this.deviceId = options.deviceId;
         this.token = options.token;
         this.fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
+    }
+
+    /**
+     * `GET /aoide/arrangement?ids=…`: what each track is made of, section by
+     * section, and where somebody is singing. See `docs/arrangement.md` in the
+     * iOS repo.
+     *
+     * The fourth call of the family, and the same call: chunked at the
+     * server's ceiling, a 404 ending it at once with `absent`, any other
+     * failure thrown. A caller that gets `absent` mixes nothing and crossfades
+     * as it did before, which is the state a sidecar older than 1.15.0.0
+     * leaves it in.
+     */
+    async arrangements(ids: readonly string[]): Promise<ArrangementAnswer> {
+        const answer = await this.measurements(
+            'aoide/arrangement',
+            'arrangements',
+            ids,
+            readArrangement,
+        );
+        return { absent: answer.absent, arrangements: answer.rows, pending: answer.pending };
     }
 
     /**
@@ -259,6 +413,17 @@ export class SidecarClient {
         }
 
         return { absent: false, analysis, pending };
+    }
+
+    /**
+     * `GET /aoide/beat-grid?ids=…`: where each track's beats fall, as the
+     * sidecar fitted them. See `docs/beat-grid.md` in the iOS repo. Handled
+     * exactly as the arrangement is; a sidecar older than 1.13.0.0 answers
+     * 404 and nothing mixes.
+     */
+    async beatGrids(ids: readonly string[]): Promise<BeatGridAnswer> {
+        const answer = await this.measurements('aoide/beat-grid', 'grids', ids, readBeatGrid);
+        return { absent: answer.absent, grids: answer.rows, pending: answer.pending };
     }
 
     /**
@@ -638,6 +803,50 @@ export class SidecarClient {
 
     private authHeader(): string {
         return `MediaBrowser Token="${this.token}"`;
+    }
+
+    /**
+     * One lazily measured family of rows, keyed by track id: the shape shared
+     * by every `/aoide/*` measurement endpoint. `read` turns a row into a
+     * value, null for the server's "measured, nothing to say", or undefined
+     * for a row that cannot be read and is left out.
+     */
+    private async measurements<T>(
+        path: string,
+        key: string,
+        ids: readonly string[],
+        read: (value: unknown) => null | T | undefined,
+    ): Promise<{ absent: boolean; pending: string[]; rows: Record<string, null | T> }> {
+        const rows: Record<string, null | T> = {};
+        const pending: string[] = [];
+        if (ids.length === 0) return { absent: false, pending, rows };
+
+        for (let at = 0; at < ids.length; at += MEASUREMENT_IDS_PER_REQUEST) {
+            const chunk = ids.slice(at, at + MEASUREMENT_IDS_PER_REQUEST);
+            const response = await this.send(
+                `/${path}?ids=${encodeURIComponent(chunk.join(','))}`,
+                { method: 'GET' },
+            );
+
+            if (response.status === 404) return { absent: true, pending: [], rows: {} };
+            if (!response.ok) {
+                throw syncErrorFromReply(path, await this.readReply(response));
+            }
+
+            const body = await this.readJson<Record<string, unknown>>(response, path);
+            const table = body[key];
+            if (table && typeof table === 'object') {
+                for (const [id, value] of Object.entries(table)) {
+                    const row = read(value);
+                    if (row !== undefined) rows[id] = row;
+                }
+            }
+            for (const id of listFrom<unknown>(body.pending)) {
+                if (typeof id === 'string') pending.push(id);
+            }
+        }
+
+        return { absent: false, pending, rows };
     }
 
     private async readJson<T>(response: Response, context: string): Promise<T> {
