@@ -19,3 +19,4 @@ packaging/arch/*.pkg.tar.zst
 # Working notes, kept locally
 HANDOFF.md
 .claude/
+*.tsbuildinfo
