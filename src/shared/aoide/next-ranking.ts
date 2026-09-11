@@ -23,6 +23,9 @@ export type NextLibrary = {
     records: readonly NextRecord[];
 };
 
+/** The planner's score for the pair (from, to), or null when either record is unread. The server has the planner; this module does not, so the fixture supplies the figures by hand. */
+export type NextMixability = (from: string, to: string) => null | number;
+
 /** One decided listen. A play neither completed nor skipped is still in progress. */
 export type NextPlay = { completed: boolean; id: string; skipped: boolean; startedAt: number };
 
@@ -60,12 +63,15 @@ export const NEXT_QUEUE_ARTIST_DEPTH = 3;
 export const NEXT_MINIMUM_FINISH_SAMPLE = 3;
 
 export const NEXT_GENRE_WEIGHT = 0.45;
+/** Whether the record is of the seed's kind — shares a genre with it. The largest single term after taste. */
+export const NEXT_KINSHIP_WEIGHT = 0.6;
+/** What a pair the planner refused, or could not read, is worth in the ordering: it can still be crossfaded. */
+export const NEXT_CROSSFADE_ONLY = 0.15;
 export const NEXT_ARTIST_WEIGHT = 0.3;
 export const NEXT_FINISH_WEIGHT = 0.3;
 export const NEXT_RECENT_PENALTY = 1.4;
 export const NEXT_SAME_ARTIST_PENALTY = 0.4;
 export const NEXT_SIMILARITY_WEIGHT = 0.4;
-export const NEXT_MIXABILITY_WEIGHT = 0.6;
 export const NEXT_ARC_WEIGHT = 0.2;
 
 export const NEXT_EASY_BEND = 0.02;
@@ -214,14 +220,16 @@ export const keyPart = (a: null | string, b: null | string): number => {
     return around === 1 && first.isMinor === second.isMinor ? 1 : 0;
 };
 
-/** The mean of the parts that can be answered. */
+/** 1 when a genre is shared with the seed, 0 when both are tagged and none is, 0.5 when either is untagged. */
+export const kinship = (seed: NextRecord, candidate: NextRecord): number => {
+    if (seed.genres.length === 0 || candidate.genres.length === 0) return 0.5;
+    const mine = new Set(seed.genres.map((genre) => genre.toLowerCase()));
+    return candidate.genres.some((genre) => mine.has(genre.toLowerCase())) ? 1 : 0;
+};
+
+/** The mean of the parts that can be answered: tempo, key, energy. Genre is `kinship`'s, on its own. */
 export const similarity = (seed: NextRecord, candidate: NextRecord): number => {
     const parts: number[] = [];
-
-    if (seed.genres.length > 0 && candidate.genres.length > 0) {
-        const mine = new Set(seed.genres.map((genre) => genre.toLowerCase()));
-        parts.push(candidate.genres.some((genre) => mine.has(genre.toLowerCase())) ? 1 : 0);
-    }
 
     const a = steadyTempo(seed);
     const b = steadyTempo(candidate);
@@ -276,10 +284,52 @@ const arc = (candidate: NextRecord, target: null | number): number => {
 
 const ordinal = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
-/** The best `limit` records to follow the seed, best first, and how many finished plays the taste term stood on. */
+/**
+ * The chosen records as a set: from what they follow, each next is the one
+ * that best follows the last. A pair refused or unread counts as a
+ * crossfade; ties go to the better-chosen record, then the id.
+ */
+export const orderNext = (
+    chosen: readonly NextResult[],
+    after: string,
+    mixability: NextMixability,
+): NextResult[] => {
+    const remaining = [...chosen];
+    const ordered: NextResult[] = [];
+    let last = after;
+    while (remaining.length > 0) {
+        let best = 0;
+        let bestScore = -Infinity;
+        for (const [index, candidate] of remaining.entries()) {
+            const pair = mixability(last, candidate.id) ?? NEXT_CROSSFADE_ONLY;
+            if (pair > bestScore) {
+                bestScore = pair;
+                best = index;
+            }
+        }
+        const [next] = remaining.splice(best, 1);
+        ordered.push({
+            ...next,
+            factors: { ...next.factors, mixability: mixability(last, next.id) },
+        });
+        last = next.id;
+    }
+    return ordered;
+};
+
+/**
+ * The best `limit` records to follow the seed, in the order they should
+ * play, and how many finished plays the taste term stood on.
+ *
+ * Chosen by taste, kinship, similarity, freshness and arc — never by
+ * mixability — then, with Auto DJ on, ordered by mixability as a chain from
+ * the end of the queue (or the seed). The score reported is the choosing
+ * score; the mixability reported is the pair's, from the record before it.
+ */
 export const rankNext = (
     query: NextQuery,
     library: NextLibrary,
+    mixability: NextMixability = () => null,
 ): { events: number; results: NextResult[] } => {
     const byId = new Map(library.records.map((record) => [record.id, record]));
     const seed = byId.get(query.seed);
@@ -297,16 +347,17 @@ export const rankNext = (
         if (excluded.has(record.id) || library.notInterested.has(record.id)) continue;
 
         const tasteRaw = taste(record, profile, finish.get(record.id));
+        const kin = kinship(seed, record);
         const fit = similarity(seed, record);
-        // No grids in the fixture; mixability is pinned by the planner's own table.
-        const mixability: null | number = null;
         const shape = arc(record, target);
         const wasHeard = heard.has(record.id);
         const sameArtist = heardArtists.has(record.artist.toLowerCase());
 
-        let score = tasteRaw + fit * NEXT_SIMILARITY_WEIGHT + shape * NEXT_ARC_WEIGHT;
-        if (query.mode === 'autodj' && mixability !== null)
-            score += mixability * NEXT_MIXABILITY_WEIGHT;
+        let score =
+            tasteRaw +
+            kin * NEXT_KINSHIP_WEIGHT +
+            fit * NEXT_SIMILARITY_WEIGHT +
+            shape * NEXT_ARC_WEIGHT;
         if (wasHeard) score -= NEXT_RECENT_PENALTY;
         if (sameArtist) score -= NEXT_SAME_ARTIST_PENALTY;
 
@@ -314,7 +365,8 @@ export const rankNext = (
             factors: {
                 arc: shape,
                 freshness: wasHeard ? 0 : sameArtist ? 0.5 : 1,
-                mixability,
+                kinship: kin,
+                mixability: null,
                 similarity: fit,
                 taste: Math.min(1, Math.max(0, tasteRaw)),
             },
@@ -324,5 +376,10 @@ export const rankNext = (
     }
 
     results.sort((a, b) => (a.score !== b.score ? b.score - a.score : ordinal(a.id, b.id)));
-    return { events: profile.events, results: results.slice(0, Math.max(0, query.limit)) };
+    const chosen = results.slice(0, Math.max(0, query.limit));
+    if (query.mode !== 'autodj') return { events: profile.events, results: chosen };
+    return {
+        events: profile.events,
+        results: orderNext(chosen, query.queue[query.queue.length - 1] ?? query.seed, mixability),
+    };
 };

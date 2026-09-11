@@ -18,10 +18,16 @@ export type NextCandidate = {
     score: number;
 };
 
-/** Why a record was chosen, each in 0…1. `mixability` is null outside Auto DJ and for a pair the server could not read. */
+/**
+ * Why a record was chosen, each in 0…1. `mixability` is null outside Auto DJ
+ * and for a pair the server could not read. `kinship` — whether the record
+ * is of the seed's kind — is null from a server older than 1.17.0.0, which
+ * folded it into `similarity`.
+ */
 export type NextFactors = {
     arc: number;
     freshness: number;
+    kinship: null | number;
     mixability: null | number;
     similarity: number;
     taste: number;
@@ -85,7 +91,14 @@ const readFactors = (value: unknown): NextFactors | undefined => {
     if (taste === null || freshness === null || similarity === null || arc === null) {
         return undefined;
     }
-    return { arc, freshness, mixability: finite(raw.mixability), similarity, taste };
+    return {
+        arc,
+        freshness,
+        kinship: finite(raw.kinship),
+        mixability: finite(raw.mixability),
+        similarity,
+        taste,
+    };
 };
 
 /**
@@ -129,7 +142,9 @@ const percent = (value: number): string => `${Math.round(value * 100)}%`;
  * heard, so nearly every row would read "fresh", which says nothing.
  */
 export const summariseNextFactors = (factors: NextFactors): string => {
-    const parts = [`Taste ${percent(factors.taste)}`, `Fits ${percent(factors.similarity)}`];
+    const parts = [`Taste ${percent(factors.taste)}`];
+    if (factors.kinship !== null) parts.push(`Kin ${percent(factors.kinship)}`);
+    parts.push(`Fits ${percent(factors.similarity)}`);
     if (factors.mixability !== null) parts.push(`Mixes ${percent(factors.mixability)}`);
     parts.push(`Arc ${percent(factors.arc)}`);
     if (factors.freshness < 0.25) {

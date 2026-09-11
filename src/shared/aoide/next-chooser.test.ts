@@ -44,6 +44,7 @@ describe('asking the server what plays next', () => {
                     factors: {
                         arc: 0.9,
                         freshness: 1,
+                        kinship: 1,
                         mixability: 0.79,
                         similarity: 0.62,
                         taste: 0.71,
@@ -68,6 +69,8 @@ describe('asking the server what plays next', () => {
         expect(response?.candidates.map((c) => c.id)).toEqual(['a', 'b']);
         expect(response?.candidates[0].factors.mixability).toBe(0.79);
         expect(response?.candidates[1].factors.mixability).toBeNull();
+        expect(response?.candidates[0].factors.kinship).toBe(1);
+        expect(response?.candidates[1].factors.kinship).toBeNull();
         expect(response?.profile).toEqual({ events: 184, since: 1749600000000 });
     });
 
@@ -93,6 +96,7 @@ describe('asking the server what plays next', () => {
             summariseNextFactors({
                 arc: 0.9,
                 freshness: 1,
+                kinship: null,
                 mixability: 0.79,
                 similarity: 0.62,
                 taste: 0.714,
@@ -100,8 +104,19 @@ describe('asking the server what plays next', () => {
         ).toBe('Taste 71% · Fits 62% · Mixes 79% · Arc 90%');
         expect(
             summariseNextFactors({
+                arc: 0.9,
+                freshness: 1,
+                kinship: 1,
+                mixability: 0.79,
+                similarity: 0.62,
+                taste: 0.714,
+            }),
+        ).toBe('Taste 71% · Kin 100% · Fits 62% · Mixes 79% · Arc 90%');
+        expect(
+            summariseNextFactors({
                 arc: 0.5,
                 freshness: 1,
+                kinship: null,
                 mixability: null,
                 similarity: 0.5,
                 taste: 0.2,
@@ -111,6 +126,7 @@ describe('asking the server what plays next', () => {
             summariseNextFactors({
                 arc: 0.5,
                 freshness: 0.5,
+                kinship: null,
                 mixability: null,
                 similarity: 0.5,
                 taste: 0.2,
@@ -120,6 +136,7 @@ describe('asking the server what plays next', () => {
             summariseNextFactors({
                 arc: 0.5,
                 freshness: 0,
+                kinship: null,
                 mixability: null,
                 similarity: 0.5,
                 taste: 0.2,

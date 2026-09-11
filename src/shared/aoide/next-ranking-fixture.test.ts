@@ -20,6 +20,7 @@ type Case = {
             factors: {
                 arc: number;
                 freshness: number;
+                kinship: null | number;
                 mixability: null | number;
                 similarity: number;
                 taste: number;
@@ -59,10 +60,12 @@ const library: NextLibrary = {
 describe('what plays next, held to the fixture', () => {
     it('is the fixture the phone generated', () => {
         expect(fixture.tasteWindowDays).toBe(90);
-        expect(fixture.cases).toHaveLength(7);
+        expect(fixture.cases).toHaveLength(8);
     });
 
     it.each((fixture.cases as Case[]).map((c) => [c.name, c] as const))('%s', (_name, testCase) => {
+        const table: Record<string, number> =
+            (fixture as { mixability?: Record<string, number> }).mixability ?? {};
         const { events, results } = rankNext(
             {
                 limit: testCase.limit,
@@ -72,6 +75,7 @@ describe('what plays next, held to the fixture', () => {
                 seed: testCase.seed,
             },
             library,
+            (from, to) => table[`${from}>${to}`] ?? null,
         );
 
         expect(events).toBe(testCase.expected.events);
@@ -83,6 +87,7 @@ describe('what plays next, held to the fixture', () => {
                 want.factors.taste,
                 6,
             );
+            expect(got.factors.kinship, `${want.id} kinship`).toBe(want.factors.kinship);
             expect(got.factors.freshness, `${want.id} freshness`).toBe(want.factors.freshness);
             expect(round6(got.factors.similarity), `${want.id} similarity`).toBeCloseTo(
                 want.factors.similarity,
