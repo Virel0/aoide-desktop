@@ -1939,7 +1939,26 @@ describe('Infinity picks out of the pool rather than taking it', () => {
     it('fetches the pool’s tracklists before ranking albums', () => {
         expect(hook).toContain('albumPoolTracks(');
         expect(hook).toContain('albumIds,');
-        expect(hook.match(/songsQueries\.list\(/g)).toHaveLength(1);
+        // Two: the albums' tracklists, and the songs the server chose.
+        expect(hook.match(/songsQueries\.list\(/g)).toHaveLength(2);
+    });
+
+    // The server first, from the whole library — see docs/infinity.md in the
+    // iOS repo. The pool is what happens when it is an older sidecar (a 404,
+    // remembered for the session) or when the request failed this once.
+    it('asks the sidecar before collecting a pool, and remembers a 404', () => {
+        expect(hook).toContain('if (sidecar && nextReasons.sidecarChooses) {');
+        expect(hook).toContain('await askServerForNext({');
+        expect(hook).toContain("mode: args.autoDj ? 'autodj' : 'infinity',");
+        expect(hook).toContain('recent: await readRecentlyPlayed(),');
+        expect(hook).toContain('nextReasons.markAbsent();');
+        expect(hook).toContain('nextReasons.remember(chosen);');
+        expect(hook).toContain(
+            "_custom: { Ids: chosen.map((candidate) => candidate.id).join(',') },",
+        );
+        expect(sourceOf('../sync/sidecar-client.ts')).toContain(
+            'if (response.status === 404) return { absent: true };',
+        );
     });
 
     it('is published by preload and handled by main', () => {

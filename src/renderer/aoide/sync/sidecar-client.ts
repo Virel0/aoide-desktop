@@ -5,12 +5,14 @@ import type {
 } from '/@/shared/aoide/arrangement';
 import type { BeatGrid, BeatGridReply, BeatGridSegment } from '/@/shared/aoide/beat-grid';
 import type { AudioAnalysis, AudioAnalysisReply } from '/@/shared/aoide/loudness';
+import type { NextRequest, NextResponse } from '/@/shared/aoide/next-chooser';
 import type { ImportedTrack } from '/@/shared/aoide/playlist-import';
 import type { SoundBounds, SoundBoundsReply } from '/@/shared/aoide/trim-plan';
 
 import { SyncError, syncErrorFromReply } from './errors';
 
 import { SECTION_KINDS } from '/@/shared/aoide/arrangement';
+import { parseNextResponse } from '/@/shared/aoide/next-chooser';
 import {
     isSyncEntity,
     OrphanImage,
@@ -521,6 +523,40 @@ export class SidecarClient {
     }
 
     /**
+     * Send ops the server has not accepted yet.
+     *
+     * Push before pull: this device's own ops come back with a sequence number,
+     * which is how it learns they were durably accepted.
+     */
+    /**
+     * `POST /aoide/next`: what should play after the record playing, chosen
+     * from the whole library by the server. See `docs/infinity.md` in the
+     * iOS repo.
+     *
+     * `absent` on a 404 — an older sidecar — so the caller can fall back for
+     * the session. The server answers 404 for an unknown seed too, but the
+     * seed is what is playing, and a record the server no longer knows would
+     * defeat Instant Mix as well, so the two are not told apart.
+     */
+    async next(request: NextRequest): Promise<{ absent: boolean; answer?: NextResponse }> {
+        const response = await this.send('/aoide/next', {
+            body: JSON.stringify(request),
+            headers: { 'Content-Type': 'application/json' },
+            method: 'POST',
+        });
+
+        if (response.status === 404) return { absent: true };
+        if (!response.ok) {
+            throw syncErrorFromReply('aoide/next', await this.readReply(response));
+        }
+
+        const answer = parseNextResponse(await this.readJson<unknown>(response, 'aoide/next'));
+        if (!answer)
+            throw new Error('aoide/next: the answer was not in the shape the contract gives');
+        return { absent: false, answer };
+    }
+
+    /**
      * Blobs the server holds that no playlist names.
      *
      * Also the cheapest answer to "did my upload arrive?" — a blob pushed
@@ -603,12 +639,6 @@ export class SidecarClient {
         };
     }
 
-    /**
-     * Send ops the server has not accepted yet.
-     *
-     * Push before pull: this device's own ops come back with a sequence number,
-     * which is how it learns they were durably accepted.
-     */
     async push(ops: SyncOp[]): Promise<PushResponse> {
         const request: PushRequest = { deviceId: this.deviceId, ops };
         const response = await this.send('/aoide/sync/push', {

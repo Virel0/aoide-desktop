@@ -66,4 +66,28 @@ export const readTasteProfile = async (): Promise<TasteProfile> => {
     }
 };
 
+/**
+ * What this device heard lately, newest first — the order the sidecar's
+ * `recent` wants, which the profile's own set has thrown away. The same read
+ * as the profile (the wire form keeps the order); empty for every way of
+ * having nothing, as above.
+ */
+export const readRecentlyPlayed = async (): Promise<string[]> => {
+    if (!isAoideAvailable()) return [];
+
+    const since = Date.now() - INFINITY_TASTE_WINDOW_DAYS * MS_PER_DAY;
+
+    try {
+        const wire = await window.api.aoide.history.tasteProfile(since);
+        return Array.isArray(wire.recent)
+            ? wire.recent.filter((id): id is string => typeof id === 'string')
+            : [];
+    } catch (error) {
+        logger.warn('Infinity could not read what was heard lately', {
+            error: (error as Error).message,
+        });
+        return [];
+    }
+};
+
 const MS_PER_DAY = 24 * 60 * 60 * 1000;

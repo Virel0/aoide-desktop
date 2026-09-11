@@ -1,15 +1,20 @@
+import type { SidecarClient } from '/@/renderer/aoide/sync/sidecar-client';
 import type { QueryClient } from '@tanstack/react-query';
 
 import { useQueryClient } from '@tanstack/react-query';
 import React, { useEffect } from 'react';
 
+import { useAoideAutoDjEnabled } from '/@/renderer/aoide/features/playback/use-auto-dj';
+import { useSidecarTransport } from '/@/renderer/aoide/features/sync/use-sidecar-transport';
 import {
     chooseAlbumsByTaste,
     chooseSongsByTaste,
     infinityPoolCount,
 } from '/@/renderer/aoide/features/taste/infinity-taste';
+import { nextReasons } from '/@/renderer/aoide/features/taste/next-reasons';
 import {
     readFinishCounts,
+    readRecentlyPlayed,
     readTasteProfile,
 } from '/@/renderer/aoide/features/taste/taste-profile-api';
 import { queryKeys } from '/@/renderer/api/query-keys';
@@ -30,6 +35,7 @@ import {
     useSettingsStore,
 } from '/@/renderer/store';
 import { logger } from '/@/renderer/utils/logger';
+import { buildNextRequest } from '/@/shared/aoide/next-chooser';
 import { hasFeature } from '/@/shared/api/utils';
 import { LibraryItem, type Song, SongListSort, SortOrder } from '/@/shared/types/domain-types';
 import { ServerFeature } from '/@/shared/types/features-types';
@@ -42,6 +48,8 @@ export const useAutoDJ = () => {
     const player = usePlayer();
     const settings = useAutoDJSettings();
     const isFetching = useIsPlayerFetching();
+    const sidecar = useSidecarTransport();
+    const autoDj = useAoideAutoDjEnabled();
 
     const hasSimilarSongsMusicFolder = hasFeature(server, ServerFeature.SIMILAR_SONGS_MUSIC_FOLDER);
 
@@ -161,6 +169,36 @@ export const useAutoDJ = () => {
 
                     const queueSongIdSet = new Set(queue.items.map((item) => item.id));
 
+                    // The server first: it scores the whole library against
+                    // the record playing, from every device's history. See
+                    // `docs/infinity.md` in the iOS repo. An older sidecar
+                    // answers 404 once and the pool below is used for the
+                    // session; any other failure falls back for this top-up.
+                    if (sidecar && nextReasons.sidecarChooses) {
+                        const chosen = await askServerForNext({
+                            autoDj,
+                            client: sidecar,
+                            limit: settings.itemCount,
+                            queryClient,
+                            queueSongIdSet,
+                            seed: properties.song,
+                            serverId,
+                            upcoming: queue.items
+                                .slice(properties.index + 1)
+                                .map((item) => item.id),
+                        });
+
+                        if (chosen) {
+                            if (chosen.length > 0) {
+                                player.addToQueueByData(chosen, Play.LAST);
+                                eventEmitter.emit('AUTODJ_QUEUE_ADDED', {
+                                    songCount: chosen.length,
+                                });
+                            }
+                            return;
+                        }
+                    }
+
                     const songPool = await runAutoDjSongs({
                         ...runnerDepsBase,
                         currentSong: properties.song,
@@ -198,12 +236,14 @@ export const useAutoDJ = () => {
 
         return () => unsubscribe();
     }, [
+        autoDj,
         hasSimilarSongsMusicFolder,
         isFetching,
         player,
         queryClient,
         server,
         serverId,
+        sidecar,
         settings.enabled,
         settings.albumStrategy,
         settings.allowDuplicates,
@@ -213,6 +253,81 @@ export const useAutoDJ = () => {
         settings.songStrategy,
         settings.timing,
     ]);
+};
+
+/**
+ * The sidecar's choice of what follows `seed`, as songs, in its order.
+ *
+ * `undefined` when the server did not choose — an older sidecar (remembered
+ * for the session), or any failure, which is logged — so the caller can
+ * collect a pool the old way. An empty list is an answer: the server looked
+ * and found nothing new, and the queue simply ends.
+ */
+const askServerForNext = async (args: {
+    autoDj: boolean;
+    client: SidecarClient;
+    limit: number;
+    queryClient: QueryClient;
+    queueSongIdSet: Set<string>;
+    seed: Song;
+    serverId: string;
+    upcoming: string[];
+}): Promise<Song[] | undefined> => {
+    try {
+        const request = buildNextRequest({
+            limit: args.limit,
+            mode: args.autoDj ? 'autodj' : 'infinity',
+            queue: args.upcoming,
+            recent: await readRecentlyPlayed(),
+            seed: args.seed.id,
+        });
+        const { absent, answer } = await args.client.next(request);
+
+        if (absent || !answer) {
+            nextReasons.markAbsent();
+            logger.info(
+                'This server has no /aoide/next; Infinity is using Instant Mix for the session',
+            );
+            return undefined;
+        }
+
+        if (answer.profile.events === 0) {
+            logger.info(
+                'Infinity is still learning what this listener likes: no finished plays yet',
+            );
+        }
+
+        const chosen = answer.candidates.filter(
+            (candidate) => !args.queueSongIdSet.has(candidate.id),
+        );
+        nextReasons.remember(chosen);
+        if (chosen.length === 0) return [];
+
+        // Items come back in the server's own order; the order asked for is
+        // the sidecar's, so they are put back into it.
+        const list = await args.queryClient.fetchQuery({
+            ...songsQueries.list({
+                query: {
+                    _custom: { Ids: chosen.map((candidate) => candidate.id).join(',') },
+                    limit: -1,
+                    sortBy: SongListSort.NAME,
+                    sortOrder: SortOrder.ASC,
+                    startIndex: 0,
+                },
+                serverId: args.serverId,
+            }),
+            queryKey: queryKeys.player.fetch({ aoideNext: args.seed.id }),
+        });
+        const byId = new Map(list.items.map((song) => [song.id, song]));
+        return chosen
+            .map((candidate) => byId.get(candidate.id))
+            .filter((song): song is Song => !!song);
+    } catch (error) {
+        logger.warn('The server could not choose what plays next', {
+            error: (error as Error).message,
+        });
+        return undefined;
+    }
 };
 
 /**
