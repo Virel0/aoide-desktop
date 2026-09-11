@@ -116,6 +116,16 @@ describe('asking the server what plays next', () => {
             summariseNextFactors({
                 arc: 0.5,
                 freshness: 1,
+                kinship: 1,
+                mixability: 0.15,
+                similarity: 0.5,
+                taste: 0.2,
+            }),
+        ).toBe('Taste 20% · Kin 100% · Fits 50% · Crossfade · Arc 50%');
+        expect(
+            summariseNextFactors({
+                arc: 0.5,
+                freshness: 1,
                 kinship: null,
                 mixability: null,
                 similarity: 0.5,

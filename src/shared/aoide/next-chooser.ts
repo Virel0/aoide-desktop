@@ -35,6 +35,9 @@ export type NextFactors = {
 
 export type NextMode = 'autodj' | 'infinity';
 
+/** What the server reports for a pair the planner refused: the record can still be crossfaded. Anything at or under it is not a mix. */
+export const NEXT_CROSSFADE_ONLY = 0.15;
+
 /** How much history the taste term stood on. With no finished plays at all, taste is 0 for everything. */
 export type NextProfile = {
     events: number;
@@ -145,7 +148,15 @@ export const summariseNextFactors = (factors: NextFactors): string => {
     const parts = [`Taste ${percent(factors.taste)}`];
     if (factors.kinship !== null) parts.push(`Kin ${percent(factors.kinship)}`);
     parts.push(`Fits ${percent(factors.similarity)}`);
-    if (factors.mixability !== null) parts.push(`Mixes ${percent(factors.mixability)}`);
+    // A pair the planner looked at and declined is a crossfade; one it could
+    // not look at says nothing. "Mixes 15%" would read as a poor mix.
+    if (factors.mixability !== null) {
+        parts.push(
+            factors.mixability <= NEXT_CROSSFADE_ONLY
+                ? 'Crossfade'
+                : `Mixes ${percent(factors.mixability)}`,
+        );
+    }
     parts.push(`Arc ${percent(factors.arc)}`);
     if (factors.freshness < 0.25) {
         parts.push('heard lately');

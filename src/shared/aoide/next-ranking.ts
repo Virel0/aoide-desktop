@@ -1,5 +1,7 @@
 import type { NextFactors, NextMode } from './next-chooser';
 
+import { NEXT_CROSSFADE_ONLY } from './next-chooser';
+
 /**
  * The rule the sidecar follows to choose what plays next — `docs/infinity.md`
  * in the iOS repo, as arithmetic — written out here so the rule has a
@@ -65,8 +67,6 @@ export const NEXT_MINIMUM_FINISH_SAMPLE = 3;
 export const NEXT_GENRE_WEIGHT = 0.45;
 /** Whether the record is of the seed's kind — shares a genre with it. The largest single term after taste. */
 export const NEXT_KINSHIP_WEIGHT = 0.6;
-/** What a pair the planner refused, or could not read, is worth in the ordering: it can still be crossfaded. */
-export const NEXT_CROSSFADE_ONLY = 0.15;
 export const NEXT_ARTIST_WEIGHT = 0.3;
 export const NEXT_FINISH_WEIGHT = 0.3;
 export const NEXT_RECENT_PENALTY = 1.4;
@@ -220,11 +220,22 @@ export const keyPart = (a: null | string, b: null | string): number => {
     return around === 1 && first.isMinor === second.isMinor ? 1 : 0;
 };
 
-/** 1 when a genre is shared with the seed, 0 when both are tagged and none is, 0.5 when either is untagged. */
+/**
+ * What sharing a secondary tag is worth against sharing the first one. A
+ * record's first genre is what it *is*; the rest is what it touches.
+ */
+export const NEXT_SECONDARY_KINSHIP = 0.5;
+
+/** 1 when the seed's first genre is the candidate's first, 0.5 when any other genre is shared, 0 when both are tagged and none is, 0.5 when either is untagged. */
 export const kinship = (seed: NextRecord, candidate: NextRecord): number => {
-    if (seed.genres.length === 0 || candidate.genres.length === 0) return 0.5;
-    const mine = new Set(seed.genres.map((genre) => genre.toLowerCase()));
-    return candidate.genres.some((genre) => mine.has(genre.toLowerCase())) ? 1 : 0;
+    const mine = seed.genres[0];
+    const theirs = candidate.genres[0];
+    if (mine === undefined || theirs === undefined) return 0.5;
+    if (mine.toLowerCase() === theirs.toLowerCase()) return 1;
+    const shared = new Set(seed.genres.map((genre) => genre.toLowerCase()));
+    return candidate.genres.some((genre) => shared.has(genre.toLowerCase()))
+        ? NEXT_SECONDARY_KINSHIP
+        : 0;
 };
 
 /** The mean of the parts that can be answered: tempo, key, energy. Genre is `kinship`'s, on its own. */
