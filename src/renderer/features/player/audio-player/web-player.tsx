@@ -8,6 +8,7 @@ import { useArrangement } from '/@/renderer/aoide/features/playback/arrangement-
 import { useBeatGrid } from '/@/renderer/aoide/features/playback/beat-grid-store';
 import { useAoideAutoDjEnabled } from '/@/renderer/aoide/features/playback/use-auto-dj';
 import { useBufferDeck } from '/@/renderer/aoide/features/playback/use-buffer-deck';
+import { useAoideExactJoinsEnabled } from '/@/renderer/aoide/features/playback/use-crossfade';
 import { useDjPrefetch } from '/@/renderer/aoide/features/playback/use-dj-prefetch';
 import { useLoudnessGain } from '/@/renderer/aoide/features/playback/use-loudness-gain';
 import { useAoideLoudnessNormalisationEnabled } from '/@/renderer/aoide/features/playback/use-loudness-normalisation';
@@ -56,7 +57,17 @@ export function WebPlayer() {
     // trim tracker and by the transition handlers below, all of which have to
     // stand down when a join has been committed to the audio clock.
     const deckOwnsBoundary = useRef(false);
-    const trim = useTrimPlayers({ holdEndRef: deckOwnsBoundary, num, player1, player2, playerRef });
+    // Filled in below, once the ended handlers exist: ending a track early
+    // runs the same path the element's own `ended` would.
+    const trimEnd = useRef<((slot: 1 | 2) => void) | null>(null);
+    const trim = useTrimPlayers({
+        holdEndRef: deckOwnsBoundary,
+        num,
+        onEnded: trimEnd,
+        player1,
+        player2,
+        playerRef,
+    });
     // Aoide's loudness normalisation, as a factor into each slot's existing
     // gain node — the same node ReplayGain uses, so the two multiply.
     const loudness1 = useLoudnessGain(player1);
@@ -79,7 +90,13 @@ export function WebPlayer() {
     const player2Url = useSongUrl(player2, num === 2, transcode);
 
     // Aoide's exact join. It only takes a boundary it can be sample-accurate
-    // about; everything below is what happens when it does not.
+    // about; everything below is what happens when it does not. Without the
+    // graph the deck is never built, and every path through it is a no-op —
+    // which is how it is switched off. Auto DJ is the deck too: a mix cannot
+    // be performed on an element, so turning it on builds the deck whether or
+    // not exact joins were asked for.
+    const exactJoins = useAoideExactJoinsEnabled();
+    const deckWanted = exactJoins || autoDj;
     const deck = useBufferDeck({
         currentSong,
         dj: {
@@ -98,7 +115,7 @@ export function WebPlayer() {
         repeat,
         trim,
         volume,
-        webAudio,
+        webAudio: deckWanted ? webAudio : undefined,
     });
 
     const [localPlayerStatus, setLocalPlayerStatus] = useState<PlayerStatus>(status);
@@ -374,6 +391,8 @@ export function WebPlayer() {
             setIsTransitioning(false);
         });
     }, [deck, mediaAutoNext, volume]);
+
+    trimEnd.current = (slot) => (slot === 1 ? handleOnEndedPlayer1() : handleOnEndedPlayer2());
 
     const player = usePlayer();
 

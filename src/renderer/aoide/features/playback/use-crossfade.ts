@@ -14,3 +14,6 @@ export const useAoideCrossfadeEnabled = (): boolean =>
 
 export const useAoideAlbumLockEnabled = (): boolean =>
     useSettingsStore((state) => state.general.aoideAlbumLock, shallow);
+
+export const useAoideExactJoinsEnabled = (): boolean =>
+    useSettingsStore((state) => state.general.aoideExactJoins, shallow);

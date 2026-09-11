@@ -179,6 +179,8 @@
             "trimSilence_footer": "The bounds come from the Aoide sidecar, which measures each track once; a track it has not measured yet plays whole, and one it measured as having nothing to trim is left alone.",
             "crossfade": "Crossfade",
             "crossfade_description": "Fades one song into the next instead of stopping between them, choosing the length for each pair: two songs at a tempo that holds across both get a longer blend, anything else a short one. While this is on it decides every handover and the fixed transition settings above are not used. Nothing is beat-matched — the tempo the sidecar measures says how fast a track is, not where its beats fall.",
+            "exactJoins": "Exact joins (experimental)",
+            "exactJoins_description": "Join tracks on the audio clock to the sample instead of starting the next one a fraction early. Truer gapless, and new: leave it off unless you want to try it, and turn it off if a track ever restarts at a boundary.",
             "crossfade_footer": "A fade begins before the current song ends, so the last few seconds of one track play under the first few of the next rather than after them.",
             "albumLock": "Keep albums whole",
             "albumLock_description": "Two tracks of one record, played in order, hand over untouched — a record written to run continuously still does. Leave this on and Crossfade is safe to leave on with it.",
