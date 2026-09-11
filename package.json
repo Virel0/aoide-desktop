@@ -1,6 +1,6 @@
 {
     "name": "aoide-desktop",
-    "version": "1.17.0",
+    "version": "1.17.1",
     "description": "Aoide for Linux — a desktop client for the Aoide/Jellyfin music setup.",
     "keywords": [
         "subsonic",
