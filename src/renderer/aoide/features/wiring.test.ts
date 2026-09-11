@@ -1075,6 +1075,17 @@ describe('taste flags: the phone’s "Not Interested" and "Don’t Count Plays"'
     });
 });
 
+describe('Infinity asks for an instant mix, not a name match', () => {
+    it('leaves /Similar to people who chose it', () => {
+        const controller = readFileSync(
+            join(import.meta.dirname, '../../api/jellyfin/jellyfin-controller.ts'),
+            'utf8',
+        );
+        expect(controller).toContain('if (apiClientProps.server?.preferInstantMix === false) {');
+        expect(controller).not.toContain('preferInstantMix !== true');
+    });
+});
+
 describe('the exact join: a buffer deck takes the boundary, or the elements keep it', () => {
     const webPlayer = readFileSync(
         join(import.meta.dirname, '../../features/player/audio-player/web-player.tsx'),
@@ -1083,6 +1094,18 @@ describe('the exact join: a buffer deck takes the boundary, or the elements keep
     const hook = sourceOf('playback/use-buffer-deck.ts');
     const deck = sourceOf('playback/buffer-deck.ts');
     const trimPlayers = sourceOf('playback/use-trim-players.ts');
+
+    // Silence trimming used to end a track by seeking the element to its own
+    // duration, which on a transcoded stream is a request the server cannot
+    // serve; the engine's retry then reloaded the outgoing song from the start
+    // over the top of the one that had faded in.
+    it('ends a trimmed track by running the ended handler, not by seeking the stream', () => {
+        expect(trimPlayers).toContain('onEnded.current?.(slot);');
+        expect(trimPlayers).not.toContain('element.currentTime = element.duration');
+        expect(webPlayer).toContain(
+            'trimEnd.current = (slot) => (slot === 1 ? handleOnEndedPlayer1() : handleOnEndedPlayer2());',
+        );
+    });
 
     // Twice in two releases the deck left a track restarting over the one that
     // had just begun, and a third report followed the second fix. Until a
@@ -1296,9 +1319,9 @@ describe('silence trimming: the player consults the trim plan, the setting gates
     // The web player: a hook over its two slots, fed from the same progress
     // samples it scrobbles and crossfades from.
     it('the web player feeds both slots’ progress to the trim hook', () => {
-        expect(webPlayer).toContain(
-            'useTrimPlayers({ holdEndRef: deckOwnsBoundary, num, player1, player2, playerRef })',
-        );
+        expect(webPlayer).toContain('const trim = useTrimPlayers({');
+        expect(webPlayer).toContain('holdEndRef: deckOwnsBoundary,');
+        expect(webPlayer).toContain('onEnded: trimEnd,');
         expect(webPlayer).toContain('trim.onProgress1(e.playedSeconds)');
         expect(webPlayer).toContain('trim.onProgress2(e.playedSeconds)');
     });
@@ -1313,9 +1336,11 @@ describe('silence trimming: the player consults the trim plan, the setting gates
     // Ending early runs Feishin's own `ended` path: the element is seeked to
     // its end and fires `ended`, which `onEnded` is wired to. Nothing of
     // `handleOnEndedPlayerN` is restated. Only the audible slot may do it.
-    it('ends a track through the element’s own ended event, only from the audible slot', () => {
-        expect(players).toContain('element.currentTime = element.duration');
+    it('ends a track through the player’s own ended handler, only from the audible slot', () => {
+        expect(players).toContain('onEnded.current?.(slot);');
         expect(players).toContain('if (slot !== num || holdEndRef?.current) return;');
+        // Still nothing of the store's advance restated here: the handler it
+        // runs is the one the element's `ended` would have.
         expect(players).not.toMatch(/\bmediaAutoNext\s*\(/);
     });
 

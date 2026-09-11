@@ -1202,11 +1202,13 @@ export const JellyfinController: InternalControllerEndpoint = {
     getSimilarSongs: async (args) => {
         const { apiClientProps, query } = args;
 
-        if (apiClientProps.server?.preferInstantMix !== true) {
-            // Prefer getSimilarSongs, where possible, and not overridden.
-            // InstantMix can be overridden by plugins, so this may be preferred by the user.
-            // Otherwise, similarSongs may have a better output than InstantMix, if sufficient
-            // data exists from the server.
+        // Jellyfin's /Similar for a song is a name match. Asked what follows
+        // "Cities", it answered "Cities of Asylum" and "Ancient Cities", which
+        // is not a set; it is a search result. Instant Mix is the one built on
+        // genre and artist, it is what the phone asks for, and it is the pool
+        // Infinity's own ranking was designed to sort. The old preference for
+        // /Similar is kept for anyone who set it, and off for everyone else.
+        if (apiClientProps.server?.preferInstantMix === false) {
             const res = await jfApiClient(apiClientProps).getSimilarSongs({
                 params: {
                     itemId: query.songId,
