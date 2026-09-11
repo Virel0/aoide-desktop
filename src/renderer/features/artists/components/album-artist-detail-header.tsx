@@ -20,8 +20,7 @@ import {
 import { useSetFavorite } from '/@/renderer/features/shared/hooks/use-set-favorite';
 import { useSetRating } from '/@/renderer/features/shared/hooks/use-set-rating';
 import { AppRoute } from '/@/renderer/router/routes';
-import { useAppStore, useCurrentServer, useShowFavorites } from '/@/renderer/store';
-import { useArtistReleaseTypeItems, usePlayButtonBehavior } from '/@/renderer/store/settings.store';
+import { PLAY_BUTTON_BEHAVIOR, useAppStore, useCurrentServer } from '/@/renderer/store';
 import { formatDurationString } from '/@/renderer/utils';
 import { hasFeature, SEPARATOR_STRING, sortAlbumList } from '/@/shared/api/utils';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
@@ -105,7 +104,6 @@ export const AlbumArtistDetailHeader = forwardRef<HTMLDivElement, AlbumArtistDet
         };
         const routeId = (artistId || albumArtistId) as string;
         const server = useCurrentServer();
-        const showFavorites = useShowFavorites();
         const { t } = useTranslation();
         const detailQuery = useSuspenseQuery(
             artistsQueries.albumArtistDetail({
@@ -141,7 +139,6 @@ export const AlbumArtistDetailHeader = forwardRef<HTMLDivElement, AlbumArtistDet
         ];
 
         const { addToQueueByFetch } = usePlayer();
-        const playButtonBehavior = usePlayButtonBehavior();
         const setFavorite = useSetFavorite();
         const setRating = useSetRating();
         const uploadArtistImageMutation = useUploadArtistImage({});
@@ -150,7 +147,6 @@ export const AlbumArtistDetailHeader = forwardRef<HTMLDivElement, AlbumArtistDet
         const sortBy = albumArtistDetailSort.sortBy;
         const sortOrder = albumArtistDetailSort.sortOrder;
         const groupingType = albumArtistDetailSort.groupingType;
-        const artistReleaseTypeItems = useArtistReleaseTypeItems();
 
         const handlePlay = useCallback(
             (type?: Play) => {
@@ -163,7 +159,6 @@ export const AlbumArtistDetailHeader = forwardRef<HTMLDivElement, AlbumArtistDet
                     sortedAlbums,
                     routeId,
                     groupingType,
-                    artistReleaseTypeItems,
                     t,
                 );
 
@@ -173,19 +168,17 @@ export const AlbumArtistDetailHeader = forwardRef<HTMLDivElement, AlbumArtistDet
                     server.id,
                     albumIds,
                     LibraryItem.ALBUM,
-                    type || playButtonBehavior,
+                    type || PLAY_BUTTON_BEHAVIOR,
                 );
             },
             [
                 addToQueueByFetch,
-                playButtonBehavior,
                 routeId,
                 server.id,
                 albumsQuery.data?.items,
                 sortBy,
                 sortOrder,
                 groupingType,
-                artistReleaseTypeItems,
                 t,
             ],
         );
@@ -309,7 +302,7 @@ export const AlbumArtistDetailHeader = forwardRef<HTMLDivElement, AlbumArtistDet
                     </Group>
                     <LibraryHeaderMenu
                         favorite={detailQuery.data?.userFavorite}
-                        onFavorite={showFavorites ? handleFavorite : undefined}
+                        onFavorite={handleFavorite}
                         onMore={handleMoreOptions}
                         onPlay={(type) => handlePlay(type)}
                         onRating={showRating ? handleUpdateRating : undefined}

@@ -49,17 +49,14 @@ import { useHotkeys } from '/@/renderer/hooks/use-hotkeys';
 import { AppRoute } from '/@/renderer/router/routes';
 import {
     ArtistItem,
+    artistItems,
+    RADIO_TRACK_COUNT,
     useAppStore,
     useCurrentServer,
     useCurrentServerId,
     usePlayerSong,
-    useShowFavorites,
 } from '/@/renderer/store';
-import {
-    useArtistItems,
-    useArtistRadioCount,
-    useSettingsStore,
-} from '/@/renderer/store/settings.store';
+import { useSettingsStore } from '/@/renderer/store/settings.store';
 import { sanitize } from '/@/renderer/utils/sanitize';
 import { sortAlbumList, sortSongList } from '/@/shared/api/utils';
 import { ActionIcon, ActionIconGroup } from '/@/shared/components/action-icon/action-icon';
@@ -625,20 +622,13 @@ const AlbumArtistMetadataFavoriteSongs = ({
     const player = usePlayer();
     const serverId = useCurrentServerId();
     const server = useCurrentServer();
-    const showFavorites = useShowFavorites();
-    const showFavoriteAndRatingSegmentControl =
-        server?.type !== ServerType.JELLYFIN && showFavorites;
-
-    let favoriteSongsQueryTypeFilter = favoriteSongsQueryType;
-    if (!showFavorites) {
-        favoriteSongsQueryTypeFilter = 'rating';
-    }
+    const showFavoriteAndRatingSegmentControl = server?.type !== ServerType.JELLYFIN;
 
     const favoriteSongsQuery = useQuery({
         ...artistsQueries.favoriteSongs({
             query: {
                 artistId: routeId,
-                type: favoriteSongsQueryTypeFilter,
+                type: favoriteSongsQueryType,
             },
             serverId: serverId,
         }),
@@ -997,8 +987,6 @@ export const AlbumArtistDetailContent = ({
     albumsQuery,
     detailQuery,
 }: AlbumArtistDetailContentProps) => {
-    const artistItems = useArtistItems();
-    const artistRadioCount = useArtistRadioCount();
     const { albumArtistId, artistId } = useParams() as {
         albumArtistId?: string;
         artistId?: string;
@@ -1018,7 +1006,7 @@ export const AlbumArtistDetailContent = ({
         }
 
         return [enabled, order];
-    }, [artistItems]);
+    }, []);
 
     const artistDiscographyLink = useMemo(
         () =>
@@ -1052,7 +1040,7 @@ export const AlbumArtistDetailContent = ({
                 ...songsQueries.artistRadio({
                     query: {
                         artistId: routeId,
-                        count: artistRadioCount,
+                        count: RADIO_TRACK_COUNT,
                     },
                     serverId: server.id,
                 }),
@@ -1065,7 +1053,7 @@ export const AlbumArtistDetailContent = ({
         } catch (error) {
             console.error('Failed to load artist radio:', error);
         }
-    }, [addToQueueByData, artistRadioCount, queryClient, routeId, server.id, stationName]);
+    }, [addToQueueByData, queryClient, routeId, server.id, stationName]);
 
     // Calculate order for genres and external links (show before other sections)
     // Use a very low order number to ensure they appear first

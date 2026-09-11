@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { queryKeys } from '/@/renderer/api/query-keys';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
-import { useArtistRadioCount, useCurrentServerId, usePlayButtonBehavior } from '/@/renderer/store';
+import { PLAY_BUTTON_BEHAVIOR, RADIO_TRACK_COUNT, useCurrentServerId } from '/@/renderer/store';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
 import { Album } from '/@/shared/types/domain-types';
 import { Play } from '/@/shared/types/types';
@@ -16,12 +16,10 @@ interface PlayAlbumRadioActionProps {
 }
 
 export const PlayAlbumRadioAction = ({ album, disabled }: PlayAlbumRadioActionProps) => {
-    const albumRadioCount = useArtistRadioCount(); // Reuse the same setting for album radio
     const { t } = useTranslation();
     const player = usePlayer();
     const serverId = useCurrentServerId();
     const queryClient = useQueryClient();
-    const playButtonBehavior = usePlayButtonBehavior();
 
     const handlePlayAlbumRadio = useCallback(
         async (playType: Play) => {
@@ -32,7 +30,7 @@ export const PlayAlbumRadioAction = ({ album, disabled }: PlayAlbumRadioActionPr
                     ...songsQueries.albumRadio({
                         query: {
                             albumId: album.id,
-                            count: albumRadioCount,
+                            count: RADIO_TRACK_COUNT,
                         },
                         serverId: serverId,
                     }),
@@ -45,7 +43,7 @@ export const PlayAlbumRadioAction = ({ album, disabled }: PlayAlbumRadioActionPr
                 console.error('Failed to load album radio:', error);
             }
         },
-        [album, albumRadioCount, player, queryClient, serverId],
+        [album, player, queryClient, serverId],
     );
 
     const handlePlayAlbumRadioNow = useCallback(() => {
@@ -61,8 +59,8 @@ export const PlayAlbumRadioAction = ({ album, disabled }: PlayAlbumRadioActionPr
     }, [handlePlayAlbumRadio]);
 
     const defaultPlayAlbumRadioAction = useCallback(() => {
-        handlePlayAlbumRadio(playButtonBehavior);
-    }, [handlePlayAlbumRadio, playButtonBehavior]);
+        handlePlayAlbumRadio(PLAY_BUTTON_BEHAVIOR);
+    }, [handlePlayAlbumRadio]);
 
     return (
         <ContextMenu.Submenu>

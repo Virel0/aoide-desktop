@@ -2,7 +2,7 @@ import { Reorder } from 'motion/react';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { DraggableItem } from '/@/renderer/features/settings/components/general/draggable-item';
+import { DraggableItem } from '/@/renderer/features/shared/components/draggable-item';
 import {
     AlbumGroupItem,
     SortableItem,

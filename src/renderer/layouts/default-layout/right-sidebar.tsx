@@ -1,4 +1,3 @@
-import clsx from 'clsx';
 import { forwardRef, Ref } from 'react';
 
 import styles from './right-sidebar.module.css';
@@ -7,7 +6,7 @@ import { AoideNowPlayingColumn } from '/@/renderer/aoide/features/now-playing/ao
 import { useAoideNowPlayingColumn } from '/@/renderer/aoide/features/now-playing/use-now-playing-column';
 import { SidebarPlayQueue } from '/@/renderer/features/now-playing/components/sidebar-play-queue';
 import { ResizeHandle } from '/@/renderer/features/shared/components/resize-handle';
-import { useAppStore, useSideQueueLayout, useSideQueueType } from '/@/renderer/store';
+import { useAppStore } from '/@/renderer/store';
 
 // const queueDrawerVariants: Variants = {
 //     closed: (windowBarStyle) => ({
@@ -58,9 +57,6 @@ export const RightSidebar = forwardRef(
         ref: Ref<HTMLDivElement>,
     ) => {
         const rightExpanded = useAppStore((state) => state.sidebar.rightExpanded);
-        const sideQueueType = useSideQueueType();
-        const sideQueueLayout = useSideQueueLayout();
-        const isVerticalLayout = sideQueueLayout === 'vertical';
         const nowPlayingColumn = useAoideNowPlayingColumn();
 
         if (nowPlayingColumn) {
@@ -75,11 +71,9 @@ export const RightSidebar = forwardRef(
 
         return (
             <>
-                {rightExpanded && sideQueueType === 'sideQueue' && (
+                {rightExpanded && (
                     <aside
-                        className={clsx(styles.rightSidebarContainer, {
-                            [styles.verticalLayout]: isVerticalLayout,
-                        })}
+                        className={styles.rightSidebarContainer}
                         id="sidebar-queue"
                         key="queue-sidebar"
                     >
@@ -87,9 +81,9 @@ export const RightSidebar = forwardRef(
                             isResizing={isResizingRight}
                             onMouseDown={(e) => {
                                 e.preventDefault();
-                                startResizing(isVerticalLayout ? 'top' : 'right', e.nativeEvent);
+                                startResizing('right', e.nativeEvent);
                             }}
-                            placement={isVerticalLayout ? 'top' : 'left'}
+                            placement="left"
                             ref={ref}
                         />
                         <SidebarPlayQueue />

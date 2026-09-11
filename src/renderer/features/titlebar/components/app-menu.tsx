@@ -14,14 +14,10 @@ import {
     useAppStoreActions,
     useCommandPalette,
     useCurrentServer,
-    useGeneralSettings,
     useLatestVersion,
-    useSettingsStoreActions,
 } from '/@/renderer/store';
-import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { DropdownMenu, MenuItemProps } from '/@/shared/components/dropdown-menu/dropdown-menu';
 import { Flex } from '/@/shared/components/flex/flex';
-import { Group } from '/@/shared/components/group/group';
 import { Icon } from '/@/shared/components/icon/icon';
 import { toast } from '/@/shared/components/toast/toast';
 
@@ -84,8 +80,6 @@ export const AppMenu = () => {
     const collapsed = useAppStore((state) => state.sidebar.collapsed);
     const privateMode = useAppStore((state) => state.privateMode);
     const { setPrivateMode, setSideBar } = useAppStoreActions();
-    const { setSettings } = useSettingsStoreActions();
-    const settings = useGeneralSettings();
     const currentServer = useCurrentServer();
     const { open: openCommandPalette } = useCommandPalette();
 
@@ -119,15 +113,6 @@ export const AppMenu = () => {
 
     const handleQuit = () => {
         browser?.quit();
-    };
-
-    const handleSetSideQueueLayout = (sideQueueLayout: 'horizontal' | 'vertical') => {
-        setSettings({
-            general: {
-                ...settings,
-                sideQueueLayout,
-            },
-        });
     };
 
     const { currentVersion } = useLatestVersion();
@@ -288,63 +273,6 @@ export const AppMenu = () => {
             ),
             id: 'update-available',
             type: 'custom',
-        },
-        {
-            id: 'divider-5',
-            type: 'divider',
-        },
-        {
-            condition: settings.sideQueueType === 'sideQueue',
-            id: 'layout-toggle-group',
-            items: [
-                {
-                    component: (
-                        <Group gap="xs" grow pb="xs" pt="sm" px="xs" w="100%">
-                            <ActionIcon
-                                icon="layoutPanelRight"
-                                iconProps={{
-                                    size: 'xl',
-                                }}
-                                onClick={() => handleSetSideQueueLayout('horizontal')}
-                                tooltip={{
-                                    label: t('setting.sidePlayQueueLayout', {
-                                        context: 'optionHorizontal',
-                                    }),
-                                    openDelay: 0,
-                                    position: 'bottom',
-                                }}
-                                variant={
-                                    settings.sideQueueLayout === 'horizontal'
-                                        ? 'default'
-                                        : 'transparent'
-                                }
-                            />
-                            <ActionIcon
-                                icon="layoutPanelBottom"
-                                iconProps={{
-                                    size: 'xl',
-                                }}
-                                onClick={() => handleSetSideQueueLayout('vertical')}
-                                tooltip={{
-                                    label: t('setting.sidePlayQueueLayout', {
-                                        context: 'optionVertical',
-                                    }),
-                                    openDelay: 0,
-                                    position: 'bottom',
-                                }}
-                                variant={
-                                    settings.sideQueueLayout === 'vertical'
-                                        ? 'default'
-                                        : 'transparent'
-                                }
-                            />
-                        </Group>
-                    ),
-                    id: 'layout-toggle',
-                    type: 'custom',
-                },
-            ],
-            type: 'conditional-group',
         },
     ];
 

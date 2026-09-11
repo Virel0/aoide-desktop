@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useParams } from 'react-router';
 
@@ -19,13 +19,8 @@ import {
 } from '/@/renderer/features/shared/components/library-header';
 import { LibraryHeaderBar } from '/@/renderer/features/shared/components/library-header-bar';
 import { ListSearchInput } from '/@/renderer/features/shared/components/list-search-input';
-import { getPlaylistLeafName } from '/@/renderer/features/sidebar/components/playlist-folder-tree';
 import { AppRoute } from '/@/renderer/router/routes';
-import {
-    useCurrentServer,
-    useSidebarPlaylistFolders,
-    useSidebarPlaylistFolderSeparator,
-} from '/@/renderer/store';
+import { useCurrentServer } from '/@/renderer/store';
 import { formatDurationString } from '/@/renderer/utils';
 import { replaceURLWithHTMLLinks } from '/@/renderer/utils/linkify';
 import { hasFeature } from '/@/shared/api/utils';
@@ -118,14 +113,7 @@ export const PlaylistDetailSongListHeader = ({
 
     const playlistDuration = detailQuery?.data?.duration;
     const playlistDescription = detailQuery?.data?.description?.trim();
-    const foldersEnabled = useSidebarPlaylistFolders();
-    const folderSeparator = useSidebarPlaylistFolderSeparator();
-    const playlistDisplayName = useMemo(() => {
-        const name = detailQuery?.data?.name;
-        if (!name) return '';
-        if (!foldersEnabled) return name;
-        return getPlaylistLeafName(name, folderSeparator);
-    }, [detailQuery?.data?.name, folderSeparator, foldersEnabled]);
+    const playlistDisplayName = detailQuery?.data?.name ?? '';
 
     const [collapsed] = useLocalStorage<boolean>({
         defaultValue: false,

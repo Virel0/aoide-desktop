@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState, WheelEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { AoideActivityButton } from '/@/renderer/aoide/features/activity/aoide-activity-button';
-import { PopoverPlayQueue } from '/@/renderer/features/now-playing/components/popover-play-queue';
 import { CustomPlayerbarSlider } from '/@/renderer/features/player/components/playerbar-slider';
 import { SleepTimerButton } from '/@/renderer/features/player/components/sleep-timer-button';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
@@ -32,11 +31,9 @@ import {
     usePlayerVolume,
     useSetFullScreenPlayerStore,
     useSettingsStoreActions,
-    useShowFavorites,
     useSidebarRightExpanded,
-    useSideQueueType,
-    useVolumeWheelStep,
-    useVolumeWidth,
+    VOLUME_WHEEL_STEP,
+    VOLUME_WIDTH,
 } from '/@/renderer/store';
 import { useFullScreenPlayerStoreActions } from '/@/renderer/store/full-screen-player.store';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
@@ -57,32 +54,11 @@ import { useThrottledCallback } from '/@/shared/hooks/use-throttled-callback';
 import { useThrottledValue } from '/@/shared/hooks/use-throttled-value';
 import { LibraryItem, QueueSong, ServerType } from '/@/shared/types/domain-types';
 
-const calculateVolumeUp = (volume: number, volumeWheelStep: number) => {
-    let volumeToSet: number;
-    const newVolumeGreaterThanHundred = volume + volumeWheelStep > 100;
-    if (newVolumeGreaterThanHundred) {
-        volumeToSet = 100;
-    } else {
-        volumeToSet = volume + volumeWheelStep;
-    }
+const calculateVolumeUp = (volume: number) => Math.min(100, volume + VOLUME_WHEEL_STEP);
 
-    return volumeToSet;
-};
-
-const calculateVolumeDown = (volume: number, volumeWheelStep: number) => {
-    let volumeToSet: number;
-    const newVolumeLessThanZero = volume - volumeWheelStep < 0;
-    if (newVolumeLessThanZero) {
-        volumeToSet = 0;
-    } else {
-        volumeToSet = volume - volumeWheelStep;
-    }
-
-    return volumeToSet;
-};
+const calculateVolumeDown = (volume: number) => Math.max(0, volume - VOLUME_WHEEL_STEP);
 
 export const RightControls = () => {
-    const showFavorites = useShowFavorites();
     return (
         <Flex align="flex-end" direction="column" h="100%" px="1rem" py="0.5rem">
             <Group h="calc(100% / 3)">
@@ -93,7 +69,7 @@ export const RightControls = () => {
             <Group align="center" gap="xs" wrap="nowrap">
                 <SleepTimerButton />
                 <LyricsButton />
-                {showFavorites && <FavoriteButton />}
+                <FavoriteButton />
                 <QueueButton />
                 <VolumeButton />
             </Group>
@@ -337,62 +313,33 @@ const QueueButton = () => {
     const { t } = useTranslation();
     const isSidebarRightExpanded = useSidebarRightExpanded();
     const { setSideBar } = useAppStoreActions();
-    const sideQueueType = useSideQueueType();
 
     const { bindings } = useHotkeySettings();
 
-    const [popoverOpened, setPopoverOpened] = useState(false);
-
     const handleToggleQueue = () => {
-        if (sideQueueType === 'sideQueue') {
-            setSideBar({ rightExpanded: !isSidebarRightExpanded });
-        } else {
-            setPopoverOpened((prev) => !prev);
-        }
-    };
-
-    const handlePopoverClose = () => {
-        setPopoverOpened(false);
+        setSideBar({ rightExpanded: !isSidebarRightExpanded });
     };
 
     useHotkeys([
         [bindings.toggleQueue.isGlobal ? '' : bindings.toggleQueue.hotkey, handleToggleQueue],
     ]);
 
-    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.stopPropagation();
-
-        if (sideQueueType === 'sideQueue') {
-            return handleToggleQueue();
-        }
-    };
-
-    if (sideQueueType === 'sideQueue') {
-        return (
-            <ActionIcon
-                icon={isSidebarRightExpanded ? 'panelRightClose' : 'panelRightOpen'}
-                iconProps={{
-                    size: 'lg',
-                }}
-                onClick={handleClick}
-                size="sm"
-                tooltip={{
-                    label: t('player.viewQueue'),
-                    openDelay: 0,
-                }}
-                variant="subtle"
-            />
-        );
-    }
-
     return (
-        <PopoverPlayQueue
-            onClose={handlePopoverClose}
-            onToggle={(e) => {
+        <ActionIcon
+            icon={isSidebarRightExpanded ? 'panelRightClose' : 'panelRightOpen'}
+            iconProps={{
+                size: 'lg',
+            }}
+            onClick={(e) => {
                 e.stopPropagation();
                 handleToggleQueue();
             }}
-            opened={popoverOpened}
+            size="sm"
+            tooltip={{
+                label: t('player.viewQueue'),
+                openDelay: 0,
+            }}
+            variant="subtle"
         />
     );
 };
@@ -588,8 +535,6 @@ const VolumeButton = () => {
     const { bindings } = useHotkeySettings();
     const volume = usePlayerVolume();
     const muted = usePlayerMuted();
-    const volumeWheelStep = useVolumeWheelStep();
-    const volumeWidth = useVolumeWidth();
     const { decreaseVolume, increaseVolume, mediaToggleMute, setVolume } = usePlayer();
     const isMinWidth = useMediaQuery('(max-width: 480px)');
 
@@ -621,12 +566,12 @@ const VolumeButton = () => {
     }, [volume]);
 
     const handleVolumeDown = useCallback(() => {
-        decreaseVolume(volumeWheelStep);
-    }, [decreaseVolume, volumeWheelStep]);
+        decreaseVolume(VOLUME_WHEEL_STEP);
+    }, [decreaseVolume]);
 
     const handleVolumeUp = useCallback(() => {
-        increaseVolume(volumeWheelStep);
-    }, [increaseVolume, volumeWheelStep]);
+        increaseVolume(VOLUME_WHEEL_STEP);
+    }, [increaseVolume]);
 
     const handleVolumeSlider = useCallback((e: number) => {
         setSliderValue(e);
@@ -640,14 +585,14 @@ const VolumeButton = () => {
         (e: WheelEvent<HTMLButtonElement | HTMLDivElement>) => {
             let volumeToSet;
             if (e.deltaY > 0 || e.deltaX > 0) {
-                volumeToSet = calculateVolumeDown(volume, volumeWheelStep);
+                volumeToSet = calculateVolumeDown(volume);
             } else {
-                volumeToSet = calculateVolumeUp(volume, volumeWheelStep);
+                volumeToSet = calculateVolumeUp(volume);
             }
 
             setVolume(volumeToSet);
         },
-        [setVolume, volume, volumeWheelStep],
+        [setVolume, volume],
     );
 
     const handleVolumeDownThrottled = useThrottledCallback(handleVolumeDown, 100);
@@ -720,7 +665,7 @@ const VolumeButton = () => {
                     onWheel={handleVolumeWheel}
                     size={6}
                     value={sliderValue}
-                    w={volumeWidth}
+                    w={VOLUME_WIDTH}
                 />
             ) : null}
         </>

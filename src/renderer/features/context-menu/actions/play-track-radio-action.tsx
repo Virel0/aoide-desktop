@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { queryKeys } from '/@/renderer/api/query-keys';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
-import { useArtistRadioCount, useCurrentServerId, usePlayButtonBehavior } from '/@/renderer/store';
+import { PLAY_BUTTON_BEHAVIOR, RADIO_TRACK_COUNT, useCurrentServerId } from '/@/renderer/store';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
 import { Song } from '/@/shared/types/domain-types';
 import { Play } from '/@/shared/types/types';
@@ -25,9 +25,6 @@ export const PlayTrackRadioAction = ({
     const player = usePlayer();
     const serverId = useCurrentServerId();
     const queryClient = useQueryClient();
-    const playButtonBehavior = usePlayButtonBehavior();
-
-    const radioCount = useArtistRadioCount();
 
     const handlePlayTrackRadio = useCallback(
         async (playType: Play) => {
@@ -37,7 +34,7 @@ export const PlayTrackRadioAction = ({
                 const similarSongs = await queryClient.fetchQuery({
                     ...songsQueries.similar({
                         query: {
-                            count: radioCount,
+                            count: RADIO_TRACK_COUNT,
                             songId: song.id,
                         },
                         serverId,
@@ -56,7 +53,7 @@ export const PlayTrackRadioAction = ({
                 console.error('Failed to load track radio:', error);
             }
         },
-        [player, queryClient, radioCount, serverId, skipFirstSong, song],
+        [player, queryClient, serverId, skipFirstSong, song],
     );
 
     const handlePlayTrackRadioNow = useCallback(() => {
@@ -72,8 +69,8 @@ export const PlayTrackRadioAction = ({
     }, [handlePlayTrackRadio]);
 
     const defaultPlayTrackRadioAction = useCallback(() => {
-        handlePlayTrackRadio(playButtonBehavior);
-    }, [handlePlayTrackRadio, playButtonBehavior]);
+        handlePlayTrackRadio(PLAY_BUTTON_BEHAVIOR);
+    }, [handlePlayTrackRadio]);
 
     return (
         <ContextMenu.Submenu>

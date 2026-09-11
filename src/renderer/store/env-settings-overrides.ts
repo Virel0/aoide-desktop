@@ -39,19 +39,13 @@ const APP_THEMES = new Set([
 const DISCORD_DISPLAY_TYPES = new Set(['artist', 'feishin', 'song']);
 const DISCORD_LINK_TYPES = new Set(['last_fm', 'musicbrainz', 'musicbrainz_last_fm', 'none']);
 const LYRICS_ALIGNMENTS = new Set(['center', 'left', 'right']);
-const FONT_TYPES = new Set(['builtIn', 'custom', 'system']);
-const HOME_FEATURE_STYLES = new Set(['multiple', 'single']);
-const SIDE_QUEUE_TYPES = new Set(['sideDrawerQueue', 'sideQueue']);
-const SIDE_QUEUE_LAYOUTS = new Set(['horizontal', 'vertical']);
-const SIDEBAR_PLAYLIST_FOLDER_VIEWS = new Set(['navigation', 'single', 'tree']);
-const SIDEBAR_PLAYLIST_MODES = new Set(['compact', 'expanded']);
 const AUTO_DJ_MODES = new Set(['albums', 'songs']);
 const AUTO_DJ_STRATEGIES = new Set(['library_random', 'similar']);
 
 export type EnvSettingsOverrides = DeepPartial<
     Pick<
         SettingsState,
-        'autoDJ' | 'css' | 'discord' | 'font' | 'general' | 'lyrics' | 'lyricsDisplay' | 'playback'
+        'autoDJ' | 'css' | 'discord' | 'general' | 'lyrics' | 'lyricsDisplay' | 'playback'
     >
 >;
 
@@ -96,55 +90,10 @@ const ENV_SETTING_SPECS: EnvSettingSpec[] = [
         transform: (s) => (RGB_ACCENT_REGEX.test(s) ? s : undefined),
         type: 'string',
     },
-    { key: 'FS_GENERAL_ALBUM_BACKGROUND', path: ['general', 'albumBackground'], type: 'bool' },
-    {
-        key: 'FS_GENERAL_ALBUM_BACKGROUND_BLUR',
-        path: ['general', 'albumBackgroundBlur'],
-        type: 'num',
-    },
-    { key: 'FS_GENERAL_ARTIST_BACKGROUND', path: ['general', 'artistBackground'], type: 'bool' },
-    {
-        key: 'FS_GENERAL_ARTIST_BACKGROUND_BLUR',
-        path: ['general', 'artistBackgroundBlur'],
-        type: 'num',
-    },
-    {
-        key: 'FS_GENERAL_BLUR_EXPLICIT_IMAGES',
-        path: ['general', 'blurExplicitImages'],
-        type: 'bool',
-    },
     {
         key: 'FS_GENERAL_COMBINED_LYRICS_AND_VISUALIZER',
         path: ['general', 'combinedLyricsAndVisualizer'],
         type: 'bool',
-    },
-    {
-        key: 'FS_GENERAL_ENABLE_GRID_MULTI_SELECT',
-        path: ['general', 'enableGridMultiSelect'],
-        type: 'bool',
-    },
-    { key: 'FS_GENERAL_FOLLOW_CURRENT_SONG', path: ['general', 'followCurrentSong'], type: 'bool' },
-    { key: 'FS_GENERAL_HOME_FEATURE', path: ['general', 'homeFeature'], type: 'bool' },
-    {
-        enumSet: HOME_FEATURE_STYLES,
-        key: 'FS_GENERAL_HOME_FEATURE_STYLE',
-        path: ['general', 'homeFeatureStyle'],
-        type: 'enum',
-    },
-    {
-        key: 'FS_GENERAL_LANGUAGE',
-        path: ['general', 'language'],
-        skipIfEmpty: true,
-        type: 'string',
-    },
-    {
-        key: 'FS_GENERAL_PRIMARY_SHADE',
-        path: ['general', 'primaryShade'],
-        transform: (s) => {
-            const n = parseNum(s);
-            return n !== undefined ? Math.min(9, Math.max(0, Math.round(n))) : undefined;
-        },
-        type: 'num',
     },
     { enumSet: APP_THEMES, key: 'FS_GENERAL_THEME', path: ['general', 'theme'], type: 'enum' },
     {
@@ -160,20 +109,11 @@ const ENV_SETTING_SPECS: EnvSettingSpec[] = [
         type: 'enum',
     },
     { key: 'FS_GENERAL_FOLLOW_SYSTEM_THEME', path: ['general', 'followSystemTheme'], type: 'bool' },
-    { key: 'FS_GENERAL_PATH_REPLACE', path: ['general', 'pathReplace'], type: 'string' },
-    { key: 'FS_GENERAL_PATH_REPLACE_WITH', path: ['general', 'pathReplaceWith'], type: 'string' },
-    { key: 'FS_GENERAL_NATIVE_ASPECT_RATIO', path: ['general', 'nativeAspectRatio'], type: 'bool' },
-    {
-        key: 'FS_GENERAL_PLAYERBAR_OPEN_DRAWER',
-        path: ['general', 'playerbarOpenDrawer'],
-        type: 'bool',
-    },
     {
         key: 'FS_GENERAL_SHOW_LYRICS_IN_SIDEBAR',
         path: ['general', 'showLyricsInSidebar'],
         type: 'bool',
     },
-    { key: 'FS_GENERAL_SHOW_FAVORITES', path: ['general', 'showFavorites'], type: 'bool' },
     {
         key: 'FS_GENERAL_SHOW_QUEUE_IN_SIDEBAR',
         path: ['general', 'showQueueInSidebar'],
@@ -184,87 +124,6 @@ const ENV_SETTING_SPECS: EnvSettingSpec[] = [
         path: ['general', 'showVisualizerInSidebar'],
         type: 'bool',
     },
-    {
-        key: 'FS_GENERAL_SIDEBAR_COLLAPSED_NAVIGATION',
-        path: ['general', 'sidebarCollapsedNavigation'],
-        type: 'bool',
-    },
-    {
-        key: 'FS_GENERAL_SIDEBAR_COLLAPSE_SHARED',
-        path: ['general', 'sidebarCollapseShared'],
-        type: 'bool',
-    },
-    {
-        key: 'FS_GENERAL_SIDEBAR_PLAYLIST_FOLDERS',
-        path: ['general', 'sidebarPlaylistFolders'],
-        type: 'bool',
-    },
-    {
-        key: 'FS_GENERAL_SIDEBAR_PLAYLIST_FOLDER_SEPARATOR',
-        path: ['general', 'sidebarPlaylistFolderSeparator'],
-        skipIfEmpty: true,
-        type: 'string',
-    },
-    {
-        key: 'FS_GENERAL_SIDEBAR_PLAYLIST_FOLDER_TREE_INDENT',
-        path: ['general', 'sidebarPlaylistFolderTreeIndent'],
-        transform: (s) => {
-            const n = parseNum(s);
-            return n !== undefined ? Math.min(64, Math.max(0, Math.round(n))) : undefined;
-        },
-        type: 'num',
-    },
-    {
-        key: 'FS_GENERAL_SIDEBAR_PLAYLIST_FOLDER_TREE_LINE_COLOR',
-        path: ['general', 'sidebarPlaylistFolderTreeLineColor'],
-        type: 'string',
-    },
-    {
-        enumSet: SIDEBAR_PLAYLIST_FOLDER_VIEWS,
-        key: 'FS_GENERAL_SIDEBAR_PLAYLIST_FOLDER_VIEW',
-        path: ['general', 'sidebarPlaylistFolderView'],
-        type: 'enum',
-    },
-    {
-        key: 'FS_GENERAL_SIDEBAR_PLAYLIST_LIST',
-        path: ['general', 'sidebarPlaylistList'],
-        type: 'bool',
-    },
-    {
-        enumSet: SIDEBAR_PLAYLIST_MODES,
-        key: 'FS_GENERAL_SIDEBAR_PLAYLIST_MODE',
-        path: ['general', 'sidebarPlaylistMode'],
-        type: 'enum',
-    },
-    {
-        key: 'FS_GENERAL_SIDEBAR_PLAYLIST_SORTING',
-        path: ['general', 'sidebarPlaylistSorting'],
-        type: 'bool',
-    },
-    {
-        enumSet: SIDE_QUEUE_TYPES,
-        key: 'FS_GENERAL_SIDE_QUEUE_TYPE',
-        path: ['general', 'sideQueueType'],
-        type: 'enum',
-    },
-    {
-        enumSet: SIDE_QUEUE_LAYOUTS,
-        key: 'FS_GENERAL_SIDE_QUEUE_LAYOUT',
-        path: ['general', 'sideQueueLayout'],
-        type: 'enum',
-    },
-    { key: 'FS_GENERAL_RESUME', path: ['general', 'resume'], type: 'bool' },
-    {
-        key: 'FS_GENERAL_USE_THEME_ACCENT_COLOR',
-        path: ['general', 'useThemeAccentColor'],
-        type: 'bool',
-    },
-    {
-        key: 'FS_GENERAL_USE_THEME_PRIMARY_SHADE',
-        path: ['general', 'useThemePrimaryShade'],
-        type: 'bool',
-    },
-    { key: 'FS_GENERAL_ZOOM_FACTOR', path: ['general', 'zoomFactor'], type: 'num' },
     { key: 'FS_PLAYBACK_MEDIA_SESSION', path: ['playback', 'mediaSession'], type: 'bool' },
     { key: 'FS_PLAYBACK_PRESERVE_PITCH', path: ['playback', 'preservePitch'], type: 'bool' },
     {
@@ -383,14 +242,6 @@ const ENV_SETTING_SPECS: EnvSettingSpec[] = [
         type: 'string',
     },
     { key: 'FS_CSS_ENABLED', path: ['css', 'enabled'], type: 'bool' },
-    { enumSet: FONT_TYPES, key: 'FS_FONT_TYPE', path: ['font', 'type'], type: 'enum' },
-    { key: 'FS_FONT_BUILT_IN', path: ['font', 'builtIn'], skipIfEmpty: true, type: 'string' },
-    {
-        key: 'FS_FONT_SYSTEM',
-        path: ['font', 'system'],
-        transform: (s) => (s === '' ? null : s),
-        type: 'string',
-    },
 ];
 
 export function getEnvSettingsOverrides(): EnvSettingsOverrides {

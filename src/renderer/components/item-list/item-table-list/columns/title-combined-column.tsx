@@ -19,7 +19,7 @@ import {
     LONG_PRESS_PLAY_BEHAVIOR,
     PlayTooltip,
 } from '/@/renderer/features/shared/components/play-button-group';
-import { usePlayButtonBehavior } from '/@/renderer/store';
+import { PLAY_BUTTON_BEHAVIOR } from '/@/renderer/store';
 import { ExplicitIndicator } from '/@/shared/components/explicit-indicator/explicit-indicator';
 import { Icon } from '/@/shared/components/icon/icon';
 import { Text } from '/@/shared/components/text/text';
@@ -31,7 +31,6 @@ export const DefaultTitleCombinedColumn = (props: ItemTableListInnerColumn) => {
     const row: object | undefined = (rowItem as any)?.id;
     const item = rowItem as any;
     const internalState = (props as any).internalState;
-    const playButtonBehavior = usePlayButtonBehavior();
     const [isHovered, setIsHovered] = useState(false);
 
     const handlePlay = (playType: Play, event: React.MouseEvent<HTMLButtonElement>) => {
@@ -125,14 +124,14 @@ export const DefaultTitleCombinedColumn = (props: ItemTableListInnerColumn) => {
                             >
                                 <PlayTooltip
                                     disabled={props.itemType === LibraryItem.QUEUE_SONG}
-                                    type={playButtonBehavior}
+                                    type={PLAY_BUTTON_BEHAVIOR}
                                 >
                                     <PlayButton
                                         fill
-                                        onClick={(e) => handlePlay(playButtonBehavior, e)}
+                                        onClick={(e) => handlePlay(PLAY_BUTTON_BEHAVIOR, e)}
                                         onLongPress={(e) =>
                                             handlePlay(
-                                                LONG_PRESS_PLAY_BEHAVIOR[playButtonBehavior],
+                                                LONG_PRESS_PLAY_BEHAVIOR[PLAY_BUTTON_BEHAVIOR],
                                                 e,
                                             )
                                         }
@@ -192,7 +191,6 @@ export const QueueSongTitleCombinedColumn = (props: ItemTableListInnerColumn) =>
     const song = rowItem as QueueSong;
     const item = rowItem as any;
     const internalState = (props as any).internalState;
-    const playButtonBehavior = usePlayButtonBehavior();
     const [isHovered, setIsHovered] = useState(false);
     const isActive = useIsActiveRow(song?.id, song?._uniqueId);
 
@@ -287,14 +285,14 @@ export const QueueSongTitleCombinedColumn = (props: ItemTableListInnerColumn) =>
                             >
                                 <PlayTooltip
                                     disabled={props.itemType === LibraryItem.QUEUE_SONG}
-                                    type={playButtonBehavior}
+                                    type={PLAY_BUTTON_BEHAVIOR}
                                 >
                                     <PlayButton
                                         fill
-                                        onClick={(e) => handlePlay(playButtonBehavior, e)}
+                                        onClick={(e) => handlePlay(PLAY_BUTTON_BEHAVIOR, e)}
                                         onLongPress={(e) =>
                                             handlePlay(
-                                                LONG_PRESS_PLAY_BEHAVIOR[playButtonBehavior],
+                                                LONG_PRESS_PLAY_BEHAVIOR[PLAY_BUTTON_BEHAVIOR],
                                                 e,
                                             )
                                         }

@@ -10,7 +10,6 @@ import {
     subscribePlayerStatus,
     usePlaybackSettings,
     usePlayerStore,
-    useSkipButtons,
     useTimestampStoreBase,
 } from '/@/renderer/store';
 import { LibraryItem, QueueSong } from '/@/shared/types/domain-types';
@@ -18,24 +17,21 @@ import { PlayerStatus } from '/@/shared/types/types';
 
 const mediaSession = navigator.mediaSession;
 
+const SKIP_BACKWARD_SECONDS = 5;
+const SKIP_FORWARD_SECONDS = 10;
+
 export const useMediaSession = () => {
     const { mediaSession: mediaSessionEnabled } = usePlaybackSettings();
     const player = usePlayer();
-    const skip = useSkipButtons();
 
     // Keep refs to current values to avoid dependency changes triggering handler re-registration
     const playerRef = useRef(player);
-    const skipRef = useRef(skip);
     const isMediaSessionEnabledRef = useRef(false);
 
     // Update refs whenever values change, but don't trigger effects
     useEffect(() => {
         playerRef.current = player;
     }, [player]);
-
-    useEffect(() => {
-        skipRef.current = skip;
-    }, [skip]);
 
     const isMediaSessionEnabled = useMemo(() => {
         // Always enable media session on web
@@ -99,14 +95,14 @@ export const useMediaSession = () => {
         mediaSession.setActionHandler('seekbackward', (e) => {
             const currentTimestamp = useTimestampStoreBase.getState().timestamp;
             playerRef.current.mediaSeekToTimestamp(
-                currentTimestamp - (e.seekOffset || skipRef.current?.skipBackwardSeconds || 5),
+                currentTimestamp - (e.seekOffset || SKIP_BACKWARD_SECONDS),
             );
         });
 
         mediaSession.setActionHandler('seekforward', (e) => {
             const currentTimestamp = useTimestampStoreBase.getState().timestamp;
             playerRef.current.mediaSeekToTimestamp(
-                currentTimestamp + (e.seekOffset || skipRef.current?.skipForwardSeconds || 5),
+                currentTimestamp + (e.seekOffset || SKIP_FORWARD_SECONDS),
             );
         });
 

@@ -63,10 +63,11 @@ describe('the sidebar honours the preference', () => {
     });
 
     // On top of Feishin's own toggle, never instead of it.
-    it('gates the Jellyfin section without discarding Feishin’s own toggle', () => {
-        expect(sidebar).toContain(
-            '{sidebarPlaylistList && showJellyfinPlaylists && <SidebarPlaylistSection />}',
-        );
+    // Feishin's own "show the playlist list in the sidebar" switch is gone —
+    // the sidebar is where playlists live — so this preference is the only
+    // thing left that can hide the Jellyfin section.
+    it('gates the Jellyfin section', () => {
+        expect(sidebar).toContain('{showJellyfinPlaylists && <SidebarPlaylistSection />}');
     });
 
     it('drops the Playlists library entry, but never the route', () => {

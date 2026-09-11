@@ -1,26 +1,12 @@
-import { useMemo } from 'react';
+/**
+ * A song's path on the server, as the server reports it.
+ *
+ * There was a prefix rewrite here: a stored find/replace pair for anyone whose
+ * library sat at a different root on this machine than on the server. Both
+ * halves shipped empty and there was no screen left to fill them in, so the
+ * rewrite never fired.
+ */
+export const resolveSongPath = (path: null | string | undefined): null | string => path || null;
 
-import { usePathReplace, useSettingsStore } from '/@/renderer/store/settings.store';
-import { replacePathPrefix } from '/@/shared/api/utils';
-
-export const resolveSongPath = (path: null | string | undefined): null | string => {
-    if (!path) {
-        return null;
-    }
-
-    const { pathReplace, pathReplaceWith } = useSettingsStore.getState().general;
-
-    return replacePathPrefix(path, pathReplace, pathReplaceWith);
-};
-
-export const useResolvedSongPath = (path: null | string | undefined): null | string => {
-    const { pathReplace, pathReplaceWith } = usePathReplace();
-
-    return useMemo(() => {
-        if (!path) {
-            return null;
-        }
-
-        return replacePathPrefix(path, pathReplace, pathReplaceWith);
-    }, [path, pathReplace, pathReplaceWith]);
-};
+export const useResolvedSongPath = (path: null | string | undefined): null | string =>
+    resolveSongPath(path);

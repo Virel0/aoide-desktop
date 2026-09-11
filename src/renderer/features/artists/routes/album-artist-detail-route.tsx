@@ -10,15 +10,12 @@ import { artistsQueries } from '/@/renderer/features/artists/api/artists-api';
 import { AlbumArtistDetailContent } from '/@/renderer/features/artists/components/album-artist-detail-content';
 import { AlbumArtistDetailHeader } from '/@/renderer/features/artists/components/album-artist-detail-header';
 import { AnimatedPage } from '/@/renderer/features/shared/components/animated-page';
-import {
-    LibraryBackgroundImage,
-    LibraryBackgroundOverlay,
-} from '/@/renderer/features/shared/components/library-background-overlay';
+import { LibraryBackgroundImage } from '/@/renderer/features/shared/components/library-background-overlay';
 import { LibraryContainer } from '/@/renderer/features/shared/components/library-container';
 import { LibraryHeaderBar } from '/@/renderer/features/shared/components/library-header-bar';
 import { PageErrorBoundary } from '/@/renderer/features/shared/components/page-error-boundary';
 import { useFastAverageColor } from '/@/renderer/hooks';
-import { useArtistBackground, useCurrentServer, useCurrentServerId } from '/@/renderer/store';
+import { ARTIST_BACKGROUND_BLUR, useCurrentServer, useCurrentServerId } from '/@/renderer/store';
 import { Spinner } from '/@/shared/components/spinner/spinner';
 import { AlbumListSort, LibraryItem, SortOrder } from '/@/shared/types/domain-types';
 
@@ -27,7 +24,6 @@ const AlbumArtistDetailRouteContent = () => {
     const headerRef = useRef<HTMLDivElement>(null);
     const server = useCurrentServer();
     const serverId = useCurrentServerId();
-    const { artistBackground, artistBackgroundBlur } = useArtistBackground();
 
     useNativeScrollPersist({ enabled: true, scrollRef: scrollAreaRef });
 
@@ -76,10 +72,6 @@ const AlbumArtistDetailRouteContent = () => {
         srcLoaded: true,
     });
 
-    const background = backgroundColor;
-
-    const showBlurredImage = artistBackground;
-
     // if (isColorLoading) {
     //     return <Spinner container />;
     // }
@@ -106,15 +98,16 @@ const AlbumArtistDetailRouteContent = () => {
                 }}
                 ref={scrollAreaRef}
             >
-                {showBlurredImage ? (
-                    <LibraryBackgroundImage
-                        blur={artistBackgroundBlur}
-                        headerRef={headerRef}
-                        imageUrl={libraryBackgroundImageUrl || ''}
-                    />
-                ) : (
-                    <LibraryBackgroundOverlay backgroundColor={background} headerRef={headerRef} />
-                )}
+                {/*
+                 * An artist has no cover art of its own on the page below, so the
+                 * blurred portrait is the only thing here that says whose page
+                 * this is before the header has loaded.
+                 */}
+                <LibraryBackgroundImage
+                    blur={ARTIST_BACKGROUND_BLUR}
+                    headerRef={headerRef}
+                    imageUrl={libraryBackgroundImageUrl || ''}
+                />
                 <LibraryContainer>
                     <AlbumArtistDetailHeader
                         albumsQuery={albumsQuery}

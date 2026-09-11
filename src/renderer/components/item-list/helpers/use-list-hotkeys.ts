@@ -8,7 +8,7 @@ import {
 } from '/@/renderer/components/item-list/helpers/item-list-state';
 import { ItemControls } from '/@/renderer/components/item-list/types';
 import { useHotkeys } from '/@/renderer/hooks/use-hotkeys';
-import { useHotkeySettings, usePlayButtonBehavior } from '/@/renderer/store';
+import { PLAY_BUTTON_BEHAVIOR, useHotkeySettings } from '/@/renderer/store';
 import { LibraryItem } from '/@/shared/types/domain-types';
 import { Play } from '/@/shared/types/types';
 
@@ -28,7 +28,6 @@ export const useListHotkeys = ({
     onShowPlayingSong?: () => void;
 }) => {
     const { bindings } = useHotkeySettings();
-    const playButtonBehavior = usePlayButtonBehavior();
     const navigate = useNavigate();
     const focusedRef = useRef(focused);
     focusedRef.current = focused;
@@ -83,7 +82,7 @@ export const useListHotkeys = ({
                 if (validSelected.length === 0) return;
 
                 const item = validSelected[0];
-                const playType = playButtonBehavior;
+                const playType = PLAY_BUTTON_BEHAVIOR;
                 controls.onPlay?.({ item, itemType, playType } as any);
             },
         ],

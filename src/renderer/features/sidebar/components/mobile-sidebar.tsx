@@ -12,11 +12,7 @@ import {
     SidebarSharedPlaylistList,
     useSidebarPlaylistAddDragMonitor,
 } from '/@/renderer/features/sidebar/components/sidebar-playlist-list';
-import {
-    SidebarItemType,
-    useSidebarItems,
-    useSidebarPlaylistList,
-} from '/@/renderer/store/settings.store';
+import { sidebarItems, SidebarItemType } from '/@/renderer/store/settings.store';
 import { Accordion } from '/@/shared/components/accordion/accordion';
 import { Group } from '/@/shared/components/group/group';
 import { ScrollArea } from '/@/shared/components/scroll-area/scroll-area';
@@ -35,7 +31,6 @@ const MobileSidebarPlaylistSection = () => {
 
 export const MobileSidebar = () => {
     const { t } = useTranslation();
-    const sidebarPlaylistList = useSidebarPlaylistList();
 
     const translatedSidebarItemMap = useMemo(
         () => ({
@@ -54,22 +49,19 @@ export const MobileSidebar = () => {
         [t],
     );
 
-    const sidebarItems = useSidebarItems();
-
-    const sidebarItemsWithRoute: SidebarItemType[] = useMemo(() => {
-        if (!sidebarItems) return [];
-
-        const items = sidebarItems
-            .filter((item) => !item.disabled)
-            .map((item) => ({
-                ...item,
-                label:
-                    translatedSidebarItemMap[item.id as keyof typeof translatedSidebarItemMap] ??
-                    item.label,
-            }));
-
-        return items;
-    }, [sidebarItems, translatedSidebarItemMap]);
+    const sidebarItemsWithRoute: SidebarItemType[] = useMemo(
+        () =>
+            sidebarItems
+                .filter((item) => !item.disabled)
+                .map((item) => ({
+                    ...item,
+                    label:
+                        translatedSidebarItemMap[
+                            item.id as keyof typeof translatedSidebarItemMap
+                        ] ?? item.label,
+                })),
+        [translatedSidebarItemMap],
+    );
 
     return (
         <div className={styles.container} id="mobile-sidebar">
@@ -106,7 +98,7 @@ export const MobileSidebar = () => {
                             })}
                         </Accordion.Panel>
                     </Accordion.Item>
-                    {sidebarPlaylistList && <MobileSidebarPlaylistSection />}
+                    <MobileSidebarPlaylistSection />
                 </Accordion>
             </ScrollArea>
         </div>

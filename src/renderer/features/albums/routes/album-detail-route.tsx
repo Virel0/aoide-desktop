@@ -8,15 +8,12 @@ import { albumQueries } from '/@/renderer/features/albums/api/album-api';
 import { AlbumDetailContent } from '/@/renderer/features/albums/components/album-detail-content';
 import { AlbumDetailHeader } from '/@/renderer/features/albums/components/album-detail-header';
 import { AnimatedPage } from '/@/renderer/features/shared/components/animated-page';
-import {
-    LibraryBackgroundImage,
-    LibraryBackgroundOverlay,
-} from '/@/renderer/features/shared/components/library-background-overlay';
+import { LibraryBackgroundOverlay } from '/@/renderer/features/shared/components/library-background-overlay';
 import { LibraryContainer } from '/@/renderer/features/shared/components/library-container';
 import { LibraryHeaderBar } from '/@/renderer/features/shared/components/library-header-bar';
 import { PageErrorBoundary } from '/@/renderer/features/shared/components/page-error-boundary';
 import { useFastAverageColor } from '/@/renderer/hooks';
-import { useAlbumBackground, useCurrentServerId } from '/@/renderer/store';
+import { useCurrentServerId } from '/@/renderer/store';
 import { LibraryItem } from '/@/shared/types/domain-types';
 
 const ALBUM_DETAIL_BG_FALLBACK = 'var(--theme-colors-foreground-muted)';
@@ -24,7 +21,6 @@ const ALBUM_DETAIL_BG_FALLBACK = 'var(--theme-colors-foreground-muted)';
 const AlbumDetailRoute = () => {
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const headerRef = useRef<HTMLDivElement>(null);
-    const { albumBackground, albumBackgroundBlur } = useAlbumBackground();
 
     const { albumId } = useParams() as { albumId: string };
     const serverId = useCurrentServerId();
@@ -48,8 +44,6 @@ const AlbumDetailRoute = () => {
 
     const background = backgroundColor ?? ALBUM_DETAIL_BG_FALLBACK;
 
-    const showBlurredImage = albumBackground;
-
     return (
         <AnimatedPage key={`album-detail-${albumId}`}>
             <NativeScrollArea
@@ -70,15 +64,12 @@ const AlbumDetailRoute = () => {
                 }}
                 ref={scrollAreaRef}
             >
-                {showBlurredImage ? (
-                    <LibraryBackgroundImage
-                        blur={albumBackgroundBlur}
-                        headerRef={headerRef}
-                        imageUrl={imageUrl}
-                    />
-                ) : (
-                    <LibraryBackgroundOverlay backgroundColor={background} headerRef={headerRef} />
-                )}
+                {/*
+                 * An album page wears the cover's average colour, not a blown-up
+                 * blur of the cover it is already showing at full size a few
+                 * hundred pixels below.
+                 */}
+                <LibraryBackgroundOverlay backgroundColor={background} headerRef={headerRef} />
                 <LibraryContainer>
                     <AlbumDetailHeader ref={headerRef as React.Ref<HTMLDivElement>} />
                     <AlbumDetailContent />

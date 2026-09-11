@@ -5,12 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import styles from './mobile-fullscreen-player.module.css';
 
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
-import {
-    useFullScreenPlayerStore,
-    useImageRes,
-    usePlayerData,
-    usePlayerSong,
-} from '/@/renderer/store';
+import { useFullScreenPlayerStore, usePlayerData, usePlayerSong } from '/@/renderer/store';
 import { Center } from '/@/shared/components/center/center';
 import { Icon } from '/@/shared/components/icon/icon';
 import { PlaybackSelectors } from '/@/shared/constants/playback-selectors';
@@ -81,7 +76,6 @@ export const MobileFullscreenPlayerAlbumArt = () => {
     const mainImageRef = useRef<HTMLImageElement | null>(null);
     const [mainImageDimensions, setMainImageDimensions] = useState({ idealSize: 1000 });
 
-    const { fullScreenPlayer: albumArtRes } = useImageRes();
     const { useImageAspectRatio } = useFullScreenPlayerStore();
     const currentSong = usePlayerSong();
     const { nextSong } = usePlayerData();
@@ -109,12 +103,11 @@ export const MobileFullscreenPlayerAlbumArt = () => {
     const updateImageSize = useCallback(() => {
         if (mainImageRef.current) {
             const idealSize =
-                albumArtRes ||
                 Math.ceil((mainImageRef.current as HTMLDivElement).offsetHeight / 100) * 100;
 
             setMainImageDimensions({ idealSize });
         }
-    }, [albumArtRes]);
+    }, []);
 
     useLayoutEffect(() => {
         updateImageSize();

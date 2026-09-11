@@ -13,17 +13,7 @@ import { ContextMenuController } from '/@/renderer/features/context-menu/context
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { playlistsQueries } from '/@/renderer/features/playlists/api/playlists-api';
 import { openCreatePlaylistModal } from '/@/renderer/features/playlists/components/create-playlist-form';
-import { useIsMutatingSidebarPlaylistFolderMove } from '/@/renderer/features/playlists/mutations/sidebar-playlist-folder-move-mutation';
 import { ItemRowPlayControls } from '/@/renderer/features/shared/components/item-row-play-controls';
-import {
-    collectFolderPaths,
-    PlaylistFolderDragExpandProvider,
-    PlaylistFolderViews,
-    PlaylistRootAccordionControl,
-    usePlaylistFolderState,
-    usePlaylistFolderViewState,
-    usePlaylistNavigationState,
-} from '/@/renderer/features/sidebar/components/playlist-folder-tree';
 import { useDragDrop } from '/@/renderer/hooks/use-drag-drop';
 import { useDragMonitor } from '/@/renderer/hooks/use-drag-monitor';
 import { AppRoute } from '/@/renderer/router/routes';
@@ -32,9 +22,6 @@ import {
     useCurrentServer,
     useCurrentServerId,
     usePermissions,
-    useSidebarPlaylistListFilterRegex,
-    useSidebarPlaylistMode,
-    useSidebarPlaylistSorting,
 } from '/@/renderer/store';
 import { formatDurationString } from '/@/renderer/utils';
 import { Accordion } from '/@/shared/components/accordion/accordion';
@@ -45,9 +32,7 @@ import { ButtonProps } from '/@/shared/components/button/button';
 import { Group } from '/@/shared/components/group/group';
 import { Icon } from '/@/shared/components/icon/icon';
 import { Image } from '/@/shared/components/image/image';
-import { LoadingOverlay } from '/@/shared/components/loading-overlay/loading-overlay';
 import { Text } from '/@/shared/components/text/text';
-import { useLocalStorage } from '/@/shared/hooks/use-local-storage';
 import {
     LibraryItem,
     Playlist,
@@ -63,11 +48,6 @@ const MotionLink = motion.create(Link);
 const playlistRowDimVariants = animationVariants.combine(animationVariants.fadeIn, {
     hidden: { opacity: 0.5 },
 });
-
-const getPlaylistOrderKey = (serverId: string | undefined, scope: 'owned' | 'shared') => {
-    const sid = serverId || 'local';
-    return `playlist_order:${sid}:${scope}`;
-};
 
 export const SidebarPlaylistAddDragContext = createContext(false);
 
@@ -103,20 +83,16 @@ export interface PlaylistRowButtonProps extends Omit<ButtonProps, 'onContextMenu
     item: Playlist;
     name: string;
     onContextMenu: (e: MouseEvent<HTMLAnchorElement>, item: Playlist) => void;
-    onReorder?: (sourceIds: string[], targetId: string, edge: 'bottom' | 'top' | null) => void;
     to: string;
 }
 
 export const PlaylistRowButton = memo(
-    ({ item, name, onContextMenu, onReorder, to }: PlaylistRowButtonProps) => {
+    ({ item, name, onContextMenu, to }: PlaylistRowButtonProps) => {
         const url = {
             pathname: generatePath(AppRoute.PLAYLISTS_DETAIL_SONGS, { playlistId: to }),
             state: { item },
         };
         const { t } = useTranslation();
-        const sidebarPlaylistSorting = useSidebarPlaylistSorting();
-        const sidebarPlaylistMode = useSidebarPlaylistMode();
-        const isCompact = sidebarPlaylistMode === 'compact';
         const activePlaylistId = useCurrentPlaylistContextId();
         const isActive = activePlaylistId === item.id;
 
@@ -133,26 +109,15 @@ export const PlaylistRowButton = memo(
                     return item ? [item] : [];
                 },
                 itemType: LibraryItem.PLAYLIST,
-                operation: [DragOperation.ADD, DragOperation.REORDER],
+                operation: [DragOperation.ADD],
                 target: DragTarget.PLAYLIST,
             },
             drop: {
-                canDrop: (args) => {
-                    // Allow dropping items into a playlist (ADD)
-                    const canAdd =
-                        !isSmartPlaylist &&
-                        args.source.itemType !== undefined &&
-                        args.source.type !== DragTarget.PLAYLIST &&
-                        (args.source.operation?.includes(DragOperation.ADD) ?? false);
-
-                    // Allow reordering playlists when source is playlist and operation includes REORDER
-                    // do not allow cross-scope reorders
-                    const canReorder =
-                        args.source.itemType === LibraryItem.PLAYLIST &&
-                        args.source.type === DragTarget.PLAYLIST &&
-                        (args.source.operation?.includes(DragOperation.REORDER) ?? false);
-                    return canAdd || (canReorder && sidebarPlaylistSorting);
-                },
+                canDrop: (args) =>
+                    !isSmartPlaylist &&
+                    args.source.itemType !== undefined &&
+                    args.source.type !== DragTarget.PLAYLIST &&
+                    (args.source.operation?.includes(DragOperation.ADD) ?? false),
                 getData: () => {
                     return {
                         id: [to],
@@ -170,29 +135,6 @@ export const PlaylistRowButton = memo(
                 onDrop: (args) => {
                     const sourceItemType = args.source.itemType as LibraryItem;
                     const sourceIds = args.source.id;
-
-                    // Handle playlist reordering locally
-                    if (
-                        sourceItemType === LibraryItem.PLAYLIST &&
-                        (args.source.operation?.includes(DragOperation.REORDER) ?? false) &&
-                        args.edge &&
-                        (args.edge === 'top' || args.edge === 'bottom') &&
-                        onReorder
-                    ) {
-                        const sourceItems = Array.isArray(args.source.item)
-                            ? (args.source.item as Playlist[])
-                            : undefined;
-
-                        // Prevent cross-scope reorders (owned <-> shared)
-                        if (sourceItems && sourceItems.length > 0) {
-                            if (sourceItems.some((si) => si.ownerId !== item.ownerId)) {
-                                return;
-                            }
-                        }
-
-                        onReorder(sourceIds, to, args.edge);
-                        return;
-                    }
 
                     if (isSmartPlaylist) {
                         return;
@@ -277,7 +219,6 @@ export const PlaylistRowButton = memo(
                 {...animationProps.fadeIn}
                 animate={isDimmed ? 'hidden' : 'show'}
                 className={clsx(styles.row, {
-                    [styles.rowCompact]: isCompact,
                     [styles.rowDraggedOver]: isDraggedOver && !isSmartPlaylist,
                     [styles.rowHover]: isHovered,
                 })}
@@ -292,10 +233,11 @@ export const PlaylistRowButton = memo(
                 to={url}
                 variants={playlistRowDimVariants}
             >
-                {isCompact ? (
-                    <>
+                <div className={styles.rowGroup}>
+                    <Image containerClassName={styles.imageContainer} src={imageUrl} />
+                    <div className={styles.metadata}>
                         <Text
-                            className={clsx(styles.compactName, {
+                            className={clsx(styles.name, {
                                 [styles.nameActive]: isActive,
                             })}
                             fw={500}
@@ -303,72 +245,48 @@ export const PlaylistRowButton = memo(
                         >
                             {name}
                         </Text>
-                        {isHovered && (
-                            <ItemRowPlayControls
-                                className={clsx(styles.controls, styles.controlsCompact)}
-                                onPlay={(playType) => handlePlay(to, playType)}
-                            />
-                        )}
-                    </>
-                ) : (
-                    <>
-                        <div className={styles.rowGroup}>
-                            <Image containerClassName={styles.imageContainer} src={imageUrl} />
-                            <div className={styles.metadata}>
-                                <Text
-                                    className={clsx(styles.name, {
-                                        [styles.nameActive]: isActive,
-                                    })}
-                                    fw={500}
-                                    size="md"
-                                >
-                                    {name}
+                        <div className={styles.metadataGroup}>
+                            <div
+                                className={clsx(
+                                    styles.metadataGroupItem,
+                                    styles.metadataGroupItemNoShrink,
+                                )}
+                            >
+                                <Icon color="muted" icon="itemSong" size="sm" />
+                                <Text isMuted size="sm">
+                                    {item.songCount || 0}
                                 </Text>
-                                <div className={styles.metadataGroup}>
-                                    <div
-                                        className={clsx(
-                                            styles.metadataGroupItem,
-                                            styles.metadataGroupItemNoShrink,
-                                        )}
-                                    >
-                                        <Icon color="muted" icon="itemSong" size="sm" />
-                                        <Text isMuted size="sm">
-                                            {item.songCount || 0}
-                                        </Text>
-                                    </div>
-                                    <div className={styles.metadataGroupItem}>
-                                        <Icon color="muted" icon="duration" size="sm" />
-                                        <Text isMuted size="sm">
-                                            {formatDurationString(item.duration ?? 0)}
-                                        </Text>
-                                    </div>
-                                    {item.ownerId === permissions.userId &&
-                                        Boolean(item.public) && (
-                                            <div className={styles.metadataGroupItem}>
-                                                <Text isMuted size="sm">
-                                                    {t('common.public')}
-                                                </Text>
-                                            </div>
-                                        )}
-                                    {item.ownerId !== permissions.userId && (
-                                        <div className={styles.metadataGroupItem}>
-                                            <Icon color="muted" icon="user" size="sm" />
-                                            <Text isMuted size="sm">
-                                                {item.owner}
-                                            </Text>
-                                        </div>
-                                    )}
-                                </div>
                             </div>
+                            <div className={styles.metadataGroupItem}>
+                                <Icon color="muted" icon="duration" size="sm" />
+                                <Text isMuted size="sm">
+                                    {formatDurationString(item.duration ?? 0)}
+                                </Text>
+                            </div>
+                            {item.ownerId === permissions.userId && Boolean(item.public) && (
+                                <div className={styles.metadataGroupItem}>
+                                    <Text isMuted size="sm">
+                                        {t('common.public')}
+                                    </Text>
+                                </div>
+                            )}
+                            {item.ownerId !== permissions.userId && (
+                                <div className={styles.metadataGroupItem}>
+                                    <Icon color="muted" icon="user" size="sm" />
+                                    <Text isMuted size="sm">
+                                        {item.owner}
+                                    </Text>
+                                </div>
+                            )}
                         </div>
+                    </div>
+                </div>
 
-                        {isHovered && (
-                            <ItemRowPlayControls
-                                className={styles.controls}
-                                onPlay={(playType) => handlePlay(to, playType)}
-                            />
-                        )}
-                    </>
+                {isHovered && (
+                    <ItemRowPlayControls
+                        className={styles.controls}
+                        onPlay={(playType) => handlePlay(to, playType)}
+                    />
                 )}
             </MotionLink>
         );
@@ -379,8 +297,6 @@ export const SidebarPlaylistList = () => {
     const player = usePlayer();
     const { t } = useTranslation();
     const server = useCurrentServer();
-    const sidebarPlaylistSorting = useSidebarPlaylistSorting();
-    const filterRegex = useSidebarPlaylistListFilterRegex();
 
     const playlistsQuery = useQuery(
         playlistsQueries.list({
@@ -412,11 +328,6 @@ export const SidebarPlaylistList = () => {
         [],
     );
 
-    const [playlistOrder, setPlaylistOrder] = useLocalStorage<string[]>({
-        defaultValue: [],
-        key: getPlaylistOrderKey(server.id, 'owned'),
-    });
-
     const playlistItems = useMemo(() => {
         const base = { handlePlay: handlePlayPlaylist };
 
@@ -424,144 +335,24 @@ export const SidebarPlaylistList = () => {
             return { ...base, items: playlistsQuery.data?.items };
         }
 
-        let regex: null | RegExp = null;
-        if (filterRegex) {
-            try {
-                regex = new RegExp(filterRegex, 'i');
-            } catch {
-                // Invalid regex, ignore filtering
-            }
-        }
+        const ownedPlaylistItems = (playlistsQuery.data?.items ?? []).filter(
+            (playlist) => !playlist.owner || playlist.owner === server.username,
+        );
 
-        const ownedPlaylistItems: Array<Playlist> = [];
-
-        for (const playlist of playlistsQuery.data?.items ?? []) {
-            if (!playlist.owner || playlist.owner === server.username) {
-                // Filter out playlists that match the regex
-                if (regex && regex.test(playlist.name)) {
-                    continue;
-                }
-                ownedPlaylistItems.push(playlist);
-            }
-        }
-
-        if (!ownedPlaylistItems || !sidebarPlaylistSorting || !playlistOrder) {
-            return { ...base, items: ownedPlaylistItems };
-        }
-
-        // Apply saved order, include only playlists that still exist
-        const idMap = new Map(ownedPlaylistItems.map((it) => [it.id, it]));
-        const ordered = playlistOrder
-            .map((id) => idMap.get(id))
-            .filter((it): it is Playlist => it !== undefined);
-
-        // Append any new items that weren't in saved order
-        const remaining = ownedPlaylistItems.filter((it) => !playlistOrder.includes(it.id));
-        const newPlaylistItems = [...ordered, ...remaining];
-        return { ...base, items: newPlaylistItems };
-    }, [
-        handlePlayPlaylist,
-        playlistsQuery.data?.items,
-        server.type,
-        server.username,
-        sidebarPlaylistSorting,
-        playlistOrder,
-        filterRegex,
-    ]);
-
-    const handleReorder = (
-        sourceIds: string[],
-        targetId: string,
-        edge: 'bottom' | 'top' | null,
-    ) => {
-        if (!playlistItems?.items || !edge) return;
-
-        const currentIds = playlistItems.items.map((p) => p.id);
-        const targetIndex = currentIds.indexOf(targetId);
-        if (targetIndex === -1) return;
-
-        const idsWithoutSources = currentIds.filter((id) => !sourceIds.includes(id));
-
-        const sourcesBeforeTarget = sourceIds.filter((id) => {
-            const sourceIndex = currentIds.indexOf(id);
-            return sourceIndex !== -1 && sourceIndex < targetIndex;
-        }).length;
-
-        const insertIndexInFiltered =
-            edge === 'top'
-                ? targetIndex - sourcesBeforeTarget
-                : targetIndex - sourcesBeforeTarget + 1;
-
-        const insertIndex = Math.max(0, Math.min(insertIndexInFiltered, idsWithoutSources.length));
-
-        const reorderedIds = [
-            ...idsWithoutSources.slice(0, insertIndex),
-            ...sourceIds,
-            ...idsWithoutSources.slice(insertIndex),
-        ];
-
-        setPlaylistOrder(reorderedIds);
-    };
+        return { ...base, items: ownedPlaylistItems };
+    }, [handlePlayPlaylist, playlistsQuery.data?.items, server.type, server.username]);
 
     const handleCreatePlaylistModal = (e: MouseEvent<HTMLButtonElement>) => {
         openCreatePlaylistModal(server, e);
     };
 
-    const folderViewState = usePlaylistFolderViewState(playlistItems?.items ?? []);
-    const { folderView, groups, tree } = folderViewState;
-    const navigation = usePlaylistNavigationState();
-    const inNavigation = folderView === 'navigation' && navigation.pathStack.length > 0;
-
-    const folderPaths = useMemo(() => {
-        if (folderView === 'single') {
-            return groups.reduce<string[]>((acc, g) => {
-                if (g.type === 'folder') acc.push(g.name);
-                return acc;
-            }, []);
-        }
-        return collectFolderPaths(tree);
-    }, [folderView, groups, tree]);
-
-    const { expandedSet, setMany, toggle } = usePlaylistFolderState('owned');
-    const allExpanded =
-        folderPaths.length > 0 && folderPaths.every((path) => expandedSet.has(path));
-
-    const handleToggleAllFolders = useCallback(
-        (e: MouseEvent<HTMLButtonElement>) => {
-            e.stopPropagation();
-            setMany(folderPaths, !allExpanded);
-        },
-        [setMany, folderPaths, allExpanded],
-    );
-
-    const handleNavigateUp = useCallback(
-        (e: MouseEvent<HTMLButtonElement>) => {
-            e.stopPropagation();
-            navigation.goUp();
-        },
-        [navigation],
-    );
-
-    const showExpandAll = folderView !== 'navigation' && folderPaths.length > 0;
-    const isFolderMovePending = useIsMutatingSidebarPlaylistFolderMove();
-
     return (
         <Accordion.Item value="playlists">
-            <PlaylistRootAccordionControl allPlaylists={playlistItems?.items ?? []}>
+            <Accordion.Control component="div" role="button" style={{ userSelect: 'none' }}>
                 <Group gap="xs" justify="space-between" pr="var(--theme-spacing-md)" wrap="nowrap">
                     <Group gap="xs" style={{ minWidth: 0 }} wrap="nowrap">
-                        {inNavigation && (
-                            <ActionIcon
-                                icon="arrowLeftS"
-                                iconProps={{ size: 'lg' }}
-                                onClick={handleNavigateUp}
-                                size="xs"
-                                tooltip={{ label: t('common.back') }}
-                                variant="subtle"
-                            />
-                        )}
                         <Text className={styles.name} fw={500}>
-                            {inNavigation ? navigation.currentName : t('page.sidebar.playlists')}
+                            {t('page.sidebar.playlists')}
                         </Text>
                     </Group>
                     <Group gap="xs" wrap="nowrap">
@@ -577,27 +368,6 @@ export const SidebarPlaylistList = () => {
                             }}
                             variant="subtle"
                         />
-                        {showExpandAll && (
-                            <ActionIcon
-                                icon={allExpanded ? 'collapseAll' : 'expandAll'}
-                                iconProps={{
-                                    size: 'lg',
-                                }}
-                                onClick={handleToggleAllFolders}
-                                size="xs"
-                                tooltip={{
-                                    label: t(
-                                        allExpanded
-                                            ? 'action.collapseAllFolders'
-                                            : 'action.expandAllFolders',
-                                        {
-                                            postProcess: 'sentenceCase',
-                                        },
-                                    ),
-                                }}
-                                variant="subtle"
-                            />
-                        )}
                         <ActionIcon
                             component={Link}
                             icon="list"
@@ -614,20 +384,17 @@ export const SidebarPlaylistList = () => {
                         />
                     </Group>
                 </Group>
-            </PlaylistRootAccordionControl>
+            </Accordion.Control>
             <Accordion.Panel className={styles.panel}>
-                <LoadingOverlay pos="absolute" visible={isFolderMovePending} />
-                <PlaylistFolderDragExpandProvider expandedSet={expandedSet} setMany={setMany}>
-                    <PlaylistFolderViews
-                        {...folderViewState}
-                        allPlaylists={playlistItems?.items ?? []}
-                        expandedSet={expandedSet}
-                        navigation={navigation}
+                {playlistItems?.items?.map((item) => (
+                    <PlaylistRowButton
+                        item={item}
+                        key={item.id}
+                        name={item.name}
                         onContextMenu={handleContextMenu}
-                        onReorder={handleReorder}
-                        onToggleFolder={toggle}
+                        to={item.id}
                     />
-                </PlaylistFolderDragExpandProvider>
+                ))}
             </Accordion.Panel>
         </Accordion.Item>
     );
@@ -637,8 +404,6 @@ export const SidebarSharedPlaylistList = () => {
     const player = usePlayer();
     const { t } = useTranslation();
     const server = useCurrentServer();
-    const sidebarPlaylistSorting = useSidebarPlaylistSorting();
-    const filterRegex = useSidebarPlaylistListFilterRegex();
 
     const playlistsQuery = useQuery(
         playlistsQueries.list({
@@ -674,11 +439,6 @@ export const SidebarSharedPlaylistList = () => {
         [],
     );
 
-    const [playlistOrder, setPlaylistOrder] = useLocalStorage<string[]>({
-        defaultValue: [],
-        key: getPlaylistOrderKey(server.id, 'shared'),
-    });
-
     const playlistItems = useMemo(() => {
         const base = { handlePlay: handlePlayPlaylist };
 
@@ -686,100 +446,12 @@ export const SidebarSharedPlaylistList = () => {
             return { ...base, items: playlistsQuery.data?.items };
         }
 
-        let regex: null | RegExp = null;
-        if (filterRegex) {
-            try {
-                regex = new RegExp(filterRegex, 'i');
-            } catch {
-                // Invalid regex, ignore filtering
-            }
-        }
+        const sharedPlaylistItems = (playlistsQuery.data?.items ?? []).filter(
+            (playlist) => playlist.owner && playlist.owner !== server.username,
+        );
 
-        const sharedPlaylistItems: Array<Playlist> = [];
-
-        for (const playlist of playlistsQuery.data?.items ?? []) {
-            if (playlist.owner && playlist.owner !== server.username) {
-                // Filter out playlists that match the regex
-                if (regex && regex.test(playlist.name)) {
-                    continue;
-                }
-                sharedPlaylistItems.push(playlist);
-            }
-        }
-
-        if (!sharedPlaylistItems || !sidebarPlaylistSorting || !playlistOrder) {
-            return { ...base, items: sharedPlaylistItems };
-        }
-
-        // Apply saved order, include only playlists that still exist
-        const idMap = new Map(sharedPlaylistItems.map((it) => [it.id, it]));
-        const ordered = playlistOrder
-            .map((id) => idMap.get(id))
-            .filter((it): it is Playlist => it !== undefined);
-
-        // Append any new items that weren't in saved order
-        const remaining = sharedPlaylistItems.filter((it) => !playlistOrder.includes(it.id));
-        const newPlaylistItems = [...ordered, ...remaining];
-        return { ...base, items: newPlaylistItems };
-    }, [
-        handlePlayPlaylist,
-        playlistsQuery.data?.items,
-        server.type,
-        server.username,
-        sidebarPlaylistSorting,
-        playlistOrder,
-        filterRegex,
-    ]);
-
-    const handleReorder = (
-        sourceIds: string[],
-        targetId: string,
-        edge: 'bottom' | 'top' | null,
-    ) => {
-        if (!playlistItems?.items || !edge) return;
-
-        const currentIds = playlistItems.items.map((p) => p.id);
-        const targetIndex = currentIds.indexOf(targetId);
-        if (targetIndex === -1) return;
-
-        const idsWithoutSources = currentIds.filter((id) => !sourceIds.includes(id));
-
-        const sourcesBeforeTarget = sourceIds.filter((id) => {
-            const sourceIndex = currentIds.indexOf(id);
-            return sourceIndex !== -1 && sourceIndex < targetIndex;
-        }).length;
-
-        const insertIndexInFiltered =
-            edge === 'top'
-                ? targetIndex - sourcesBeforeTarget
-                : targetIndex - sourcesBeforeTarget + 1;
-
-        const insertIndex = Math.max(0, Math.min(insertIndexInFiltered, idsWithoutSources.length));
-
-        const reorderedIds = [
-            ...idsWithoutSources.slice(0, insertIndex),
-            ...sourceIds,
-            ...idsWithoutSources.slice(insertIndex),
-        ];
-
-        setPlaylistOrder(reorderedIds);
-    };
-
-    const folderViewState = usePlaylistFolderViewState(playlistItems?.items ?? []);
-    const navigation = usePlaylistNavigationState();
-    const { expandedSet, setMany, toggle } = usePlaylistFolderState('shared');
-    const inNavigation =
-        folderViewState.folderView === 'navigation' && navigation.pathStack.length > 0;
-
-    const handleNavigateUp = useCallback(
-        (e: MouseEvent<HTMLButtonElement>) => {
-            e.stopPropagation();
-            navigation.goUp();
-        },
-        [navigation],
-    );
-
-    const isFolderMovePending = useIsMutatingSidebarPlaylistFolderMove();
+        return { ...base, items: sharedPlaylistItems };
+    }, [handlePlayPlaylist, playlistsQuery.data?.items, server.type, server.username]);
 
     if (playlistItems?.items?.length === 0) {
         return null;
@@ -789,34 +461,21 @@ export const SidebarSharedPlaylistList = () => {
         <Accordion.Item value="shared-playlists">
             <Accordion.Control component="motion.div" role="button" style={{ userSelect: 'none' }}>
                 <Group gap="xs" style={{ minWidth: 0 }} wrap="nowrap">
-                    {inNavigation && (
-                        <ActionIcon
-                            icon="arrowLeftS"
-                            iconProps={{ size: 'lg' }}
-                            onClick={handleNavigateUp}
-                            size="xs"
-                            tooltip={{ label: t('common.back') }}
-                            variant="subtle"
-                        />
-                    )}
                     <Text className={styles.name} fw={500} variant="secondary">
-                        {inNavigation ? navigation.currentName : t('page.sidebar.shared')}
+                        {t('page.sidebar.shared')}
                     </Text>
                 </Group>
             </Accordion.Control>
             <Accordion.Panel className={styles.panel}>
-                <LoadingOverlay pos="absolute" visible={isFolderMovePending} />
-                <PlaylistFolderDragExpandProvider expandedSet={expandedSet} setMany={setMany}>
-                    <PlaylistFolderViews
-                        {...folderViewState}
-                        allPlaylists={playlistItems?.items ?? []}
-                        expandedSet={expandedSet}
-                        navigation={navigation}
+                {playlistItems?.items?.map((item) => (
+                    <PlaylistRowButton
+                        item={item}
+                        key={item.id}
+                        name={item.name}
                         onContextMenu={handleContextMenu}
-                        onReorder={handleReorder}
-                        onToggleFolder={toggle}
+                        to={item.id}
                     />
-                </PlaylistFolderDragExpandProvider>
+                ))}
             </Accordion.Panel>
         </Accordion.Item>
     );

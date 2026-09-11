@@ -9,7 +9,6 @@ import { ItemListWithPagination } from '/@/renderer/components/item-list/item-li
 import { useItemListPagination } from '/@/renderer/components/item-list/item-list-pagination/use-item-list-pagination';
 import { ItemListGridComponentProps } from '/@/renderer/components/item-list/types';
 import { playlistsQueries } from '/@/renderer/features/playlists/api/playlists-api';
-import { useGeneralSettings } from '/@/renderer/store';
 import {
     LibraryItem,
     PlaylistListQuery,
@@ -57,8 +56,6 @@ export const PlaylistListPaginatedGrid = ({
     });
 
     const rows = useGridRows(LibraryItem.PLAYLIST, ItemListKey.PLAYLIST, size);
-    const { enableGridMultiSelect } = useGeneralSettings();
-
     return (
         <ItemListWithPagination
             currentPage={currentPage}
@@ -70,7 +67,7 @@ export const PlaylistListPaginatedGrid = ({
             <ItemGridList
                 currentPage={currentPage}
                 data={data || []}
-                enableMultiSelect={enableGridMultiSelect}
+                enableMultiSelect={false}
                 gap={gap}
                 initialTop={{
                     to: scrollOffset ?? 0,

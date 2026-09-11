@@ -16,12 +16,7 @@ import {
 } from '/@/renderer/features/player/utils';
 import { playlistsQueries } from '/@/renderer/features/playlists/api/playlists-api';
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
-import {
-    AddToQueueType,
-    usePlayerActions,
-    useSettingsStore,
-    useSettingsStoreActions,
-} from '/@/renderer/store';
+import { AddToQueueType, usePlayerActions } from '/@/renderer/store';
 import { logger } from '/@/renderer/utils/logger';
 import { shuffle as shuffleArray } from '/@/renderer/utils/shuffle';
 import { sortSongsByFetchedOrder } from '/@/shared/api/utils';
@@ -166,7 +161,6 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
     const { t } = useTranslation();
     const queryClient = useQueryClient();
     const storeActions = usePlayerActions();
-    const settingsActions = useSettingsStoreActions();
     const timeoutIds = useRef<null | Record<string, ReturnType<typeof setTimeout>>>({});
 
     const [doNotShowAgain, setDoNotShowAgain] = useLocalStorage({
@@ -176,9 +170,8 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
 
     const confirmQueueChange = useCallback(
         (onConfirm: () => void) => {
-            const shouldConfirm = useSettingsStore.getState().general.confirmQueueChanges;
-
-            if (!shouldConfirm || storeActions.getQueue().items.length === 0) {
+            // Replacing an empty queue destroys nothing, so it needs no confirmation.
+            if (storeActions.getQueue().items.length === 0) {
                 onConfirm();
                 return;
             }
@@ -195,25 +188,13 @@ export const PlayerProvider = ({ children }: { children: React.ReactNode }) => {
                             onConfirm();
                         }}
                     >
-                        <Stack>
-                            <Text>{t('form.queueChangeConfirmation.description')}</Text>
-                            <Checkbox
-                                label={t('common.doNotShowAgain')}
-                                onChange={(event) => {
-                                    settingsActions.setSettings({
-                                        general: {
-                                            confirmQueueChanges: !event.currentTarget.checked,
-                                        },
-                                    });
-                                }}
-                            />
-                        </Stack>
+                        <Text>{t('form.queueChangeConfirmation.description')}</Text>
                     </ConfirmModal>
                 ),
                 title: t('form.queueChangeConfirmation.title'),
             });
         },
-        [settingsActions, storeActions, t],
+        [storeActions, t],
     );
 
     const confirmLargeFetch = useCallback((): Promise<boolean> => {

@@ -34,7 +34,6 @@ import {
     usePlayerData,
     usePlayerSong,
     useSetFullScreenPlayerStore,
-    useShowFavorites,
 } from '/@/renderer/store';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Text } from '/@/shared/components/text/text';
@@ -379,7 +378,6 @@ export const MobileFullscreenPlayer = () => {
     const server = useCurrentServer();
 
     const setFavorite = useSetFavorite();
-    const showFavorites = useShowFavorites();
     const setRating = useSetRating();
 
     const [isPageHovered, setIsPageHovered] = useState(false);
@@ -470,7 +468,7 @@ export const MobileFullscreenPlayer = () => {
                     currentSong={currentSong}
                     onToggleFavorite={handleToggleFavorite}
                     onUpdateRating={handleUpdateRating}
-                    showFavorite={showFavorites}
+                    showFavorite
                     showRating={showRating}
                 />
                 <MobileFullscreenPlayerProgress currentSong={currentSong} />

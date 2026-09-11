@@ -7,12 +7,11 @@ import { PlayerbarSlider } from '/@/renderer/features/player/components/playerba
 import { openShuffleAllModal } from '/@/renderer/features/player/components/shuffle-all-modal';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import {
-    useButtonSize,
+    PLAYER_BUTTON_SIZE,
     usePlayerRepeat,
     usePlayerShuffle,
     usePlayerSongProperties,
     usePlayerStatus,
-    useSkipButtons,
 } from '/@/renderer/store';
 import { Icon } from '/@/shared/components/icon/icon';
 import { Stack } from '/@/shared/components/stack/stack';
@@ -20,8 +19,6 @@ import { Text } from '/@/shared/components/text/text';
 import { PlayerRepeat, PlayerShuffle, PlayerStatus } from '/@/shared/types/types';
 
 export const CenterControls = () => {
-    const skip = useSkipButtons();
-
     return (
         <>
             <div className={styles.controlsContainer}>
@@ -29,9 +26,7 @@ export const CenterControls = () => {
                     <StopButton />
                     <ShuffleButton />
                     <PreviousButton />
-                    {skip?.enabled && <SkipBackwardButton />}
                     <CenterPlayButton />
-                    {skip?.enabled && <SkipForwardButton />}
                     <NextButton />
                     <RepeatButton />
                     <ShuffleAllButton />
@@ -44,13 +39,12 @@ export const CenterControls = () => {
 
 const StopButton = ({ disabled }: { disabled?: boolean }) => {
     const { t } = useTranslation();
-    const buttonSize = useButtonSize();
     const { mediaStop } = usePlayer();
 
     return (
         <PlayerButton
             disabled={disabled}
-            icon={<Icon fill="default" icon="mediaStop" size={buttonSize - 2} />}
+            icon={<Icon fill="default" icon="mediaStop" size={PLAYER_BUTTON_SIZE - 2} />}
             onClick={() => mediaStop()}
             tooltip={{
                 label: t('player.stop'),
@@ -63,7 +57,6 @@ const StopButton = ({ disabled }: { disabled?: boolean }) => {
 
 const ShuffleButton = ({ disabled }: { disabled?: boolean }) => {
     const { t } = useTranslation();
-    const buttonSize = useButtonSize();
     const shuffle = usePlayerShuffle();
     const { toggleShuffle } = usePlayer();
 
@@ -74,7 +67,7 @@ const ShuffleButton = ({ disabled }: { disabled?: boolean }) => {
                 <Icon
                     color={shuffle === PlayerShuffle.NONE ? 'default' : 'primary'}
                     icon="mediaShuffle"
-                    size={buttonSize}
+                    size={PLAYER_BUTTON_SIZE}
                 />
             }
             isActive={shuffle !== PlayerShuffle.NONE}
@@ -95,13 +88,12 @@ const ShuffleButton = ({ disabled }: { disabled?: boolean }) => {
 
 const PreviousButton = ({ disabled }: { disabled?: boolean }) => {
     const { t } = useTranslation();
-    const buttonSize = useButtonSize();
     const { mediaPrevious } = usePlayer();
 
     return (
         <PlayerButton
             disabled={disabled}
-            icon={<Icon fill="default" icon="mediaPrevious" size={buttonSize} />}
+            icon={<Icon fill="default" icon="mediaPrevious" size={PLAYER_BUTTON_SIZE} />}
             onClick={(e) => mediaPrevious(e.altKey)}
             tooltip={{
                 label: (
@@ -114,27 +106,6 @@ const PreviousButton = ({ disabled }: { disabled?: boolean }) => {
                         </Text>
                     </Stack>
                 ),
-                openDelay: 0,
-            }}
-            variant="secondary"
-        />
-    );
-};
-
-const SkipBackwardButton = ({ disabled }: { disabled?: boolean }) => {
-    const { t } = useTranslation();
-    const buttonSize = useButtonSize();
-    const { mediaSkipBackward } = usePlayer();
-
-    return (
-        <PlayerButton
-            disabled={disabled}
-            icon={<Icon fill="default" icon="mediaStepBackward" size={buttonSize} />}
-            onClick={mediaSkipBackward}
-            tooltip={{
-                label: t('player.skip', {
-                    context: 'back',
-                }),
                 openDelay: 0,
             }}
             variant="secondary"
@@ -157,36 +128,14 @@ const CenterPlayButton = ({ disabled }: { disabled?: boolean }) => {
     );
 };
 
-const SkipForwardButton = ({ disabled }: { disabled?: boolean }) => {
-    const { t } = useTranslation();
-    const buttonSize = useButtonSize();
-    const { mediaSkipForward } = usePlayer();
-
-    return (
-        <PlayerButton
-            disabled={disabled}
-            icon={<Icon fill="default" icon="mediaStepForward" size={buttonSize} />}
-            onClick={mediaSkipForward}
-            tooltip={{
-                label: t('player.skip', {
-                    context: 'forward',
-                }),
-                openDelay: 0,
-            }}
-            variant="secondary"
-        />
-    );
-};
-
 const NextButton = ({ disabled }: { disabled?: boolean }) => {
     const { t } = useTranslation();
-    const buttonSize = useButtonSize();
     const { mediaNext } = usePlayer();
 
     return (
         <PlayerButton
             disabled={disabled}
-            icon={<Icon fill="default" icon="mediaNext" size={buttonSize} />}
+            icon={<Icon fill="default" icon="mediaNext" size={PLAYER_BUTTON_SIZE} />}
             onClick={(e) => mediaNext(e.altKey)}
             tooltip={{
                 label: (
@@ -208,7 +157,6 @@ const NextButton = ({ disabled }: { disabled?: boolean }) => {
 
 const RepeatButton = ({ disabled }: { disabled?: boolean }) => {
     const { t } = useTranslation();
-    const buttonSize = useButtonSize();
     const repeat = usePlayerRepeat();
     const { toggleRepeat } = usePlayer();
 
@@ -217,12 +165,12 @@ const RepeatButton = ({ disabled }: { disabled?: boolean }) => {
             disabled={disabled}
             icon={
                 repeat === PlayerRepeat.ONE ? (
-                    <Icon fill="primary" icon="mediaRepeatOne" size={buttonSize} />
+                    <Icon fill="primary" icon="mediaRepeatOne" size={PLAYER_BUTTON_SIZE} />
                 ) : (
                     <Icon
                         fill={repeat === PlayerRepeat.NONE ? 'default' : 'primary'}
                         icon="mediaRepeat"
-                        size={buttonSize}
+                        size={PLAYER_BUTTON_SIZE}
                     />
                 )
             }
@@ -251,12 +199,11 @@ const RepeatButton = ({ disabled }: { disabled?: boolean }) => {
 
 const ShuffleAllButton = ({ disabled }: { disabled?: boolean }) => {
     const { t } = useTranslation();
-    const buttonSize = useButtonSize();
 
     return (
         <PlayerButton
             disabled={disabled}
-            icon={<Icon fill="default" icon="mediaRandom" size={buttonSize} />}
+            icon={<Icon fill="default" icon="mediaRandom" size={PLAYER_BUTTON_SIZE} />}
             onClick={() => openShuffleAllModal()}
             tooltip={{
                 label: t('form.shuffleAll.title'),

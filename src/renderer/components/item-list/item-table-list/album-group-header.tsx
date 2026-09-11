@@ -21,11 +21,11 @@ import {
 } from '/@/renderer/features/shared/components/play-button-group';
 import { AppRoute } from '/@/renderer/router/routes';
 import {
+    PLAY_BUTTON_BEHAVIOR,
     useAlbumGroupImageSize,
     useAlbumGroupItems,
     useAlbumGroupShowFavoriteRating,
     useAlbumGroupVerticalLayout,
-    usePlayButtonBehavior,
 } from '/@/renderer/store';
 import { Text } from '/@/shared/components/text/text';
 import { LibraryItem, Song } from '/@/shared/types/domain-types';
@@ -60,7 +60,6 @@ export const AlbumGroupHeader = ({
     const [resolved, setResolved] = useState<null | { forInfoHeight: number; height: number }>(
         null,
     );
-    const playButtonBehavior = usePlayButtonBehavior();
     const albumImageSize = useAlbumGroupImageSize() || 96;
     const rowHeight = {
         compact: TableItemSize.COMPACT,
@@ -178,16 +177,16 @@ export const AlbumGroupHeader = ({
                 />
                 {isImageHovered && onPlay && (
                     <div className={imageColumnStyles.playButtonOverlay}>
-                        <PlayTooltip type={playButtonBehavior}>
+                        <PlayTooltip type={PLAY_BUTTON_BEHAVIOR}>
                             <PlayButton
                                 fill
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    onPlay(playButtonBehavior);
+                                    onPlay(PLAY_BUTTON_BEHAVIOR);
                                 }}
                                 onLongPress={(e) => {
                                     e.stopPropagation();
-                                    onPlay(LONG_PRESS_PLAY_BEHAVIOR[playButtonBehavior]);
+                                    onPlay(LONG_PRESS_PLAY_BEHAVIOR[PLAY_BUTTON_BEHAVIOR]);
                                 }}
                             />
                         </PlayTooltip>

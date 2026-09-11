@@ -19,8 +19,7 @@ import { useDeleteFavorite } from '/@/renderer/features/shared/mutations/delete-
 import { useFastAverageColor } from '/@/renderer/hooks';
 import { queryClient } from '/@/renderer/lib/react-query';
 import { AppRoute } from '/@/renderer/router/routes';
-import { useCurrentServer, useShowFavorites } from '/@/renderer/store';
-import { usePlayButtonBehavior } from '/@/renderer/store/settings.store';
+import { PLAY_BUTTON_BEHAVIOR, useCurrentServer } from '/@/renderer/store';
 import { formatDurationString } from '/@/renderer/utils';
 import { replaceURLWithHTMLLinks } from '/@/renderer/utils/linkify';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
@@ -38,7 +37,6 @@ const DummyAlbumDetailRoute = () => {
 
     const { albumId } = useParams() as { albumId: string };
     const server = useCurrentServer();
-    const showFavorites = useShowFavorites();
     const queryKey = queryKeys.songs.detail(server?.id || '', albumId);
     const detailQuery = useSuspenseQuery({
         queryFn: ({ signal }) => {
@@ -56,7 +54,6 @@ const DummyAlbumDetailRoute = () => {
         srcLoaded: Boolean(detailQuery.data?.imageUrl),
     });
     const { addToQueueByFetch } = usePlayer();
-    const playButtonBehavior = usePlayButtonBehavior();
 
     const createFavoriteMutation = useCreateFavorite({});
     const deleteFavoriteMutation = useDeleteFavorite({});
@@ -99,7 +96,7 @@ const DummyAlbumDetailRoute = () => {
 
     const handlePlay = () => {
         if (!server?.id) return;
-        addToQueueByFetch(server.id, [albumId], LibraryItem.SONG, playButtonBehavior);
+        addToQueueByFetch(server.id, [albumId], LibraryItem.SONG, PLAY_BUTTON_BEHAVIOR);
     };
 
     const metadataItems = [
@@ -179,22 +176,20 @@ const DummyAlbumDetailRoute = () => {
                         <Group gap="sm" justify="space-between">
                             <Group>
                                 <DefaultPlayButton onClick={() => handlePlay()} />
-                                {showFavorites && (
-                                    <ActionIcon
-                                        icon="favorite"
-                                        iconProps={{
-                                            fill: detailQuery?.data?.userFavorite
-                                                ? 'primary'
-                                                : undefined,
-                                        }}
-                                        loading={
-                                            createFavoriteMutation.isPending ||
-                                            deleteFavoriteMutation.isPending
-                                        }
-                                        onClick={handleFavorite}
-                                        variant="subtle"
-                                    />
-                                )}
+                                <ActionIcon
+                                    icon="favorite"
+                                    iconProps={{
+                                        fill: detailQuery?.data?.userFavorite
+                                            ? 'primary'
+                                            : undefined,
+                                    }}
+                                    loading={
+                                        createFavoriteMutation.isPending ||
+                                        deleteFavoriteMutation.isPending
+                                    }
+                                    onClick={handleFavorite}
+                                    variant="subtle"
+                                />
                                 <ActionIcon
                                     icon="ellipsisHorizontal"
                                     onClick={() => {

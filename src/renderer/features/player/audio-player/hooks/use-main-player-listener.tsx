@@ -1,13 +1,12 @@
 import isElectron from 'is-electron';
 import { useEffect } from 'react';
 
-import { usePlayerActions, useVolumeWheelStep } from '/@/renderer/store';
+import { usePlayerActions, VOLUME_WHEEL_STEP } from '/@/renderer/store';
 
 const playerEvents = isElectron() ? window.api.playerEvents : null;
 const ipc = isElectron() ? window.api.ipc : null;
 
 export const useMainPlayerListener = () => {
-    const volumeWheelStep = useVolumeWheelStep();
     const {
         decreaseVolume,
         increaseVolume,
@@ -86,11 +85,11 @@ export const useMainPlayerListener = () => {
         });
 
         playerEvents.rendererVolumeUp(() => {
-            increaseVolume(volumeWheelStep);
+            increaseVolume(VOLUME_WHEEL_STEP);
         });
 
         playerEvents.rendererVolumeDown(() => {
-            decreaseVolume(volumeWheelStep);
+            decreaseVolume(VOLUME_WHEEL_STEP);
         });
 
         return () => {
@@ -122,7 +121,6 @@ export const useMainPlayerListener = () => {
         mediaTogglePlayPause,
         toggleRepeat,
         toggleShuffle,
-        volumeWheelStep,
     ]);
 };
 

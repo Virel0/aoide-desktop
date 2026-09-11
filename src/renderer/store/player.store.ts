@@ -16,7 +16,6 @@ import {
 } from '/@/renderer/aoide/features/queue/manual-lane';
 import { eventEmitter } from '/@/renderer/events/event-emitter';
 import { createSelectors } from '/@/renderer/lib/zustand';
-import { useSettingsStore } from '/@/renderer/store/settings.store';
 import {
     setTimestamp as setTimestampStore,
     useTimestampStoreBase,
@@ -25,6 +24,9 @@ import { migratePlayerStorePersist, playerStoreStorage } from '/@/renderer/store
 import { shuffleInPlace } from '/@/renderer/utils/shuffle';
 import { PlayerData, QueueData, QueueSong, Song } from '/@/shared/types/domain-types';
 import { Play, PlayerRepeat, PlayerShuffle, PlayerStatus } from '/@/shared/types/types';
+
+const SKIP_BACKWARD_SECONDS = 5;
+const SKIP_FORWARD_SECONDS = 10;
 
 export interface PlayerState extends Actions, State {}
 
@@ -1285,9 +1287,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                     });
                 },
                 mediaSkipBackward: (offset?: number) => {
-                    const offsetFromSettings =
-                        useSettingsStore.getState().general.skipButtons.skipBackwardSeconds;
-                    const timeToSkip = offset ?? offsetFromSettings ?? 5;
+                    const timeToSkip = offset ?? SKIP_BACKWARD_SECONDS;
                     const currentTimestamp = useTimestampStoreBase.getState().timestamp;
                     const newTimestamp = Math.max(0, currentTimestamp - timeToSkip);
 
@@ -1306,9 +1306,7 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                     const index = state.player.index;
                     const currentTrack = queue.items[index];
                     const duration = currentTrack?.duration;
-                    const offsetFromSettings =
-                        useSettingsStore.getState().general.skipButtons.skipForwardSeconds;
-                    const timeToSkip = offset ?? offsetFromSettings ?? 5;
+                    const timeToSkip = offset ?? SKIP_FORWARD_SECONDS;
 
                     if (!duration) {
                         return;
@@ -1738,28 +1736,16 @@ export const usePlayerStoreBase = createWithEqualityFn<PlayerState>()(
                 usePlayerStoreBase.setState({ hydrated: true });
             },
             partialize: (state) => {
-                const shouldRestorePlayQueue = useSettingsStore.getState().general.resume;
-
                 // Exclude playerNum, seekToTimestamp, and status from stored player object
                 // These are not needed to be stored since they are ephemeral properties
                 // Note: timestamp is now in a separate store and doesn't need to be excluded here
                 const excludedPlayerKeys = ['playerNum', 'seekToTimestamp', 'status'];
-
-                // If we're not restoring the play queue, we don't need the index property
-                // (it is meaningless without the queue)
-                if (!shouldRestorePlayQueue) {
-                    excludedPlayerKeys.push('index');
-                }
 
                 const player = Object.fromEntries(
                     Object.entries(state.player).filter(
                         ([key]) => !excludedPlayerKeys.includes(key),
                     ),
                 ) as typeof state.player;
-
-                if (!shouldRestorePlayQueue) {
-                    return { player };
-                }
 
                 // Queue pruning and IDB writes are handled in `playerStoreStorage` so we only
                 // serialize the large queue when the queue slice reference actually changes.

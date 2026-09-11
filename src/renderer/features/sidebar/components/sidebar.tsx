@@ -25,19 +25,14 @@ import {
 } from '/@/renderer/features/sidebar/components/sidebar-playlist-list';
 import { AppRoute } from '/@/renderer/router/routes';
 import {
+    sidebarItems,
     useAppStore,
     useAppStoreActions,
     useFullScreenPlayerStore,
-    useGeneralSettings,
     usePlayerSong,
     useSetFullScreenPlayerStore,
 } from '/@/renderer/store';
-import {
-    SidebarItemType,
-    useSidebarItems,
-    useSidebarPlaylistList,
-    useWindowSettings,
-} from '/@/renderer/store/settings.store';
+import { SidebarItemType, useWindowSettings } from '/@/renderer/store/settings.store';
 import { Accordion } from '/@/shared/components/accordion/accordion';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Group } from '/@/shared/components/group/group';
@@ -45,7 +40,7 @@ import { ImageUnloader } from '/@/shared/components/image/image';
 import { ScrollArea } from '/@/shared/components/scroll-area/scroll-area';
 import { Text } from '/@/shared/components/text/text';
 import { Tooltip } from '/@/shared/components/tooltip/tooltip';
-import { ExplicitStatus, LibraryItem } from '/@/shared/types/domain-types';
+import { LibraryItem } from '/@/shared/types/domain-types';
 import { Platform } from '/@/shared/types/types';
 
 const SidebarPlaylistSection = () => {
@@ -61,8 +56,6 @@ const SidebarPlaylistSection = () => {
 
 export const Sidebar = () => {
     const { t } = useTranslation();
-
-    const sidebarPlaylistList = useSidebarPlaylistList();
 
     // Aoide's preference for which playlists the sidebar carries. Jellyfin's
     // own toggle above still applies on top; this can only hide, never show.
@@ -88,25 +81,23 @@ export const Sidebar = () => {
         [t],
     );
 
-    const sidebarItems = useSidebarItems();
     const { windowBarStyle } = useWindowSettings();
     const sidebarImageEnabled = useAppStore((state) => state.sidebar.image);
     const showImage = sidebarImageEnabled;
 
-    const sidebarItemsWithRoute: SidebarItemType[] = useMemo(() => {
-        if (!sidebarItems) return [];
-
-        const items = sidebarItems
-            .filter((item) => !item.disabled)
-            .map((item) => ({
-                ...item,
-                label:
-                    translatedSidebarItemMap[item.id as keyof typeof translatedSidebarItemMap] ??
-                    item.label,
-            }));
-
-        return items;
-    }, [sidebarItems, translatedSidebarItemMap]);
+    const sidebarItemsWithRoute: SidebarItemType[] = useMemo(
+        () =>
+            sidebarItems
+                .filter((item) => !item.disabled)
+                .map((item) => ({
+                    ...item,
+                    label:
+                        translatedSidebarItemMap[
+                            item.id as keyof typeof translatedSidebarItemMap
+                        ] ?? item.label,
+                })),
+        [translatedSidebarItemMap],
+    );
 
     /* Library accordion: only items with a route (exclude Collections section) */
     const libraryItemsWithRoute = useMemo(
@@ -166,7 +157,7 @@ export const Sidebar = () => {
                     </Accordion.Item>
                     <SidebarCollectionList />
                     {showAoidePlaylists && <AoideSidebarList />}
-                    {sidebarPlaylistList && showJellyfinPlaylists && <SidebarPlaylistSection />}
+                    {showJellyfinPlaylists && <SidebarPlaylistSection />}
                 </Accordion>
             </ScrollArea>
             <AnimatePresence initial={false} mode="popLayout">
@@ -180,7 +171,6 @@ const SidebarImage = () => {
     const { t } = useTranslation();
     const { setSideBar } = useAppStoreActions();
     const currentSong = usePlayerSong();
-    const { blurExplicitImages } = useGeneralSettings();
 
     const imageUrl = useItemImageUrl({
         id: currentSong?.imageId || undefined,
@@ -228,15 +218,7 @@ const SidebarImage = () => {
         >
             <Tooltip label={t('player.toggleFullscreenPlayer')}>
                 {imageUrl ? (
-                    <img
-                        className={clsx(styles.sidebarImage, {
-                            [styles.censored]:
-                                currentSong?.explicitStatus === ExplicitStatus.EXPLICIT &&
-                                blurExplicitImages,
-                        })}
-                        loading="eager"
-                        src={imageUrl}
-                    />
+                    <img className={styles.sidebarImage} loading="eager" src={imageUrl} />
                 ) : (
                     <ImageUnloader icon="emptySongImage" />
                 )}

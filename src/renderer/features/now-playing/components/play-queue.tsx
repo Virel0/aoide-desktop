@@ -23,7 +23,6 @@ import {
     mapShuffledToQueueIndex,
     subscribeCurrentTrack,
     subscribePlayerQueue,
-    useFollowCurrentSong,
     useListSettings,
     usePlayerActions,
     usePlayerSong,
@@ -81,7 +80,6 @@ export const PlayQueue = forwardRef<ItemListHandle, QueueProps>(
         const tableRef = useRef<ItemListHandle>(null);
         const mergedRef = useMergedRef(ref, tableRef);
         const { getQueue } = usePlayerActions();
-        const followCurrentSong = useFollowCurrentSong();
 
         const [debouncedSearchTerm] = useDebouncedValue(searchTerm, 200);
 
@@ -112,7 +110,7 @@ export const PlayQueue = forwardRef<ItemListHandle, QueueProps>(
                 // playhead does even though the queue itself has not changed.
                 setQueue();
 
-                if (followCurrentSong && e.index !== -1) {
+                if (e.index !== -1) {
                     tableRef.current?.scrollToIndex(e.index, {
                         align: 'center',
                         behavior: 'auto',
@@ -121,31 +119,6 @@ export const PlayQueue = forwardRef<ItemListHandle, QueueProps>(
             });
 
             const handleAutoDJQueueAdded = () => {
-                if (followCurrentSong) {
-                    const state = usePlayerStore.getState();
-                    let index = state.player.index;
-
-                    if (isShuffleEnabled(state)) {
-                        index = mapShuffledToQueueIndex(index, state.queue.shuffled);
-                    }
-
-                    if (index !== -1) {
-                        // Use setTimeout to ensure the DOM has updated with the new queue items
-                        setTimeout(() => {
-                            tableRef.current?.scrollToIndex(index, {
-                                align: 'center',
-                                behavior: 'auto',
-                            });
-                        }, 0);
-                    }
-                }
-            };
-
-            eventEmitter.on('AUTODJ_QUEUE_ADDED', handleAutoDJQueueAdded);
-
-            setQueue();
-
-            if (followCurrentSong) {
                 const state = usePlayerStore.getState();
                 let index = state.player.index;
 
@@ -154,6 +127,7 @@ export const PlayQueue = forwardRef<ItemListHandle, QueueProps>(
                 }
 
                 if (index !== -1) {
+                    // Use setTimeout to ensure the DOM has updated with the new queue items
                     setTimeout(() => {
                         tableRef.current?.scrollToIndex(index, {
                             align: 'center',
@@ -161,6 +135,21 @@ export const PlayQueue = forwardRef<ItemListHandle, QueueProps>(
                         });
                     }, 0);
                 }
+            };
+
+            eventEmitter.on('AUTODJ_QUEUE_ADDED', handleAutoDJQueueAdded);
+
+            setQueue();
+
+            const initialIndex = currentQueueIndex();
+
+            if (initialIndex !== -1) {
+                setTimeout(() => {
+                    tableRef.current?.scrollToIndex(initialIndex, {
+                        align: 'center',
+                        behavior: 'auto',
+                    });
+                }, 0);
             }
 
             return () => {
@@ -168,7 +157,7 @@ export const PlayQueue = forwardRef<ItemListHandle, QueueProps>(
                 unsubCurrentTrack();
                 eventEmitter.off('AUTODJ_QUEUE_ADDED', handleAutoDJQueueAdded);
             };
-        }, [getQueue, tableRef, followCurrentSong]);
+        }, [getQueue, tableRef]);
 
         const filteredData: QueueSong[] = useMemo(() => {
             if (debouncedSearchTerm) {
@@ -233,7 +222,7 @@ export const PlayQueue = forwardRef<ItemListHandle, QueueProps>(
                 <ItemTableList
                     activeRowId={currentSongUniqueId}
                     autoFitColumns={table.autoFitColumns}
-                    autoScrollToActiveRow={followCurrentSong}
+                    autoScrollToActiveRow
                     CellComponent={ItemTableListColumn}
                     columns={table.columns}
                     data={filteredData}

@@ -5,12 +5,7 @@ import { useMantineColorScheme } from '@mantine/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useCustomThemes } from '/@/renderer/store/custom-themes.store';
-import {
-    useAccent,
-    useFontSettings,
-    useNativeAspectRatio,
-    useThemeSettings,
-} from '/@/renderer/store/settings.store';
+import { useAccent, useFontSettings, useThemeSettings } from '/@/renderer/store/settings.store';
 import { createMantineTheme } from '/@/renderer/themes/mantine-theme';
 import { getAppTheme } from '/@/shared/themes/app-theme';
 import { AppTheme, AppThemeConfiguration } from '/@/shared/themes/app-theme-types';
@@ -58,7 +53,6 @@ export const THEME_DATA = [
 
 export const useAppTheme = (overrideTheme?: AppTheme) => {
     const accent = useAccent();
-    const nativeImageAspect = useNativeAspectRatio();
     const { builtIn, custom, system, type } = useFontSettings();
     // Not read directly, but its identity changes whenever the custom
     // themes folder is reloaded, which is what we want to react to below.
@@ -67,15 +61,7 @@ export const useAppTheme = (overrideTheme?: AppTheme) => {
     const themeInlineStylesRef = useRef<HTMLStyleElement | null>(null);
     const getCurrentTheme = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
     const [isDarkTheme, setIsDarkTheme] = useState(getCurrentTheme());
-    const {
-        followSystemTheme,
-        primaryShade,
-        theme,
-        themeDark,
-        themeLight,
-        useThemeAccentColor,
-        useThemePrimaryShade,
-    } = useThemeSettings();
+    const { followSystemTheme, theme, themeDark, themeLight } = useThemeSettings();
 
     const mqListener = (e: any) => {
         setIsDarkTheme(e.matches);
@@ -166,25 +152,15 @@ export const useAppTheme = (overrideTheme?: AppTheme) => {
     const appTheme: AppThemeConfiguration = useMemo(() => {
         const themeProperties = getAppTheme(selectedTheme);
 
-        // Use theme's primary color if useThemeAccentColor is enabled, otherwise use custom accent
-        const primaryColor = useThemeAccentColor
-            ? themeProperties.colors?.primary || themeProperties.colors?.['state-info'] || accent
-            : accent;
-
-        // Use theme's primary shade if useThemePrimaryShade is enabled, otherwise use slider value (0-9)
-        const effectivePrimaryShade: MantineThemeOverride['primaryShade'] = useThemePrimaryShade
-            ? themeProperties.mantineOverride?.primaryShade
-            : ({ dark: primaryShade, light: primaryShade } as MantineThemeOverride['primaryShade']);
-
         return {
             ...themeProperties,
             colors: {
                 ...themeProperties.colors,
-                primary: primaryColor,
-            },
-            mantineOverride: {
-                ...themeProperties.mantineOverride,
-                ...(effectivePrimaryShade != null && { primaryShade: effectivePrimaryShade }),
+                // The accent is the one colour a person actually picks, so it
+                // wins over whatever primary the theme declares for itself. The
+                // shade it lands on is still the theme's, and rides along in
+                // mantineOverride untouched.
+                primary: accent,
             },
         };
         // customThemes is not read directly above, but getAppTheme resolves
@@ -193,51 +169,34 @@ export const useAppTheme = (overrideTheme?: AppTheme) => {
         // Including it here is what makes an edited custom theme's colors
         // get picked up without a manual reselect.
         // eslint-disable-next-line react-hooks/exhaustive-deps -- customThemes is read indirectly via getAppTheme's registry lookup, not referenced directly above
-    }, [
-        accent,
-        customThemes,
-        primaryShade,
-        selectedTheme,
-        useThemeAccentColor,
-        useThemePrimaryShade,
-    ]);
+    }, [accent, customThemes, selectedTheme]);
 
     useEffect(() => {
         const root = document.documentElement;
         const themeProperties = getAppTheme(selectedTheme);
-        const primaryColor = useThemeAccentColor
-            ? themeProperties.colors?.primary || themeProperties.colors?.['state-info'] || accent
-            : accent;
-        const effectivePrimaryShade: MantineThemeOverride['primaryShade'] = useThemePrimaryShade
-            ? themeProperties.mantineOverride?.primaryShade
-            : ({ dark: primaryShade, light: primaryShade } as MantineThemeOverride['primaryShade']);
+        const primaryShade: MantineThemeOverride['primaryShade'] =
+            themeProperties.mantineOverride?.primaryShade;
         const mode = themeProperties.mode ?? (isDarkTheme ? 'dark' : 'light');
         const shadeIndex = Math.min(
             9,
             Math.max(
                 0,
-                typeof effectivePrimaryShade === 'object'
-                    ? (effectivePrimaryShade?.[mode] ?? 6)
-                    : (effectivePrimaryShade ?? 6),
+                typeof primaryShade === 'object'
+                    ? (primaryShade?.[mode] ?? 6)
+                    : (primaryShade ?? 6),
             ),
         );
-        const primaryScale = generateColors(primaryColor);
-        const primaryAtShade = primaryScale[shadeIndex];
+        const primaryAtShade = generateColors(accent)[shadeIndex];
         root.style.setProperty('--theme-colors-primary', primaryAtShade);
-    }, [
-        accent,
-        customThemes,
-        isDarkTheme,
-        primaryShade,
-        selectedTheme,
-        useThemeAccentColor,
-        useThemePrimaryShade,
-    ]);
+    }, [accent, customThemes, isDarkTheme, selectedTheme]);
 
     useEffect(() => {
+        // Covers fill their frame. Letterboxing every square tile to honour the
+        // one release shot at 4:3 was the alternative, and it was never worth a
+        // grid full of grey bars.
         const root = document.documentElement;
-        root.style.setProperty('--theme-image-fit', nativeImageAspect ? 'contain' : 'cover');
-    }, [nativeImageAspect]);
+        root.style.setProperty('--theme-image-fit', 'cover');
+    }, []);
 
     useEffect(() => {
         applyInlineStylesheets(appTheme?.stylesheets ?? []);
@@ -316,15 +275,7 @@ export const useAppThemeColors = () => {
     // Not read directly, but its identity changes whenever the custom
     // themes folder is reloaded, which is what we want to react to below.
     const customThemes = useCustomThemes();
-    const {
-        followSystemTheme,
-        primaryShade,
-        theme,
-        themeDark,
-        themeLight,
-        useThemeAccentColor,
-        useThemePrimaryShade,
-    } = useThemeSettings();
+    const { followSystemTheme, theme, themeDark, themeLight } = useThemeSettings();
 
     const getSelectedTheme = () => {
         if (followSystemTheme) {
@@ -339,36 +290,19 @@ export const useAppThemeColors = () => {
     const appTheme: AppThemeConfiguration = useMemo(() => {
         const themeProperties = getAppTheme(selectedTheme);
 
-        // Use theme's primary color if useThemeAccentColor is enabled, otherwise use custom accent
-        const primaryColor = useThemeAccentColor
-            ? themeProperties.colors?.primary || themeProperties.colors?.['state-info'] || accent
-            : accent;
-
-        // Use theme's primary shade if useThemePrimaryShade is enabled, otherwise use slider value (0-9)
-        const effectivePrimaryShade: MantineThemeOverride['primaryShade'] = useThemePrimaryShade
-            ? themeProperties.mantineOverride?.primaryShade
-            : ({ dark: primaryShade, light: primaryShade } as MantineThemeOverride['primaryShade']);
-
         return {
             ...themeProperties,
             colors: {
                 ...themeProperties.colors,
-                primary: primaryColor,
-            },
-            mantineOverride: {
-                ...themeProperties.mantineOverride,
-                ...(effectivePrimaryShade != null && { primaryShade: effectivePrimaryShade }),
+                // The accent is the one colour a person actually picks, so it
+                // wins over whatever primary the theme declares for itself. The
+                // shade it lands on is still the theme's, and rides along in
+                // mantineOverride untouched.
+                primary: accent,
             },
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps -- customThemes is read indirectly via getAppTheme's registry lookup, not referenced directly above
-    }, [
-        accent,
-        customThemes,
-        primaryShade,
-        selectedTheme,
-        useThemeAccentColor,
-        useThemePrimaryShade,
-    ]);
+    }, [accent, customThemes, selectedTheme]);
 
     const themeVars = useMemo(() => {
         return Object.entries(appTheme?.app ?? {})

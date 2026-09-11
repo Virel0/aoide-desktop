@@ -644,9 +644,10 @@ describe('the Now Playing column', () => {
         expect(rightSidebar).toMatch(
             /if \(nowPlayingColumn\) \{\s*return \(\s*<AoideNowPlayingColumn/,
         );
-        expect(mainContent).toContain(
-            "nowPlayingColumn || (rightExpanded && sideQueueType === 'sideQueue')",
-        );
+        // The attached queue is the only kind now — the detached drawer went
+        // with the setting that chose between them — so the column and the
+        // queue toggle are the only two things that can widen the right column.
+        expect(mainContent).toContain('nowPlayingColumn || rightExpanded');
     });
 
     // Both the JS and the CSS ask the same media query, from one constant.
@@ -1271,8 +1272,8 @@ describe('silence trimming: the player consults the trim plan, the setting gates
         join(import.meta.dirname, '../../store/settings.store.ts'),
         'utf8',
     );
-    const generalTab = readFileSync(
-        join(import.meta.dirname, '../../features/settings/components/general/general-tab.tsx'),
+    const playbackTab = readFileSync(
+        join(import.meta.dirname, '../../features/settings/components/playback/playback-tab.tsx'),
         'utf8',
     );
     const app = readFileSync(join(import.meta.dirname, '../../app.tsx'), 'utf8');
@@ -1317,10 +1318,10 @@ describe('silence trimming: the player consults the trim plan, the setting gates
 
     // The setting gates every consumer at once: the hook answers undefined when
     // it is off, and the prefetch stops asking.
-    it('the setting exists, defaults on, and is in the general tab', () => {
+    it('the setting exists, defaults on, and is in the playback tab', () => {
         expect(settings).toContain('aoideTrimSilence: AoideTrimSilenceSchema');
         expect(settings).toContain('aoideTrimSilence: DEFAULT_AOIDE_TRIM_SILENCE');
-        expect(generalTab).toContain("{ component: TrimSilenceSettings, key: 'aoideTrimSilence' }");
+        expect(playbackTab).toContain('<TrimSilenceSettings />');
         expect(sourceOf('settings/trim-silence-settings.tsx')).toContain(
             'aoideTrimSilence: e.currentTarget.checked',
         );
@@ -1353,8 +1354,8 @@ describe('loudness normalisation: the player consults the gain module, the setti
         join(import.meta.dirname, '../../store/settings.store.ts'),
         'utf8',
     );
-    const generalTab = readFileSync(
-        join(import.meta.dirname, '../../features/settings/components/general/general-tab.tsx'),
+    const playbackTab = readFileSync(
+        join(import.meta.dirname, '../../features/settings/components/playback/playback-tab.tsx'),
         'utf8',
     );
     const app = readFileSync(join(import.meta.dirname, '../../app.tsx'), 'utf8');
@@ -1395,14 +1396,12 @@ describe('loudness normalisation: the player consults the gain module, the setti
         expect(DEFAULT_AOIDE_LOUDNESS_NORMALISATION).toBe(true);
     });
 
-    it('the setting exists, is defaulted, and is in the general tab', () => {
+    it('the setting exists, is defaulted, and is in the playback tab', () => {
         expect(settings).toContain('aoideLoudnessNormalisation: AoideLoudnessNormalisationSchema');
         expect(settings).toContain(
             'aoideLoudnessNormalisation: DEFAULT_AOIDE_LOUDNESS_NORMALISATION',
         );
-        expect(generalTab).toContain(
-            "{ component: LoudnessNormalisationSettings, key: 'aoideLoudnessNormalisation' }",
-        );
+        expect(playbackTab).toContain('<LoudnessNormalisationSettings />');
         expect(sourceOf('settings/loudness-normalisation-settings.tsx')).toContain(
             'aoideLoudnessNormalisation: e.currentTarget.checked',
         );

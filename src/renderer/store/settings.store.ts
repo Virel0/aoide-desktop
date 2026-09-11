@@ -57,7 +57,6 @@ import {
     ListDisplayType,
     ListPaginationType,
     Platform,
-    Play,
     TableColumn,
 } from '/@/shared/types/types';
 
@@ -86,148 +85,6 @@ const deepMergeIntoState = <T extends Record<string, any>>(
         return undefined;
     });
 };
-
-const HomeItemSchema = z.enum([
-    'genres',
-    'mostPlayed',
-    'random',
-    'recentlyAdded',
-    'recentlyPlayed',
-    'recentlyReleased',
-]);
-
-const AlbumGroupItemSchema = z.enum([
-    'albumArtists',
-    'duration',
-    'genres',
-    'releaseDate',
-    'releaseYear',
-    'releaseType',
-    'size',
-    'songCount',
-]);
-
-const PlayerItemSchema = z.enum([
-    'bit_depth',
-    'bit_rate',
-    'bpm',
-    'disc_number',
-    'sample_rate',
-    'track_number',
-    'codec',
-    'date',
-    'release_year',
-    'release_type',
-    'release_date',
-    'genres',
-    'year',
-]);
-
-const ArtistItemSchema = z.enum([
-    'biography',
-    'compilations',
-    'favoriteSongs',
-    'recentAlbums',
-    'similarArtists',
-    'topSongs',
-]);
-
-const ArtistReleaseTypeItemSchema = z.enum([
-    'releaseTypeAlbum',
-    'releaseTypeEp',
-    'releaseTypeSingle',
-    'releaseTypeBroadcast',
-    'releaseTypeOther',
-    'releaseTypeCompilation',
-    'appearsOn',
-    'releaseTypeAudioDrama',
-    'releaseTypeAudiobook',
-    'releaseTypeDemo',
-    'releaseTypeDjMix',
-    'releaseTypeFieldRecording',
-    'releaseTypeInterview',
-    'releaseTypeLive',
-    'releaseTypeMixtapeStreet',
-    'releaseTypeRemix',
-    'releaseTypeSoundtrack',
-    'releaseTypeSpokenWord',
-]);
-
-const BindingActionsSchema = z.enum([
-    'browserBack',
-    'browserForward',
-    'favoriteCurrentAdd',
-    'favoriteCurrentRemove',
-    'favoriteCurrentToggle',
-    'favoritePreviousAdd',
-    'favoritePreviousRemove',
-    'favoritePreviousToggle',
-    'globalSearch',
-    'localSearch',
-    'volumeMute',
-    'navigateHome',
-    'next',
-    'nextAlbum',
-    'pause',
-    'play',
-    'playPause',
-    'previous',
-    'previousAlbum',
-    'rate0',
-    'rate1',
-    'rate2',
-    'rate3',
-    'rate4',
-    'rate5',
-    'toggleShuffle',
-    'skipBackward',
-    'skipForward',
-    'stop',
-    'toggleFullscreenPlayer',
-    'toggleQueue',
-    'toggleRepeat',
-    'volumeDown',
-    'volumeUp',
-    'zoomIn',
-    'zoomOut',
-    'listPlayDefault',
-    'listPlayNow',
-    'listPlayNext',
-    'listPlayLast',
-    'listNavigateToPage',
-    'listShowPlayingSong',
-]);
-
-const DiscordDisplayTypeSchema = z.enum(['artist', 'feishin', 'song']);
-
-const DiscordLinkTypeSchema = z.enum(['last_fm', 'musicbrainz', 'musicbrainz_last_fm', 'none']);
-
-const GenreTargetSchema = z.enum(['album', 'track']);
-
-const PlaylistTargetSchema = z.enum(['album', 'track']);
-
-const SideQueueTypeSchema = z.enum(['sideDrawerQueue', 'sideQueue']);
-const SideQueueLayoutSchema = z.enum(['horizontal', 'vertical']);
-
-const SidebarPanelTypeSchema = z.enum(['queue', 'lyrics', 'visualizer']);
-
-const SidebarPlaylistFolderViewSchema = z.enum(['single', 'tree', 'navigation']);
-
-const SidebarPlaylistModeSchema = z.enum(['compact', 'expanded']);
-
-const CollectionSchema = z.object({
-    filterQueryString: z.string(),
-    id: z.string(),
-    name: z.string(),
-    type: z.enum([LibraryItem.ALBUM, LibraryItem.SONG]),
-});
-
-const SidebarItemTypeSchema = z.object({
-    disabled: z.boolean(),
-    id: z.string(),
-    label: z.string(),
-    route: z.union([z.nativeEnum(AppRoute), z.string()]),
-});
 
 const SortableItemSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>
     z.object({
@@ -290,74 +147,75 @@ const ItemListConfigSchema = z.object({
     table: ItemTableListPropsSchema,
 });
 
-const TranscodingConfigSchema = z.object({
-    bitrate: z.number().optional(),
-    enabled: z.boolean(),
-    format: z.string().optional(),
-});
+const AlbumGroupItemSchema = z.enum([
+    'albumArtists',
+    'duration',
+    'genres',
+    'releaseDate',
+    'releaseYear',
+    'releaseType',
+    'size',
+    'songCount',
+]);
 
-const EqSettingsSchema = z.object({
-    bands: z.array(
-        z.object({
-            freq: z.number(),
-            gain: z.number(),
-        }),
-    ),
-    enabled: z.boolean(),
-    preamp: z.number(),
-});
+const BindingActionsSchema = z.enum([
+    'browserBack',
+    'browserForward',
+    'favoriteCurrentAdd',
+    'favoriteCurrentRemove',
+    'favoriteCurrentToggle',
+    'favoritePreviousAdd',
+    'favoritePreviousRemove',
+    'favoritePreviousToggle',
+    'globalSearch',
+    'localSearch',
+    'volumeMute',
+    'navigateHome',
+    'next',
+    'nextAlbum',
+    'pause',
+    'play',
+    'playPause',
+    'previous',
+    'previousAlbum',
+    'rate0',
+    'rate1',
+    'rate2',
+    'rate3',
+    'rate4',
+    'rate5',
+    'toggleShuffle',
+    'skipBackward',
+    'skipForward',
+    'stop',
+    'toggleFullscreenPlayer',
+    'toggleQueue',
+    'toggleRepeat',
+    'volumeDown',
+    'volumeUp',
+    'zoomIn',
+    'zoomOut',
+    'listPlayDefault',
+    'listPlayNow',
+    'listPlayNext',
+    'listPlayLast',
+    'listNavigateToPage',
+    'listShowPlayingSong',
+]);
 
-const CompressorSettingsSchema = z.object({
-    attack: z.number(),
-    enabled: z.boolean(),
-    knee: z.number(),
-    makeup: z.number(),
-    ratio: z.number(),
-    release: z.number(),
-    threshold: z.number(),
-});
+const DiscordDisplayTypeSchema = z.enum(['artist', 'feishin', 'song']);
 
-const CssSettingsSchema = z.object({
-    content: z.string().transform((val) => sanitizeCss(`<style>${val}`)),
-    enabled: z.boolean(),
-});
+const DiscordLinkTypeSchema = z.enum(['last_fm', 'musicbrainz', 'musicbrainz_last_fm', 'none']);
 
-const DiscordSettingsSchema = z.object({
-    clientId: z.string(),
-    displayType: DiscordDisplayTypeSchema,
-    enabled: z.boolean(),
-    linkType: DiscordLinkTypeSchema,
-    showAsListening: z.boolean(),
-    showPaused: z.boolean(),
-    showServerImage: z.boolean(),
-    showStateIcon: z.boolean(),
-});
+const GenreTargetSchema = z.enum(['album', 'track']);
 
-const FontSettingsSchema = z.object({
-    builtIn: FontValueSchema,
-    custom: z.string().nullable(),
-    system: z.string().nullable(),
-    type: z.nativeEnum(FontType),
-});
+const PlaylistTargetSchema = z.enum(['album', 'track']);
 
-const SkipButtonsSchema = z.object({
-    enabled: z.boolean(),
-    skipBackwardSeconds: z.number(),
-    skipForwardSeconds: z.number(),
-});
-
-const PlayerbarSliderTypeSchema = z.enum(['slider', 'waveform']);
-
-const BarAlignSchema = z.enum(['top', 'bottom', 'center']);
-
-const PlayerbarSliderSchema = z.object({
-    barAlign: BarAlignSchema,
-    barGap: z.number(),
-    barRadius: z.number(),
-    barWidth: z.number(),
-    loadingDelay: z.number(),
-    stretched: z.boolean(),
-    type: PlayerbarSliderTypeSchema,
+const CollectionSchema = z.object({
+    filterQueryString: z.string(),
+    id: z.string(),
+    name: z.string(),
+    type: z.enum([LibraryItem.ALBUM, LibraryItem.SONG]),
 });
 
 const AudioMotionAnalyzerSettingsSchema = z.object({
@@ -472,6 +330,56 @@ const ButterchurnSettingsSchema = z.object({
     selectedPresets: z.array(z.string()),
 });
 
+const TranscodingConfigSchema = z.object({
+    bitrate: z.number().optional(),
+    enabled: z.boolean(),
+    format: z.string().optional(),
+});
+
+const EqSettingsSchema = z.object({
+    bands: z.array(
+        z.object({
+            freq: z.number(),
+            gain: z.number(),
+        }),
+    ),
+    enabled: z.boolean(),
+    preamp: z.number(),
+});
+
+const CompressorSettingsSchema = z.object({
+    attack: z.number(),
+    enabled: z.boolean(),
+    knee: z.number(),
+    makeup: z.number(),
+    ratio: z.number(),
+    release: z.number(),
+    threshold: z.number(),
+});
+
+const CssSettingsSchema = z.object({
+    content: z.string().transform((val) => sanitizeCss(`<style>${val}`)),
+    enabled: z.boolean(),
+});
+
+const DiscordSettingsSchema = z.object({
+    clientId: z.string(),
+    displayType: DiscordDisplayTypeSchema,
+    enabled: z.boolean(),
+    linkType: DiscordLinkTypeSchema,
+    showAsListening: z.boolean(),
+    showPaused: z.boolean(),
+    showServerImage: z.boolean(),
+    showStateIcon: z.boolean(),
+});
+
+const FontSettingsSchema = z.object({
+    builtIn: FontValueSchema,
+    custom: z.string().nullable(),
+    system: z.string().nullable(),
+    type: z.nativeEnum(FontType),
+});
+
 const VisualizerSettingsSchema = z.object({
     audiomotionanalyzer: AudioMotionAnalyzerSettingsSchema,
     butterchurn: ButterchurnSettingsSchema,
@@ -483,11 +391,6 @@ export enum HomeFeatureStyle {
     SINGLE = 'single',
 }
 
-const AutoSaveSchema = z.object({
-    count: z.number().min(0),
-    enabled: z.boolean(),
-});
-
 export const GeneralSettingsSchema = z.object({
     accent: z
         .string()
@@ -497,8 +400,6 @@ export const GeneralSettingsSchema = z.object({
                 message: 'Accent must be a valid rgb() color string',
             },
         ),
-    albumBackground: z.boolean(),
-    albumBackgroundBlur: z.number(),
     albumGroupImageSize: z.number(),
     albumGroupItems: z.array(SortableItemSchema(AlbumGroupItemSchema)),
     albumGroupShowFavoriteRating: z.boolean(),
@@ -509,63 +410,15 @@ export const GeneralSettingsSchema = z.object({
     aoideNowPlayingColumn: AoideNowPlayingColumnSchema,
     aoidePlaylistSurface: AoidePlaylistSurfaceSchema,
     aoideTrimSilence: AoideTrimSilenceSchema,
-    artistBackground: z.boolean(),
-    artistBackgroundBlur: z.number(),
-    artistItems: z.array(SortableItemSchema(ArtistItemSchema)),
-    artistRadioCount: z.number(),
-    artistReleaseTypeItems: z.array(SortableItemSchema(ArtistReleaseTypeItemSchema)),
-    autoSave: AutoSaveSchema,
-    blurExplicitImages: z.boolean(),
-    buttonSize: z.number(),
     collections: z.array(CollectionSchema),
     combinedLyricsAndVisualizer: z.boolean(),
-    confirmQueueChanges: z.boolean(),
-    enableGridMultiSelect: z.boolean(),
-    followCurrentSong: z.boolean(),
     followSystemTheme: z.boolean(),
     genreTarget: GenreTargetSchema,
-    homeFeature: z.boolean(),
-    homeFeatureStyle: z.nativeEnum(HomeFeatureStyle),
-    homeItems: z.array(SortableItemSchema(HomeItemSchema)),
-    imageRes: z.object({
-        fullScreenPlayer: z.number(),
-        header: z.number(),
-        itemCard: z.number(),
-        sidebar: z.number(),
-        table: z.number(),
-    }),
-    language: z.string(),
-    nativeAspectRatio: z.boolean(),
     passwordStore: z.string().optional(),
-    pathReplace: z.string(),
-    pathReplaceWith: z.string(),
-    playButtonBehavior: z.nativeEnum(Play),
-    playerbarOpenDrawer: z.boolean(),
-    playerbarSlider: PlayerbarSliderSchema,
-    playerItems: z.array(SortableItemSchema(PlayerItemSchema)),
     playlistTarget: PlaylistTargetSchema,
-    primaryShade: z.number().min(0).max(9),
-    resume: z.boolean(),
-    showFavorites: z.boolean(),
     showLyricsInSidebar: z.boolean(),
     showQueueInSidebar: z.boolean(),
     showVisualizerInSidebar: z.boolean(),
-    sidebarCollapsedNavigation: z.boolean(),
-    sidebarCollapseShared: z.boolean(),
-    sidebarItems: z.array(SidebarItemTypeSchema),
-    sidebarPanelOrder: z.array(SidebarPanelTypeSchema),
-    sidebarPlaylistFolders: z.boolean(),
-    sidebarPlaylistFolderSeparator: z.string().min(1),
-    sidebarPlaylistFolderTreeIndent: z.number().int().min(0).max(64),
-    sidebarPlaylistFolderTreeLineColor: z.string(),
-    sidebarPlaylistFolderView: SidebarPlaylistFolderViewSchema,
-    sidebarPlaylistList: z.boolean(),
-    sidebarPlaylistListFilterRegex: z.string(),
-    sidebarPlaylistMode: SidebarPlaylistModeSchema,
-    sidebarPlaylistSorting: z.boolean(),
-    sideQueueLayout: SideQueueLayoutSchema,
-    sideQueueType: SideQueueTypeSchema,
-    skipButtons: SkipButtonsSchema,
     // Accepts either a built-in AppTheme id or a custom theme id (the
     // filename, without extension, of a JSON file in the themes folder).
     // Custom theme ids aren't statically known, so this can't be a
@@ -574,11 +427,6 @@ export const GeneralSettingsSchema = z.object({
     theme: z.string(),
     themeDark: z.string(),
     themeLight: z.string(),
-    useThemeAccentColor: z.boolean(),
-    useThemePrimaryShade: z.boolean(),
-    volumeWheelStep: z.number(),
-    volumeWidth: z.number(),
-    zoomFactor: z.number(),
 });
 
 const HotkeyBindingSchema = z.object({
@@ -881,28 +729,26 @@ export interface SettingsSlice extends z.infer<typeof SettingsStateSchema> {
         removeCollection: (id: string) => void;
         reset: () => void;
         setAlbumGroupItems: (items: SortableItem<AlbumGroupItem>[]) => void;
-        setArtistItems: (item: SortableItem<ArtistItem>[]) => void;
-        setArtistReleaseTypeItems: (item: SortableItem<ArtistReleaseTypeItem>[]) => void;
         setGenreBehavior: (target: GenreTarget) => void;
-        setHomeItems: (item: SortableItem<HomeItem>[]) => void;
         setList: (type: ItemListKey, data: DeepPartial<ItemListSettings>) => void;
-        setPlayerItems: (items: SortableItem<PlayerItem>[]) => void;
         setPlaylistBehavior: (target: PlaylistTarget) => void;
         setSettings: (data: DeepPartial<SettingsState>) => void;
-        setSidebarItems: (items: SidebarItemType[]) => void;
         setTable: (type: ItemListKey, data: DataTableProps) => void;
         setTranscodingConfig: (config: TranscodingConfig) => void;
         toggleMediaSession: () => void;
-        toggleSidebarCollapseShare: () => void;
         updateCollection: (id: string, updates: Partial<Omit<SavedCollection, 'id'>>) => void;
     };
 }
 export interface SettingsState extends z.infer<typeof SettingsStateSchema> {}
 
-export type SidebarItemType = z.infer<typeof SidebarItemTypeSchema>;
-
-export type SideQueueLayout = z.infer<typeof SideQueueLayoutSchema>;
-export type SideQueueType = z.infer<typeof SideQueueTypeSchema>;
+// The list of sidebar entries is fixed now rather than a setting, so this is a
+// shape and not a schema — nothing arrives from disk to validate against it.
+export type SidebarItemType = {
+    disabled: boolean;
+    id: string;
+    label: string;
+    route: AppRoute | string;
+};
 
 export type SortableItem<T extends string> = {
     disabled: boolean;
@@ -1038,17 +884,25 @@ export const sidebarItems: SidebarItemType[] = [
     },
 ];
 
-const homeItems = Object.values(HomeItem).map((item) => ({
+/*
+ * The order these pages put their sections in.
+ *
+ * They used to be drag-reorderable lists in Settings, stored per install. What
+ * an album artist page shows and in what order is a layout the app is
+ * responsible for, not a decision to hand a listener a sortable list about, so
+ * these are now the order — one place, the same on every install.
+ */
+export const homeItems = Object.values(HomeItem).map((item) => ({
     disabled: false,
     id: item,
 }));
 
-const artistItems = Object.values(ArtistItem).map((item) => ({
+export const artistItems = Object.values(ArtistItem).map((item) => ({
     disabled: false,
     id: item,
 }));
 
-const artistReleaseTypeItems = Object.values(ArtistReleaseTypeItem).map((item) => ({
+export const artistReleaseTypeItems = Object.values(ArtistReleaseTypeItem).map((item) => ({
     disabled: false,
     id: item,
 }));
@@ -1117,11 +971,10 @@ const initialState: SettingsState = {
     general: {
         // The iOS app's dark-appearance accent, #A593FF. This is a separate
         // setting from the theme's own `primary`, and it is the one that wins:
-        // `useThemeAccentColor` defaults to false, so shipping Aoide Dark
-        // without changing this would leave it wearing Feishin's blue.
+        // the accent picker is the only thing that decides the primary colour
+        // now, so shipping Aoide Dark without changing this would leave the
+        // app wearing Feishin's blue.
         accent: 'rgb(165, 147, 255)',
-        albumBackground: false,
-        albumBackgroundBlur: 3,
         albumGroupImageSize: 0,
         albumGroupItems,
         albumGroupShowFavoriteRating: true,
@@ -1132,89 +985,21 @@ const initialState: SettingsState = {
         aoideNowPlayingColumn: DEFAULT_AOIDE_NOW_PLAYING_COLUMN,
         aoidePlaylistSurface: DEFAULT_AOIDE_PLAYLIST_SURFACE,
         aoideTrimSilence: DEFAULT_AOIDE_TRIM_SILENCE,
-        artistBackground: true,
-        artistBackgroundBlur: 3,
-        artistItems,
-        artistRadioCount: 20,
-        artistReleaseTypeItems,
-        autoSave: {
-            count: 10,
-            enabled: false,
-        },
-        blurExplicitImages: false,
-        buttonSize: 15,
         collections: [],
         combinedLyricsAndVisualizer: false,
-        confirmQueueChanges: true,
-        enableGridMultiSelect: false,
-        followCurrentSong: true,
         followSystemTheme: false,
         genreTarget: GenreTarget.TRACK,
-        homeFeature: true,
-        homeFeatureStyle: HomeFeatureStyle.SINGLE,
-        homeItems,
-        imageRes: {
-            fullScreenPlayer: 0,
-            header: 300,
-            itemCard: 300,
-            sidebar: 400,
-            table: 80,
-        },
-        language: 'en',
-        nativeAspectRatio: false,
         passwordStore: undefined,
-        pathReplace: '',
-        pathReplaceWith: '',
-        playButtonBehavior: Play.NOW,
-        playerbarOpenDrawer: false,
-        playerbarSlider: {
-            barAlign: BarAlign.CENTER,
-            barGap: 1,
-            barRadius: 4,
-            barWidth: 2,
-            loadingDelay: 2,
-            stretched: false,
-            type: PlayerbarSliderType.SLIDER,
-        },
-        playerItems,
         playlistTarget: PlaylistTarget.TRACK,
-        primaryShade: 6,
-        resume: true,
-        showFavorites: true,
         showLyricsInSidebar: true,
         showQueueInSidebar: true,
         showVisualizerInSidebar: true,
-        sidebarCollapsedNavigation: true,
-        sidebarCollapseShared: false,
-        sidebarItems,
-        sidebarPanelOrder: ['queue', 'lyrics', 'visualizer'],
-        sidebarPlaylistFolders: false,
-        sidebarPlaylistFolderSeparator: '/',
-        sidebarPlaylistFolderTreeIndent: 16,
-        sidebarPlaylistFolderTreeLineColor: '',
-        sidebarPlaylistFolderView: 'tree',
-        sidebarPlaylistList: true,
-        sidebarPlaylistListFilterRegex: '',
-        sidebarPlaylistMode: 'expanded',
-        sidebarPlaylistSorting: false,
-        sideQueueLayout: 'horizontal',
-        sideQueueType: 'sideQueue',
-        skipButtons: {
-            enabled: false,
-            skipBackwardSeconds: 5,
-            skipForwardSeconds: 10,
-        },
         // Dark on a fresh install, matching the phone. `themeDark`/`themeLight`
         // are the pair used when "follow system theme" is on, so both sides of
         // that switch have to move too or the app changes identity at sunset.
         theme: AppTheme.AOIDE_DARK,
         themeDark: AppTheme.AOIDE_DARK,
         themeLight: AppTheme.AOIDE_LIGHT,
-        useThemeAccentColor: false,
-        useThemePrimaryShade: true,
-        volumeWheelStep: 5,
-        volumeWidth: 70,
-        zoomFactor: 100,
     },
     hotkeys: {
         bindings: {
@@ -1992,26 +1777,9 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                                 state.general.albumGroupItems = items;
                             });
                         },
-                        setArtistItems: (items) => {
-                            set((state) => {
-                                state.general.artistItems = items;
-                            });
-                        },
-                        setArtistReleaseTypeItems: (
-                            items: SortableItem<ArtistReleaseTypeItem>[],
-                        ) => {
-                            set((state) => {
-                                state.general.artistReleaseTypeItems = items;
-                            });
-                        },
                         setGenreBehavior: (target: GenreTarget) => {
                             set((state) => {
                                 state.general.genreTarget = target;
-                            });
-                        },
-                        setHomeItems: (items: SortableItem<HomeItem>[]) => {
-                            set((state) => {
-                                state.general.homeItems = items;
                             });
                         },
                         setList: (type: ItemListKey, data: DeepPartial<ItemListSettings>) => {
@@ -2050,11 +1818,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                                 }
                             });
                         },
-                        setPlayerItems: (items: SortableItem<PlayerItem>[]) => {
-                            set((state) => {
-                                state.general.playerItems = items;
-                            });
-                        },
                         setPlaylistBehavior: (target: PlaylistTarget) => {
                             set((state) => {
                                 state.general.playlistTarget = target;
@@ -2063,11 +1826,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                         setSettings: (data) => {
                             set((state) => {
                                 deepMergeIntoState(state, data);
-                            });
-                        },
-                        setSidebarItems: (items: SidebarItemType[]) => {
-                            set((state) => {
-                                state.general.sidebarItems = items;
                             });
                         },
                         setTable: (type: ItemListKey, data: DataTableProps) => {
@@ -2086,12 +1844,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                         toggleMediaSession: () => {
                             set((state) => {
                                 state.playback.mediaSession = !state.playback.mediaSession;
-                            });
-                        },
-                        toggleSidebarCollapseShare: () => {
-                            set((state) => {
-                                state.general.sidebarCollapseShared =
-                                    !state.general.sidebarCollapseShared;
                             });
                         },
                         updateCollection: (
@@ -2116,18 +1868,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
             migrate(persistedState, version) {
                 const state = persistedState as SettingsSlice;
 
-                if (version === 8) {
-                    state.general.sidebarItems = state.general.sidebarItems.filter(
-                        (item) => item.id !== 'Folders',
-                    );
-                    state.general.sidebarItems.push({
-                        disabled: false,
-                        id: 'Artists-all',
-                        label: i18n.t('page.sidebar.artists'),
-                        route: AppRoute.LIBRARY_ARTISTS,
-                    });
-                }
-
                 if (version <= 9) {
                     if (!state.window.releaseChannel) {
                         state.window.releaseChannel = initialState.window.releaseChannel;
@@ -2137,38 +1877,13 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                         state.playback.mediaSession = initialState.playback.mediaSession;
                     }
 
-                    if (!state.general.artistBackgroundBlur) {
-                        state.general.artistBackgroundBlur =
-                            initialState.general.artistBackgroundBlur;
-                    }
-
-                    if (!state.general.artistBackground) {
-                        state.general.artistBackground = initialState.general.artistBackground;
-                    }
-
                     state.window.windowBarStyle = Platform.LINUX;
 
                     return state;
                 }
 
-                if (version <= 10) {
-                    state.general.sidebarItems.push({
-                        disabled: false,
-                        id: 'Favorites',
-                        label: i18n.t('page.sidebar.favorites'),
-                        route: AppRoute.FAVORITES,
-                    });
-                }
-
                 if (version <= 11) {
                     return {};
-                }
-
-                if (version <= 13) {
-                    state.general.homeItems.push({
-                        disabled: false,
-                        id: HomeItem.GENRES,
-                    });
                 }
 
                 if (version <= 14) {
@@ -2358,20 +2073,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     });
                 }
 
-                if (version <= 23) {
-                    // Add FAVORITE_SONGS to album artist page configuration
-                    const hasFavoriteSongs = state.general.artistItems?.some(
-                        (item) => item.id === ArtistItem.FAVORITE_SONGS,
-                    );
-
-                    if (!hasFavoriteSongs) {
-                        state.general.artistItems.push({
-                            disabled: false,
-                            id: ArtistItem.FAVORITE_SONGS,
-                        });
-                    }
-                }
-
                 if (version <= 26) {
                     // Add ALBUM_GROUP column to the song table config
                     const listKeysToUpdate: ItemListKey[] = [
@@ -2404,12 +2105,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                             }
                         }
                     });
-                }
-
-                if (version <= 27) {
-                    if (!state.general.sideQueueLayout) {
-                        state.general.sideQueueLayout = initialState.general.sideQueueLayout;
-                    }
                 }
 
                 if (version < 28) {
@@ -2610,22 +2305,11 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     delete playback.type;
                 }
 
-                if (version < 36) {
-                    // Internet radio went, and `/radio` with it. Anyone who had
-                    // reordered their sidebar has the row stored by hand, and it
-                    // would sit there pointing at a route that no longer answers.
-                    state.general.sidebarItems = state.general.sidebarItems.filter(
-                        (item) => item.id !== 'Radio',
-                    );
-                }
-
-                if (version < 37) {
-                    // Same for the folder browser: `/library/folders` is gone,
-                    // and a stored row would still be trying to reach it.
-                    state.general.sidebarItems = state.general.sidebarItems.filter(
-                        (item) => item.id !== 'Folders',
-                    );
-                }
+                // Steps 8, 10, 13, 23, 27, 36 and 37 stood here. Every one of
+                // them reshaped a stored list — the sidebar's rows, the home
+                // page's, an artist page's — or a field the settings page no
+                // longer offers, and step 48 below deletes the lot. Keeping
+                // them would only mean editing something on its way to the bin.
 
                 if (version < 38) {
                     // The tag editor's own settings — every tag's autocomplete
@@ -2720,6 +2404,79 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     }
                 }
 
+                if (version < 48) {
+                    // Everything the General tab used to hold beyond the three
+                    // rows a person actually decides — appearance, the accent,
+                    // custom CSS. Background blurs and aspect ratios and image
+                    // resolutions and a play-button behaviour and four
+                    // drag-reorderable lists and eleven ways to tune the
+                    // playlist tree in the sidebar. None of it was a question
+                    // anybody could answer better than the app can.
+                    for (const key of [
+                        'albumBackground',
+                        'albumBackgroundBlur',
+                        'artistBackground',
+                        'artistBackgroundBlur',
+                        'artistItems',
+                        'artistRadioCount',
+                        'artistReleaseTypeItems',
+                        'autoSave',
+                        'blurExplicitImages',
+                        'buttonSize',
+                        'confirmQueueChanges',
+                        'enableGridMultiSelect',
+                        'followCurrentSong',
+                        'homeFeature',
+                        'homeFeatureStyle',
+                        'homeItems',
+                        'imageRes',
+                        'language',
+                        'nativeAspectRatio',
+                        'pathReplace',
+                        'pathReplaceWith',
+                        'playButtonBehavior',
+                        'playerbarOpenDrawer',
+                        'playerbarSlider',
+                        'playerItems',
+                        'primaryShade',
+                        'resume',
+                        'showFavorites',
+                        'sideQueueLayout',
+                        'sideQueueType',
+                        'sidebarCollapseShared',
+                        'sidebarCollapsedNavigation',
+                        'sidebarItems',
+                        'sidebarPanelOrder',
+                        'sidebarPlaylistFolderSeparator',
+                        'sidebarPlaylistFolderTreeIndent',
+                        'sidebarPlaylistFolderTreeLineColor',
+                        'sidebarPlaylistFolderView',
+                        'sidebarPlaylistFolders',
+                        'sidebarPlaylistList',
+                        'sidebarPlaylistListFilterRegex',
+                        'sidebarPlaylistMode',
+                        'sidebarPlaylistSorting',
+                        'skipButtons',
+                        'useThemeAccentColor',
+                        'useThemePrimaryShade',
+                        'volumeWheelStep',
+                        'volumeWidth',
+                        'zoomFactor',
+                    ] as const) {
+                        delete (state.general as Record<string, unknown>)[key];
+                    }
+                }
+
+                if (version < 49) {
+                    // Five tabs became four, and two of them were renamed:
+                    // "Window" is System now, and Advanced folded into it.
+                    // Whoever had either open last would come back to a strip
+                    // with nothing selected.
+                    if (state.tab === 'window' || state.tab === 'advanced') {
+                        state.tab = 'system';
+                    }
+                }
+
                 if (version < 47) {
                     // The external-link row of icons under an album — Last.fm,
                     // ListenBrainz, MusicBrainz, Qobuz, Spotify — and the seven
@@ -2774,7 +2531,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                 return persistedState;
             },
             name: 'store_settings',
-            version: 47,
+            version: 49,
         },
     ),
 );
@@ -2787,9 +2544,6 @@ export const useTableSettings = (type: ItemListKey) =>
     useSettingsStore((state) => state.lists[type as keyof typeof state.lists]);
 
 export const useGeneralSettings = () => useSettingsStore((state) => state.general, shallow);
-
-export const usePlayButtonBehavior = () =>
-    useSettingsStore((state) => state.general.playButtonBehavior, shallow);
 
 export const useWindowSettings = () => useSettingsStore((state) => state.window, shallow);
 
@@ -2850,26 +2604,12 @@ export const useListSettings = (type: ItemListKey) =>
 
 export const usePrimaryColor = () => useSettingsStore((store) => store.general.accent, shallow);
 
-export const usePlayerbarSlider = () =>
-    useSettingsStore((store) => store.general.playerbarSlider, shallow);
-
 export const useGenreTarget = () => useSettingsStore((store) => store.general.genreTarget, shallow);
 
 export const usePlaylistTarget = () =>
     useSettingsStore((store) => store.general.playlistTarget, shallow);
 
-export const useLanguage = () => useSettingsStore((state) => state.general.language, shallow);
-
 export const useAccent = () => useSettingsStore((state) => state.general.accent, shallow);
-
-export const useNativeAspectRatio = () =>
-    useSettingsStore((state) => state.general.nativeAspectRatio, shallow);
-
-export const useButtonSize = () => useSettingsStore((state) => state.general.buttonSize, shallow);
-
-export const useSkipButtons = () => useSettingsStore((state) => state.general.skipButtons, shallow);
-
-export const useImageRes = () => useSettingsStore((state) => state.general.imageRes, shallow);
 
 export const useAlbumGroupImageSize = () =>
     useSettingsStore((state) => state.general.albumGroupImageSize);
@@ -2880,33 +2620,16 @@ export const useAlbumGroupShowFavoriteRating = () =>
 export const useAlbumGroupVerticalLayout = () =>
     useSettingsStore((state) => state.general.albumGroupVerticalLayout);
 
-export const useVolumeWidth = () => useSettingsStore((state) => state.general.volumeWidth, shallow);
-
-export const useFollowCurrentSong = () =>
-    useSettingsStore((state) => state.general.followCurrentSong, shallow);
-
 export const useThemeSettings = () =>
     useSettingsStore(
         (state) => ({
             followSystemTheme: state.general.followSystemTheme,
-            primaryShade: state.general.primaryShade,
             theme: state.general.theme,
             themeDark: state.general.themeDark,
             themeLight: state.general.themeLight,
-            useThemeAccentColor: state.general.useThemeAccentColor,
-            useThemePrimaryShade: state.general.useThemePrimaryShade,
         }),
         shallow,
     );
-
-export const useSideQueueType = () =>
-    useSettingsStore((state) => state.general.sideQueueType, shallow);
-
-export const useSideQueueLayout = () =>
-    useSettingsStore((state) => state.general.sideQueueLayout, shallow);
-
-export const useVolumeWheelStep = () =>
-    useSettingsStore((state) => state.general.volumeWheelStep, shallow);
 
 export const useCollections = () => {
     const collections = useSettingsStore((state) => state.general.collections, shallow);
@@ -2917,96 +2640,8 @@ export const useCollections = () => {
     );
 };
 
-export const useSidebarPlaylistFolders = () =>
-    useSettingsStore((state) => state.general.sidebarPlaylistFolders, shallow);
-
-export const useSidebarPlaylistFolderSeparator = () =>
-    useSettingsStore((state) => state.general.sidebarPlaylistFolderSeparator, shallow);
-
-export const useSidebarPlaylistFolderView = () =>
-    useSettingsStore((state) => state.general.sidebarPlaylistFolderView, shallow);
-
-export const useSidebarPlaylistFolderTreeIndent = () =>
-    useSettingsStore((state) => state.general.sidebarPlaylistFolderTreeIndent, shallow);
-
-export const useSidebarPlaylistFolderTreeLineColor = () =>
-    useSettingsStore((state) => state.general.sidebarPlaylistFolderTreeLineColor, shallow);
-
-export const useSidebarPlaylistList = () =>
-    useSettingsStore((state) => state.general.sidebarPlaylistList, shallow);
-
-export const useSidebarPlaylistMode = () =>
-    useSettingsStore((state) => state.general.sidebarPlaylistMode, shallow);
-
-export const useSidebarPlaylistSorting = () =>
-    useSettingsStore((state) => state.general.sidebarPlaylistSorting, shallow);
-
-export const useSidebarPlaylistListFilterRegex = () =>
-    useSettingsStore((state) => state.general.sidebarPlaylistListFilterRegex, shallow);
-
-export const useSidebarItems = () =>
-    useSettingsStore((state) => state.general.sidebarItems, shallow);
-
-export const usePlayerItems = () => useSettingsStore((state) => state.general.playerItems, shallow);
-
-export const useSidebarCollapsedNavigation = () =>
-    useSettingsStore((state) => state.general.sidebarCollapsedNavigation, shallow);
-
-export const usePlayerbarOpenDrawer = () =>
-    useSettingsStore((state) => state.general.playerbarOpenDrawer, shallow);
-
-export const useShowFavorites = () =>
-    useSettingsStore((state) => state.general.showFavorites, shallow);
-
-export const useArtistRadioCount = () =>
-    useSettingsStore((state) => state.general.artistRadioCount, shallow);
-
-export const useArtistBackground = () =>
-    useSettingsStore(
-        (state) => ({
-            artistBackground: state.general.artistBackground,
-            artistBackgroundBlur: state.general.artistBackgroundBlur,
-        }),
-        shallow,
-    );
-
-export const useAlbumBackground = () =>
-    useSettingsStore(
-        (state) => ({
-            albumBackground: state.general.albumBackground,
-            albumBackgroundBlur: state.general.albumBackgroundBlur,
-        }),
-        shallow,
-    );
-
-export const useHomeFeature = () => useSettingsStore((state) => state.general.homeFeature, shallow);
-
-export const useHomeFeatureStyle = () =>
-    useSettingsStore((state) => state.general.homeFeatureStyle);
-
-export const useHomeItems = () => useSettingsStore((state) => state.general.homeItems, shallow);
-
 export const useAlbumGroupItems = () =>
     useSettingsStore((state) => state.general.albumGroupItems, shallow);
-
-export const useArtistItems = () => useSettingsStore((state) => state.general.artistItems, shallow);
-
-export const useArtistReleaseTypeItems = () =>
-    useSettingsStore((state) => state.general.artistReleaseTypeItems, shallow);
-
-export const useZoomFactor = () => useSettingsStore((state) => state.general.zoomFactor, shallow);
-
-export const usePathReplace = () =>
-    useSettingsStore(
-        (state) => ({
-            pathReplace: state.general.pathReplace,
-            pathReplaceWith: state.general.pathReplaceWith,
-        }),
-        shallow,
-    );
-
-export const useSidebarPanelOrder = () =>
-    useSettingsStore((state) => state.general.sidebarPanelOrder, shallow);
 
 export const useCombinedLyricsAndVisualizer = () =>
     useSettingsStore((state) => state.general.combinedLyricsAndVisualizer, shallow);

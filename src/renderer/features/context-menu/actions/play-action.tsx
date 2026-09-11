@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
-import { useCurrentServerId, usePlayButtonBehavior } from '/@/renderer/store';
+import { PLAY_BUTTON_BEHAVIOR, useCurrentServerId } from '/@/renderer/store';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
 import { LibraryItem, Song } from '/@/shared/types/domain-types';
 import { Play } from '/@/shared/types/types';
@@ -59,11 +59,9 @@ export const PlayAction = ({ ids, itemType, songs }: PlayActionProps) => {
         handlePlay(Play.LAST_SHUFFLE);
     }, [handlePlay]);
 
-    const playButtonBehavior = usePlayButtonBehavior();
-
     const defaultPlayAction = useCallback(() => {
-        handlePlay(playButtonBehavior);
-    }, [handlePlay, playButtonBehavior]);
+        handlePlay(PLAY_BUTTON_BEHAVIOR);
+    }, [handlePlay]);
 
     if (ids.length === 0) return null;
 

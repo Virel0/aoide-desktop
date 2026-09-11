@@ -10,7 +10,7 @@ import {
     LONG_PRESS_PLAY_BEHAVIOR,
     PlayTooltip,
 } from '/@/renderer/features/shared/components/play-button-group';
-import { usePlayButtonBehavior } from '/@/renderer/store';
+import { PLAY_BUTTON_BEHAVIOR } from '/@/renderer/store';
 import { LibraryItem } from '/@/shared/types/domain-types';
 import { Play } from '/@/shared/types/types';
 
@@ -20,7 +20,6 @@ export const ImageColumn = ({
     rowIndex = 0,
     song,
 }: ItemDetailListCellProps) => {
-    const playButtonBehavior = usePlayButtonBehavior();
     const [isHovered, setIsHovered] = useState(false);
 
     const handlePlay = (playType: Play) => {
@@ -55,12 +54,12 @@ export const ImageColumn = ({
             />
             {isHovered && (
                 <div className={clsx(styles.playButtonOverlay)}>
-                    <PlayTooltip disabled={false} type={playButtonBehavior}>
+                    <PlayTooltip disabled={false} type={PLAY_BUTTON_BEHAVIOR}>
                         <PlayButton
                             fill
-                            onClick={() => handlePlay(playButtonBehavior)}
+                            onClick={() => handlePlay(PLAY_BUTTON_BEHAVIOR)}
                             onLongPress={() =>
-                                handlePlay(LONG_PRESS_PLAY_BEHAVIOR[playButtonBehavior])
+                                handlePlay(LONG_PRESS_PLAY_BEHAVIOR[PLAY_BUTTON_BEHAVIOR])
                             }
                         />
                     </PlayTooltip>

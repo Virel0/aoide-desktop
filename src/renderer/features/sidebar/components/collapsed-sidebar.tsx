@@ -15,10 +15,9 @@ import { SidebarIcon } from '/@/renderer/features/sidebar/components/sidebar-ico
 import { AppMenu } from '/@/renderer/features/titlebar/components/app-menu';
 import { AppRoute } from '/@/renderer/router/routes';
 import {
+    sidebarItems,
     SidebarItemType,
     useCollections,
-    useSidebarCollapsedNavigation,
-    useSidebarItems,
     useWindowSettings,
 } from '/@/renderer/store';
 import { DropdownMenu } from '/@/shared/components/dropdown-menu/dropdown-menu';
@@ -35,8 +34,6 @@ export const CollapsedSidebar = () => {
     const navigate = useNavigate();
     const collections = useCollections();
     const { windowBarStyle } = useWindowSettings();
-    const sidebarCollapsedNavigation = useSidebarCollapsedNavigation();
-    const sidebarItems = useSidebarItems();
     const { isScanning } = useScanStatus();
 
     const translatedSidebarItemMap = useMemo(
@@ -57,20 +54,19 @@ export const CollapsedSidebar = () => {
         [t],
     );
 
-    const sidebarItemsWithRoute: SidebarItemType[] = useMemo(() => {
-        if (!sidebarItems) return [];
-
-        const items = sidebarItems
-            .filter((item) => !item.disabled)
-            .map((item) => ({
-                ...item,
-                label:
-                    translatedSidebarItemMap[item.id as keyof typeof translatedSidebarItemMap] ??
-                    item.label,
-            }));
-
-        return items;
-    }, [sidebarItems, translatedSidebarItemMap]);
+    const sidebarItemsWithRoute: SidebarItemType[] = useMemo(
+        () =>
+            sidebarItems
+                .filter((item) => !item.disabled)
+                .map((item) => ({
+                    ...item,
+                    label:
+                        translatedSidebarItemMap[
+                            item.id as keyof typeof translatedSidebarItemMap
+                        ] ?? item.label,
+                })),
+        [translatedSidebarItemMap],
+    );
 
     return (
         <motion.div
@@ -81,16 +77,14 @@ export const CollapsedSidebar = () => {
             })}
         >
             <ScrollArea>
-                {sidebarCollapsedNavigation && (
-                    <Group gap={0} grow>
-                        <CollapsedSidebarButton onClick={() => navigate(-1)}>
-                            <Icon icon="arrowLeftS" size="xl" />
-                        </CollapsedSidebarButton>
-                        <CollapsedSidebarButton onClick={() => navigate(1)}>
-                            <Icon icon="arrowRightS" size="xl" />
-                        </CollapsedSidebarButton>
-                    </Group>
-                )}
+                <Group gap={0} grow>
+                    <CollapsedSidebarButton onClick={() => navigate(-1)}>
+                        <Icon icon="arrowLeftS" size="xl" />
+                    </CollapsedSidebarButton>
+                    <CollapsedSidebarButton onClick={() => navigate(1)}>
+                        <Icon icon="arrowRightS" size="xl" />
+                    </CollapsedSidebarButton>
+                </Group>
                 <DropdownMenu position="right-start">
                     <DropdownMenu.Target>
                         <CollapsedSidebarItem

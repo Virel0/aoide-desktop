@@ -67,7 +67,7 @@ import { useIsMutatingDeleteFavorite } from '/@/renderer/features/shared/mutatio
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
 import { useDragDrop } from '/@/renderer/hooks/use-drag-drop';
 import { AppRoute } from '/@/renderer/router/routes';
-import { useSettingsStore, useShowFavorites } from '/@/renderer/store';
+import { useSettingsStore } from '/@/renderer/store';
 import { formatDurationString, formatPartialIsoDateUTC } from '/@/renderer/utils';
 import { SEPARATOR_STRING } from '/@/shared/api/utils';
 import { ExplicitIndicator } from '/@/shared/components/explicit-indicator/explicit-indicator';
@@ -425,7 +425,6 @@ interface MetadataSectionProps {
 const MetadataSection = memo(
     ({ controls, internalState, item }: MetadataSectionProps) => {
         const { t } = useTranslation();
-        const showFavorites = useShowFavorites();
         const [isImageHovered, setIsImageHovered] = useState(false);
         const [isMetadataHovered, setIsMetadataHovered] = useState(false);
 
@@ -570,7 +569,7 @@ const MetadataSection = memo(
                             serverId={item._serverId}
                             type="itemCard"
                         />
-                        {showFavorites && isFavorite && <div className={styles.favoriteBadge} />}
+                        {isFavorite && <div className={styles.favoriteBadge} />}
                         {hasRating && <div className={styles.ratingBadge}>{userRating}</div>}
                         <AnimatePresence>
                             {controls && isImageHovered && (
@@ -580,7 +579,7 @@ const MetadataSection = memo(
                                     internalState={internalState}
                                     item={item}
                                     itemType={item._itemType}
-                                    showFavorite={showFavorites}
+                                    showFavorite
                                     showRating={true}
                                     type="compact"
                                 />

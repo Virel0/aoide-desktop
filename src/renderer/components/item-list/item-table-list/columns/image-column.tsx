@@ -13,7 +13,7 @@ import {
     LONG_PRESS_PLAY_BEHAVIOR,
     PlayTooltip,
 } from '/@/renderer/features/shared/components/play-button-group';
-import { usePlayButtonBehavior } from '/@/renderer/store';
+import { PLAY_BUTTON_BEHAVIOR } from '/@/renderer/store';
 import { Icon } from '/@/shared/components/icon/icon';
 import { Skeleton } from '/@/shared/components/skeleton/skeleton';
 import { Folder, LibraryItem } from '/@/shared/types/domain-types';
@@ -23,7 +23,6 @@ const ImageColumnBase = (props: ItemTableListInnerColumn) => {
     const rowItem = props.getRowItem?.(props.rowIndex) ?? (props.data as any[])[props.rowIndex];
     const row: string | undefined = rowItem?.id;
     const item = rowItem as any;
-    const playButtonBehavior = usePlayButtonBehavior();
     const internalState = (props as any).internalState;
     const [isHovered, setIsHovered] = useState(false);
 
@@ -105,13 +104,16 @@ const ImageColumnBase = (props: ItemTableListInnerColumn) => {
                         >
                             <PlayTooltip
                                 disabled={props.itemType === LibraryItem.QUEUE_SONG}
-                                type={playButtonBehavior}
+                                type={PLAY_BUTTON_BEHAVIOR}
                             >
                                 <PlayButton
                                     fill
-                                    onClick={(e) => handlePlay(playButtonBehavior, e)}
+                                    onClick={(e) => handlePlay(PLAY_BUTTON_BEHAVIOR, e)}
                                     onLongPress={(e) =>
-                                        handlePlay(LONG_PRESS_PLAY_BEHAVIOR[playButtonBehavior], e)
+                                        handlePlay(
+                                            LONG_PRESS_PLAY_BEHAVIOR[PLAY_BUTTON_BEHAVIOR],
+                                            e,
+                                        )
                                     }
                                 />
                             </PlayTooltip>

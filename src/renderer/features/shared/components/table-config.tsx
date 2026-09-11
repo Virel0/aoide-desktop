@@ -81,7 +81,6 @@ export const TableConfig = ({
     const albumGroupVerticalLayout = useSettingsStore(
         (state) => state.general.albumGroupVerticalLayout,
     );
-    const imageResTable = useSettingsStore((state) => state.general.imageRes.table);
     const { setList, setSettings } = useSettingsStoreActions();
     const [albumGroupOpen, setAlbumGroupOpen] = useState(false);
 
@@ -143,11 +142,6 @@ export const TableConfig = ({
                                                     setSettings({
                                                         general: {
                                                             albumGroupImageSize: size,
-                                                            // Source table art must be at least as
-                                                            // large as the displayed album image.
-                                                            ...(size >= imageResTable
-                                                                ? { imageRes: { table: size } }
-                                                                : {}),
                                                         },
                                                     });
                                                 }}
@@ -391,7 +385,6 @@ export const TableConfig = ({
         albumGroupImageSize,
         albumGroupShowFavoriteRating,
         albumGroupVerticalLayout,
-        imageResTable,
         setSettings,
     ]);
 

@@ -23,8 +23,7 @@ import { useSetFavorite } from '/@/renderer/features/shared/hooks/use-set-favori
 import { useSetRating } from '/@/renderer/features/shared/hooks/use-set-rating';
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
 import { AppRoute } from '/@/renderer/router/routes';
-import { useCurrentServer, useShowFavorites } from '/@/renderer/store';
-import { useArtistRadioCount, usePlayButtonBehavior } from '/@/renderer/store/settings.store';
+import { PLAY_BUTTON_BEHAVIOR, RADIO_TRACK_COUNT, useCurrentServer } from '/@/renderer/store';
 import { formatDurationString, formatPartialIsoDateUTC, formatSizeString } from '/@/renderer/utils';
 import { normalizeReleaseTypes } from '/@/renderer/utils/normalize-release-types';
 import { Group } from '/@/shared/components/group/group';
@@ -38,9 +37,7 @@ export const AlbumDetailHeader = forwardRef<HTMLDivElement>((_props, ref) => {
     const { albumId } = useParams() as { albumId: string };
     const { t } = useTranslation();
     const server = useCurrentServer();
-    const showFavorites = useShowFavorites();
     const queryClient = useQueryClient();
-    const albumRadioCount = useArtistRadioCount();
     const detailQuery = useQuery(
         albumQueries.detail({ query: { id: albumId }, serverId: server?.id }),
     );
@@ -50,22 +47,19 @@ export const AlbumDetailHeader = forwardRef<HTMLDivElement>((_props, ref) => {
         detailQuery?.data?._serverType === ServerType.SUBSONIC;
 
     const { addToQueueByData, addToQueueByFetch } = usePlayer();
-    const playButtonBehavior = usePlayButtonBehavior();
 
     const setRating = useSetRating();
     const setFavorite = useSetFavorite();
 
-    const handleFavorite = showFavorites
-        ? () => {
-              if (!detailQuery?.data) return;
-              setFavorite(
-                  detailQuery.data._serverId,
-                  [detailQuery.data.id],
-                  LibraryItem.ALBUM,
-                  !detailQuery.data.userFavorite,
-              );
-          }
-        : undefined;
+    const handleFavorite = () => {
+        if (!detailQuery?.data) return;
+        setFavorite(
+            detailQuery.data._serverId,
+            [detailQuery.data.id],
+            LibraryItem.ALBUM,
+            !detailQuery.data.userFavorite,
+        );
+    };
 
     const handleUpdateRating = showRating
         ? (rating: number) => {
@@ -91,7 +85,7 @@ export const AlbumDetailHeader = forwardRef<HTMLDivElement>((_props, ref) => {
 
     const handlePlay = (type?: Play) => {
         if (!server?.id || !albumId) return;
-        addToQueueByFetch(server.id, [albumId], LibraryItem.ALBUM, type || playButtonBehavior);
+        addToQueueByFetch(server.id, [albumId], LibraryItem.ALBUM, type || PLAY_BUTTON_BEHAVIOR);
         rememberAlbum(server.id, detailQuery?.data);
     };
 
@@ -111,7 +105,7 @@ export const AlbumDetailHeader = forwardRef<HTMLDivElement>((_props, ref) => {
                 ...songsQueries.albumRadio({
                     query: {
                         albumId: albumId,
-                        count: albumRadioCount,
+                        count: RADIO_TRACK_COUNT,
                     },
                     serverId: server.id,
                 }),

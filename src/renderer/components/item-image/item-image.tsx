@@ -1,16 +1,7 @@
 import { memo, useMemo } from 'react';
-import z from 'zod';
 
 import { api } from '/@/renderer/api';
-import {
-    GeneralSettingsSchema,
-    getServerById,
-    useAuthStore,
-    useCurrentServerId,
-    useGeneralSettings,
-    useImageRes,
-    useSettingsStore,
-} from '/@/renderer/store';
+import { getServerById, IMAGE_RES, useAuthStore, useCurrentServerId } from '/@/renderer/store';
 import { BaseImage, ImageProps } from '/@/shared/components/image/image';
 import { ExplicitStatus, ImageRequest, LibraryItem } from '/@/shared/types/domain-types';
 
@@ -40,11 +31,13 @@ const BaseItemImage = (
         itemType: LibraryItem;
         serverId?: null | string;
         src?: null | string;
-        type?: keyof z.infer<typeof GeneralSettingsSchema>['imageRes'];
+        type?: keyof typeof IMAGE_RES;
     },
 ) => {
+    // Nothing blurs explicit art any more, but callers still pass the status; peel it off so it
+    // never reaches the underlying image element.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { explicitStatus, serverId, src, ...rest } = props;
-    const { blurExplicitImages } = useGeneralSettings();
 
     const imageUrl = useItemImageUrl({
         id: props.id,
@@ -62,12 +55,9 @@ const BaseItemImage = (
         type: props.type,
     });
 
-    const isExplicit = blurExplicitImages && explicitStatus === ExplicitStatus.EXPLICIT;
-
     return (
         <BaseImage
             imageRequest={imageRequest}
-            isExplicit={isExplicit}
             src={imageUrl}
             unloaderIcon={getUnloaderIcon(props.itemType)}
             {...rest}
@@ -84,7 +74,7 @@ interface UseItemImageUrlProps {
     itemType: LibraryItem;
     serverId?: string;
     size?: number;
-    type?: keyof z.infer<typeof GeneralSettingsSchema>['imageRes'];
+    type?: keyof typeof IMAGE_RES;
     useRemoteUrl?: boolean;
 }
 
@@ -92,8 +82,7 @@ export const useItemImageUrl = (args: UseItemImageUrlProps) => {
     const { id, imageUrl, itemType, size, type, useRemoteUrl } = args;
     const serverId = useCurrentServerId();
 
-    const imageRes = useImageRes();
-    const sizeByType: number | undefined = type ? imageRes[type] : undefined;
+    const sizeByType: number | undefined = type ? IMAGE_RES[type] : undefined;
 
     return useMemo(() => {
         if (imageUrl) {
@@ -126,8 +115,7 @@ export const useItemImageRequest = (args: UseItemImageUrlProps) => {
     const { id, imageUrl, itemType, size, type, useRemoteUrl } = args;
     const serverId = useCurrentServerId();
 
-    const imageRes = useImageRes();
-    const sizeByType: number | undefined = type ? imageRes[type] : undefined;
+    const sizeByType: number | undefined = type ? IMAGE_RES[type] : undefined;
 
     return useMemo(() => {
         if (imageUrl) {
@@ -165,8 +153,7 @@ export function getItemImageRequest(args: UseItemImageUrlProps) {
     const currentServerId = authStore.currentServer?.id;
     const serverId = (args.serverId || currentServerId) as string;
 
-    const imageRes = useSettingsStore.getState().general.imageRes;
-    const sizeByType: number | undefined = type ? imageRes[type] : undefined;
+    const sizeByType: number | undefined = type ? IMAGE_RES[type] : undefined;
 
     if (imageUrl) {
         return {
@@ -201,8 +188,7 @@ export function getItemImageUrl(args: UseItemImageUrlProps) {
     const currentServerId = authStore.currentServer?.id;
     const serverId = (args.serverId || currentServerId) as string;
 
-    const imageRes = useSettingsStore.getState().general.imageRes;
-    const sizeByType: number | undefined = type ? imageRes[type] : undefined;
+    const sizeByType: number | undefined = type ? IMAGE_RES[type] : undefined;
 
     if (imageUrl) {
         return imageUrl;

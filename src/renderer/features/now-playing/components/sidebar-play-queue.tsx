@@ -23,7 +23,6 @@ import {
     useShowLyricsInSidebar,
     useShowQueueInSidebar,
     useShowVisualizerInSidebar,
-    useSidebarPanelOrder,
     useWindowSettings,
 } from '/@/renderer/store';
 import { ActionIcon, ActionIconGroup } from '/@/shared/components/action-icon/action-icon';
@@ -32,6 +31,8 @@ import { Stack } from '/@/shared/components/stack/stack';
 import { ItemListKey, Platform } from '/@/shared/types/types';
 
 type SidebarPanelType = 'lyrics' | 'queue' | 'visualizer';
+
+const SIDEBAR_PANEL_ORDER: SidebarPanelType[] = ['queue', 'lyrics', 'visualizer'];
 
 const AudioMotionAnalyzerVisualizer = lazy(() =>
     import('../../visualizer/components/audiomotionanalyzer/visualizer').then((module) => ({
@@ -58,7 +59,6 @@ export const SidebarPlayQueue = () => {
     const showLyricsInSidebar = useShowLyricsInSidebar();
     const showQueueInSidebar = useShowQueueInSidebar();
     const showVisualizerInSidebar = useShowVisualizerInSidebar();
-    const sidebarPanelOrder = useSidebarPanelOrder();
     const { windowBarStyle } = useWindowSettings();
     const showVisualizer = showVisualizerInSidebar;
     const showPanel = showLyricsInSidebar || showVisualizer;
@@ -89,33 +89,23 @@ export const SidebarPlayQueue = () => {
         storage: localStorage,
     });
 
-    // Filter and order panels based on what's enabled
     const orderedPanels = useMemo(() => {
         if (combinedLyricsAndVisualizer) {
-            // When combined, use the order from settings but filter to only show queue and lyrics (combined)
-            const visiblePanels = sidebarPanelOrder.filter((panel) => {
+            // Combined, the visualizer rides inside the lyrics panel, so it never takes a slot of its own.
+            return SIDEBAR_PANEL_ORDER.filter((panel) => {
                 if (panel === 'queue') return showQueue;
                 if (panel === 'lyrics') return showLyricsInSidebar || showVisualizer;
                 return false;
             });
-            return visiblePanels;
         }
 
-        const visiblePanels = sidebarPanelOrder.filter((panel) => {
+        return SIDEBAR_PANEL_ORDER.filter((panel) => {
             if (panel === 'queue') return showQueue;
             if (panel === 'lyrics') return showLyricsInSidebar;
             if (panel === 'visualizer') return showVisualizer;
             return false;
         });
-
-        return visiblePanels;
-    }, [
-        combinedLyricsAndVisualizer,
-        showLyricsInSidebar,
-        showQueue,
-        showVisualizer,
-        sidebarPanelOrder,
-    ]);
+    }, [combinedLyricsAndVisualizer, showLyricsInSidebar, showQueue, showVisualizer]);
 
     const renderPanel = (panelType: SidebarPanelType) => {
         if (panelType === 'queue') {
@@ -265,49 +255,10 @@ export const SidebarPlayQueue = () => {
     );
 };
 
-const PanelReorderControls = ({ panelType }: { panelType: 'lyrics' | 'visualizer' }) => {
+const PanelCloseControl = ({ panelType }: { panelType: 'lyrics' | 'visualizer' }) => {
     const { t } = useTranslation();
     const { setSettings } = useSettingsStoreActions();
-    const sidebarPanelOrder = useSidebarPanelOrder();
     const combinedLyricsAndVisualizer = useCombinedLyricsAndVisualizer();
-
-    const currentIndex = sidebarPanelOrder.indexOf(panelType);
-    const canMoveUp = currentIndex > 0;
-    const canMoveDown = currentIndex < sidebarPanelOrder.length - 1;
-
-    const handleMoveUp = useCallback(() => {
-        if (!canMoveUp) return;
-
-        const newOrder = [...sidebarPanelOrder];
-        const targetIndex = currentIndex - 1;
-
-        [newOrder[currentIndex], newOrder[targetIndex]] = [
-            newOrder[targetIndex],
-            newOrder[currentIndex],
-        ];
-
-        setSettings({
-            general: {
-                sidebarPanelOrder: newOrder,
-            },
-        });
-    }, [canMoveUp, currentIndex, sidebarPanelOrder, setSettings]);
-
-    const handleMoveDown = useCallback(() => {
-        if (!canMoveDown) return;
-
-        const newOrder = [...sidebarPanelOrder];
-        [newOrder[currentIndex], newOrder[currentIndex + 1]] = [
-            newOrder[currentIndex + 1],
-            newOrder[currentIndex],
-        ];
-
-        setSettings({
-            general: {
-                sidebarPanelOrder: newOrder,
-            },
-        });
-    }, [canMoveDown, currentIndex, sidebarPanelOrder, setSettings]);
 
     const handleClose = useCallback(() => {
         if (combinedLyricsAndVisualizer && panelType === 'lyrics') {
@@ -336,28 +287,6 @@ const PanelReorderControls = ({ panelType }: { panelType: 'lyrics' | 'visualizer
         <div className={styles.panelReorderControls}>
             <ActionIconGroup>
                 <ActionIcon
-                    disabled={!canMoveUp}
-                    icon="arrowUp"
-                    iconProps={{ size: 'sm' }}
-                    onClick={handleMoveUp}
-                    size="xs"
-                    tooltip={{
-                        label: t('action.moveUp'),
-                    }}
-                    variant="subtle"
-                />
-                <ActionIcon
-                    disabled={!canMoveDown}
-                    icon="arrowDown"
-                    iconProps={{ size: 'sm' }}
-                    onClick={handleMoveDown}
-                    size="xs"
-                    tooltip={{
-                        label: t('action.moveDown'),
-                    }}
-                    variant="subtle"
-                />
-                <ActionIcon
                     icon="x"
                     iconProps={{ size: 'sm' }}
                     onClick={handleClose}
@@ -375,7 +304,7 @@ const PanelReorderControls = ({ panelType }: { panelType: 'lyrics' | 'visualizer
 const LyricsPanel = () => {
     return (
         <div className={styles.lyricsSection}>
-            <PanelReorderControls panelType="lyrics" />
+            <PanelCloseControl panelType="lyrics" />
             <Lyrics fadeOutNoLyricsMessage={false} settingsKey="sidebar" />
         </div>
     );
@@ -386,7 +315,7 @@ const VisualizerPanel = () => {
 
     return (
         <div className={styles.visualizerSection}>
-            <PanelReorderControls panelType="visualizer" />
+            <PanelCloseControl panelType="visualizer" />
             <Suspense fallback={<></>}>
                 {visualizerType === 'butterchurn' ? (
                     <ButterchurnVisualizer />
@@ -439,7 +368,7 @@ const CombinedLyricsAndVisualizerPanel = () => {
 
     return (
         <div className={styles.lyricsSection}>
-            <PanelReorderControls panelType="lyrics" />
+            <PanelCloseControl panelType="lyrics" />
             {showLyricsInSidebar && <Lyrics fadeOutNoLyricsMessage={true} settingsKey="sidebar" />}
             {showVisualizer && (
                 <div

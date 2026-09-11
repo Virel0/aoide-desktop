@@ -9,7 +9,6 @@ import '@mantine/notifications/styles.css';
 import isElectron from 'is-electron';
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
-import i18n from '/@/i18n/i18n';
 import { WebAudioContext } from '/@/renderer/features/player/context/webaudio-context';
 import { useCheckForUpdates } from '/@/renderer/hooks/use-check-for-updates';
 import { useFullscreenToggle } from '/@/renderer/hooks/use-fullscreen-toggle';
@@ -20,12 +19,7 @@ import { AoideLoudnessEffect } from '/@/renderer/aoide/features/playback/aoide-l
 import { AoideTrimEffect } from '/@/renderer/aoide/features/playback/aoide-trim-effect';
 import { AoideSyncOnLaunchEffect } from '/@/renderer/aoide/features/sync/aoide-sync-on-launch-effect';
 import { AppRouter } from '/@/renderer/router/app-router';
-import {
-    useCssSettings,
-    useHotkeySettings,
-    useLanguage,
-    useSettingsStoreActions,
-} from '/@/renderer/store';
+import { useCssSettings, useHotkeySettings, useSettingsStoreActions } from '/@/renderer/store';
 import { initCustomThemes } from '/@/renderer/store/custom-themes.store';
 import { useAppTheme } from '/@/renderer/themes/use-app-theme';
 import { sanitizeCss } from '/@/renderer/utils/sanitize';
@@ -121,7 +115,6 @@ const AppEffects = () => (
         <CustomCssFileEffect />
         <CssSettingsEffect />
         <GlobalShortcutsEffect />
-        <LanguageEffect />
         <NativeMenuSyncEffect />
         <FullscreenToggleEffect />
         <InputFocusEffect />
@@ -250,18 +243,6 @@ const GlobalShortcutsEffect = () => {
             ipc?.send('set-global-shortcuts', bindings);
         }
     }, [bindings]);
-
-    return null;
-};
-
-const LanguageEffect = () => {
-    const language = useLanguage();
-
-    useEffect(() => {
-        if (language) {
-            i18n.changeLanguage(language);
-        }
-    }, [language]);
 
     return null;
 };

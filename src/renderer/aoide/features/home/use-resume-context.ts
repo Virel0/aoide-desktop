@@ -13,8 +13,7 @@ import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { getSongById } from '/@/renderer/features/player/utils';
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
 import { AppRoute } from '/@/renderer/router/routes';
-import { useCurrentServerId } from '/@/renderer/store';
-import { useArtistRadioCount } from '/@/renderer/store/settings.store';
+import { RADIO_TRACK_COUNT, useCurrentServerId } from '/@/renderer/store';
 import { LibraryItem } from '/@/shared/types/domain-types';
 import { Play } from '/@/shared/types/types';
 
@@ -32,8 +31,6 @@ export const useResumeContext = () => {
     const queryClient = useQueryClient();
     const serverId = useCurrentServerId();
     const navigate = useNavigate();
-    // One count for both seeds, as the album header itself uses.
-    const radioCount = useArtistRadioCount();
 
     const resume = useCallback(
         async (context: RecentContext): Promise<void> => {
@@ -77,14 +74,14 @@ export const useResumeContext = () => {
                         context.seed === 'artist'
                             ? await queryClient.fetchQuery({
                                   ...songsQueries.artistRadio({
-                                      query: { artistId: context.id, count: radioCount },
+                                      query: { artistId: context.id, count: RADIO_TRACK_COUNT },
                                       serverId,
                                   }),
                                   queryKey: queryKeys.player.fetch({ artistId: context.id }),
                               })
                             : await queryClient.fetchQuery({
                                   ...songsQueries.albumRadio({
-                                      query: { albumId: context.id, count: radioCount },
+                                      query: { albumId: context.id, count: RADIO_TRACK_COUNT },
                                       serverId,
                                   }),
                                   queryKey: queryKeys.player.fetch({ albumId: context.id }),
@@ -97,7 +94,7 @@ export const useResumeContext = () => {
                 }
             }
         },
-        [navigate, player, queryClient, radioCount, serverId],
+        [navigate, player, queryClient, serverId],
     );
 
     const resumeHandoff = useCallback(

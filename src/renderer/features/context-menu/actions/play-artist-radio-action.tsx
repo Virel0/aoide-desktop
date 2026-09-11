@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { queryKeys } from '/@/renderer/api/query-keys';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import { songsQueries } from '/@/renderer/features/songs/api/songs-api';
-import { useArtistRadioCount, useCurrentServerId, usePlayButtonBehavior } from '/@/renderer/store';
+import { PLAY_BUTTON_BEHAVIOR, RADIO_TRACK_COUNT, useCurrentServerId } from '/@/renderer/store';
 import { ContextMenu } from '/@/shared/components/context-menu/context-menu';
 import { AlbumArtist, Artist } from '/@/shared/types/domain-types';
 import { Play } from '/@/shared/types/types';
@@ -16,12 +16,10 @@ interface PlayArtistRadioActionProps {
 }
 
 export const PlayArtistRadioAction = ({ artist, disabled }: PlayArtistRadioActionProps) => {
-    const artistRadioCount = useArtistRadioCount();
     const { t } = useTranslation();
     const player = usePlayer();
     const serverId = useCurrentServerId();
     const queryClient = useQueryClient();
-    const playButtonBehavior = usePlayButtonBehavior();
 
     const handlePlayArtistRadio = useCallback(
         async (playType: Play) => {
@@ -32,7 +30,7 @@ export const PlayArtistRadioAction = ({ artist, disabled }: PlayArtistRadioActio
                     ...songsQueries.artistRadio({
                         query: {
                             artistId: artist.id,
-                            count: artistRadioCount,
+                            count: RADIO_TRACK_COUNT,
                         },
                         serverId: serverId,
                     }),
@@ -45,7 +43,7 @@ export const PlayArtistRadioAction = ({ artist, disabled }: PlayArtistRadioActio
                 console.error('Failed to load track radio:', error);
             }
         },
-        [artist, artistRadioCount, player, queryClient, serverId],
+        [artist, player, queryClient, serverId],
     );
 
     const handlePlayArtistRadioNow = useCallback(() => {
@@ -61,8 +59,8 @@ export const PlayArtistRadioAction = ({ artist, disabled }: PlayArtistRadioActio
     }, [handlePlayArtistRadio]);
 
     const defaultPlayArtistRadioAction = useCallback(() => {
-        handlePlayArtistRadio(playButtonBehavior);
-    }, [handlePlayArtistRadio, playButtonBehavior]);
+        handlePlayArtistRadio(PLAY_BUTTON_BEHAVIOR);
+    }, [handlePlayArtistRadio]);
 
     return (
         <ContextMenu.Submenu>

@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { ArtistReleaseTypeItem, useAppStore } from '/@/renderer/store';
-import { useArtistReleaseTypeItems } from '/@/renderer/store/settings.store';
+import { ArtistReleaseTypeItem, artistReleaseTypeItems, useAppStore } from '/@/renderer/store';
 import { titleCase } from '/@/renderer/utils';
 import { SEPARATOR_STRING } from '/@/shared/api/utils';
 import { Album } from '/@/shared/types/domain-types';
@@ -158,7 +157,6 @@ export const getArtistAlbumsGrouped = (
     albums: Album[],
     routeId: string,
     groupingType: GroupingType,
-    artistReleaseTypeItems: { disabled: boolean; id: string }[],
     t: (key: string, options?: any) => string,
 ) => {
     const albumsByReleaseType = groupAlbumsByReleaseType(albums, routeId, groupingType);
@@ -319,11 +317,10 @@ export const getArtistAlbumsGrouped = (
 
 export const useArtistAlbumsGrouped = (albums: Album[], routeId: string) => {
     const { t } = useTranslation();
-    const artistReleaseTypeItems = useArtistReleaseTypeItems();
     const albumArtistDetailSort = useAppStore((state) => state.albumArtistDetailSort);
     const groupingType = albumArtistDetailSort.groupingType;
 
     return useMemo(() => {
-        return getArtistAlbumsGrouped(albums, routeId, groupingType, artistReleaseTypeItems, t);
-    }, [albums, routeId, groupingType, artistReleaseTypeItems, t]);
+        return getArtistAlbumsGrouped(albums, routeId, groupingType, t);
+    }, [albums, routeId, groupingType, t]);
 };

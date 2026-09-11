@@ -1,5 +1,6 @@
 import { DragControls, Reorder, useDragControls } from 'motion/react';
 
+import { SortableItem } from '/@/renderer/store';
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Checkbox } from '/@/shared/components/checkbox/checkbox';
 import { Group } from '/@/shared/components/group/group';
@@ -20,15 +21,10 @@ const DragHandle = ({ dragControls }: { dragControls: DragControls }) => {
     );
 };
 
-export interface DraggableItemProps {
+interface DraggableItemProps {
     handleChangeDisabled: (id: string, e: boolean) => void;
-    item: SidebarItem;
+    item: SortableItem<string>;
     value: string;
-}
-
-interface SidebarItem {
-    disabled: boolean;
-    id: string;
 }
 
 export const DraggableItem = ({ handleChangeDisabled, item, value }: DraggableItemProps) => {

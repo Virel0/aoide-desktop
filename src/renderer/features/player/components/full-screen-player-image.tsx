@@ -8,12 +8,7 @@ import styles from './full-screen-player-image.module.css';
 
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
 import { AppRoute } from '/@/renderer/router/routes';
-import {
-    useGeneralSettings,
-    useNativeAspectRatio,
-    usePlayerData,
-    usePlayerSong,
-} from '/@/renderer/store';
+import { playerItems, usePlayerData, usePlayerSong } from '/@/renderer/store';
 import { formatPartialIsoDateUTC } from '/@/renderer/utils';
 import { Badge } from '/@/shared/components/badge/badge';
 import { Center } from '/@/shared/components/center/center';
@@ -23,7 +18,7 @@ import { Icon } from '/@/shared/components/icon/icon';
 import { Stack } from '/@/shared/components/stack/stack';
 import { Text } from '/@/shared/components/text/text';
 import { useSetState } from '/@/shared/hooks/use-set-state';
-import { ExplicitStatus, LibraryItem } from '/@/shared/types/domain-types';
+import { LibraryItem } from '/@/shared/types/domain-types';
 
 const imageVariants: Variants = {
     closed: {
@@ -52,14 +47,10 @@ const MotionImage = motion.img;
 
 const ImageWithPlaceholder = ({
     className,
-    explicit,
     ...props
 }: HTMLMotionProps<'img'> & {
-    explicit?: boolean;
     placeholder?: string;
 }) => {
-    const nativeAspectRatio = useNativeAspectRatio();
-
     if (!props.src) {
         return (
             <Center
@@ -77,13 +68,8 @@ const ImageWithPlaceholder = ({
 
     return (
         <MotionImage
-            className={clsx(styles.image, className, {
-                [styles.censored]: explicit,
-            })}
-            style={{
-                objectFit: nativeAspectRatio ? 'contain' : 'cover',
-                width: nativeAspectRatio ? 'auto' : '100%',
-            }}
+            className={clsx(styles.image, className)}
+            style={{ objectFit: 'cover', width: '100%' }}
             {...props}
         />
     );
@@ -94,7 +80,6 @@ export const FullScreenPlayerImage = () => {
 
     const currentSong = usePlayerSong();
     const { nextSong } = usePlayerData();
-    const { blurExplicitImages, playerItems } = useGeneralSettings();
 
     const currentImageUrl = useItemImageUrl({
         id: currentSong?.imageId || undefined,
@@ -111,10 +96,8 @@ export const FullScreenPlayerImage = () => {
     });
 
     const [imageState, setImageState] = useSetState({
-        bottomExplicit: nextSong?.explicitStatus === ExplicitStatus.EXPLICIT,
         bottomImage: nextImageUrl,
         current: 0,
-        topExplicit: currentSong?.explicitStatus === ExplicitStatus.EXPLICIT,
         topImage: currentImageUrl,
     });
 
@@ -136,27 +119,13 @@ export const FullScreenPlayerImage = () => {
         const isTop = imageStateRef.current.current === 0;
 
         setImageState({
-            bottomExplicit:
-                (isTop ? currentSong?.explicitStatus : nextSong?.explicitStatus) ===
-                ExplicitStatus.EXPLICIT,
             bottomImage: isTop ? currentImageUrl : nextImageUrl,
             current: isTop ? 1 : 0,
-            topExplicit:
-                (isTop ? nextSong?.explicitStatus : currentSong?.explicitStatus) ===
-                ExplicitStatus.EXPLICIT,
             topImage: isTop ? nextImageUrl : currentImageUrl,
         });
 
         previousSongRef.current = currentSong?._uniqueId;
-    }, [
-        currentSong?._uniqueId,
-        currentImageUrl,
-        nextSong?._uniqueId,
-        nextImageUrl,
-        setImageState,
-        currentSong?.explicitStatus,
-        nextSong?.explicitStatus,
-    ]);
+    }, [currentSong?._uniqueId, currentImageUrl, nextSong?._uniqueId, nextImageUrl, setImageState]);
 
     const builtDataItems = {
         bit_depth: currentSong?.bitDepth && <Badge>{currentSong?.bitDepth} bit</Badge>,
@@ -211,7 +180,6 @@ export const FullScreenPlayerImage = () => {
                             custom={{ isOpen: imageState.current === 0 }}
                             draggable={false}
                             exit="closed"
-                            explicit={blurExplicitImages && imageState.topExplicit}
                             initial="closed"
                             key={`top-${currentSong?._uniqueId || 'none'}`}
                             placeholder="var(--theme-colors-foreground-muted)"
@@ -227,7 +195,6 @@ export const FullScreenPlayerImage = () => {
                             custom={{ isOpen: imageState.current === 1 }}
                             draggable={false}
                             exit="closed"
-                            explicit={blurExplicitImages && imageState.bottomExplicit}
                             initial="closed"
                             key={`bottom-${currentSong?._uniqueId || 'none'}`}
                             placeholder="var(--theme-colors-foreground-muted)"
