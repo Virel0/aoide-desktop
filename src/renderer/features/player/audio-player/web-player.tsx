@@ -4,7 +4,11 @@ import type ReactPlayer from 'react-player';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useArrangement } from '/@/renderer/aoide/features/playback/arrangement-store';
+import { useBeatGrid } from '/@/renderer/aoide/features/playback/beat-grid-store';
+import { useAoideAutoDjEnabled } from '/@/renderer/aoide/features/playback/use-auto-dj';
 import { useBufferDeck } from '/@/renderer/aoide/features/playback/use-buffer-deck';
+import { useDjPrefetch } from '/@/renderer/aoide/features/playback/use-dj-prefetch';
 import { useLoudnessGain } from '/@/renderer/aoide/features/playback/use-loudness-gain';
 import { useAoideLoudnessNormalisationEnabled } from '/@/renderer/aoide/features/playback/use-loudness-normalisation';
 import { useMixTransition } from '/@/renderer/aoide/features/playback/use-mix-transition';
@@ -61,6 +65,15 @@ export function WebPlayer() {
     // Aoide's Crossfade: one plan for the handover in front of us, or null when
     // the mixer is off and Feishin's own transition settings still decide.
     const mix = useMixTransition(currentSong, nextSong);
+    // Aoide's Auto DJ: what the server knows about the pair, for the deck to
+    // plan a mix from. Every hook here is gated by the setting and reads a
+    // cache; the tracks after the next are asked for ahead of time.
+    const autoDj = useAoideAutoDjEnabled();
+    const outgoingGrid = useBeatGrid(currentSong?.id);
+    const outgoingArrangement = useArrangement(currentSong?.id);
+    const incomingGrid = useBeatGrid(nextSong?.id);
+    const incomingArrangement = useArrangement(nextSong?.id);
+    useDjPrefetch();
 
     const player1Url = useSongUrl(player1, num === 1, transcode);
     const player2Url = useSongUrl(player2, num === 2, transcode);
@@ -69,6 +82,11 @@ export function WebPlayer() {
     // about; everything below is what happens when it does not.
     const deck = useBufferDeck({
         currentSong,
+        dj: {
+            enabled: autoDj,
+            incoming: { arrangement: incomingArrangement, grid: incomingGrid },
+            outgoing: { arrangement: outgoingArrangement, grid: outgoingGrid },
+        },
         isMuted,
         mix,
         nextSong,

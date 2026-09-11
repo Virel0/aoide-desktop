@@ -1,5 +1,8 @@
+import type { Handover } from '/@/renderer/aoide/features/playback/buffer-deck';
 import type { OutgoingPlayback } from '/@/renderer/aoide/features/playback/gapless-schedule';
 import type { WebPlayerEngineHandle } from '/@/renderer/features/player/audio-player/engine/web-player-engine';
+import type { Arrangement } from '/@/shared/aoide/arrangement';
+import type { BeatGrid } from '/@/shared/aoide/beat-grid';
 import type { MixTransition } from '/@/shared/aoide/mix-transition';
 import type { QueueSong } from '/@/shared/types/domain-types';
 import type { WebAudio } from '/@/shared/types/types';
@@ -8,6 +11,8 @@ import type { RefObject } from 'react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { BufferDeck } from '/@/renderer/aoide/features/playback/buffer-deck';
+import { PLAN_LEAD_SECONDS, planMixBooking } from '/@/renderer/aoide/features/playback/dj-schedule';
+import { djStatusStore } from '/@/renderer/aoide/features/playback/dj-status-store';
 import {
     endsAt,
     outgoingEndSec,
@@ -17,11 +22,15 @@ import {
 import { usePlayerEvents } from '/@/renderer/features/player/audio-player/hooks/use-player-events';
 import { convertToLogVolume } from '/@/renderer/features/player/audio-player/utils/player-utils';
 import { usePlayerActions, usePlayerStoreBase } from '/@/renderer/store';
+import { crossfadeOutgoing } from '/@/shared/aoide/dj-automation';
+import { planMix } from '/@/shared/aoide/dj-planner';
 import { PlayerRepeat, PlayerStatus } from '/@/shared/types/types';
 
 export interface BufferDeckArgs {
     /** Whether a pause is faded. The deck rides its own fader down to match. */
     currentSong: QueueSong | undefined;
+    /** Auto DJ: whether it is on, and what is known about the pair in front of us. */
+    dj: { enabled: boolean; incoming: DJMaterial; outgoing: DJMaterial };
     isMuted: boolean;
     /** Aoide's plan for this pair, or null when its mixer is switched off. */
     mix: MixTransition | null;
@@ -56,6 +65,13 @@ export interface BufferDeckHandle {
     onElementEnded: (slot: 1 | 2) => boolean;
     /** A progress sample from the element that is currently audible. */
     onElementProgress: (slot: 1 | 2) => void;
+}
+
+/** What the planner needs to know about one record, when the server has it. */
+export interface DJMaterial {
+    /** Null: measured, nothing to say. Undefined: not known yet. */
+    arrangement: Arrangement | null | undefined;
+    grid: BeatGrid | null | undefined;
 }
 
 /**
@@ -93,10 +109,22 @@ const deckVolume = (volume: number, muted: boolean): number =>
     muted ? 0 : convertToLogVolume(Math.max(0, Math.min(100, volume)) / 100);
 
 /**
- * The exact join, wired into a player built out of two `<audio>` elements.
+ * Which hand-over the deck may perform for the pair in front of it, before a
+ * mix is considered: a join for a cut, a gapless run or no plan at all; a
+ * blend for a planned blend when Auto DJ is on and the deck performs blends;
+ * nothing when a blend belongs to the element crossfade.
+ */
+const handoverKind = (plan: MixTransition | null, autoDj: boolean): 'blend' | 'join' | null => {
+    if (!plan) return 'join';
+    if (plan.kind === 'gapless' || plan.kind === 'cut') return 'join';
+    return autoDj ? 'blend' : null;
+};
+
+/**
+ * The exact hand-over, wired into a player built out of two `<audio>` elements.
  *
  * While an element is playing, the deck watches the boundary come up, decodes
- * the next track when it is thirty seconds off and — once it is inside a
+ * the next track when it is twelve seconds off and — once it is inside a
  * two-second window — commits `AudioBufferSourceNode.start(when)` to the exact
  * context time the outgoing track stops. At that moment the queue advances, the
  * element that would have played the next track is paused and silenced before
@@ -104,10 +132,20 @@ const deckVolume = (volume: number, muted: boolean): number =>
  * boundary are buffers, and the arithmetic joining them has no sampled number
  * left in it.
  *
- * It takes only the boundaries it can be exact about: a `gapless` or `cut` plan
+ * It takes the boundaries it can be exact about: a `gapless` or `cut` plan
  * from Aoide's mixer, or Feishin's own gapless setting when that mixer is off.
- * A planned blend is a crossfade and goes to the crossfade machinery untouched;
- * Repeat One is an element looping on itself and is left alone.
+ * With Auto DJ off a planned blend is a crossfade and goes to the crossfade
+ * machinery untouched; Repeat One is an element looping on itself and is left
+ * alone.
+ *
+ * **With Auto DJ on the deck takes every hand-over**, as the phone's decks do:
+ * a blend is performed on the audio clock, and a pair the server has gridded
+ * and read is *mixed* — beat-matched, bar-aligned, the bass swapped on a
+ * downbeat — when the planner says it may be. A mix is only ever booked from
+ * a record already on the deck, because the outgoing side has to be automated
+ * and an `<audio>` element cannot be; so the first hand-over after the switch
+ * is thrown is a join or a blend that puts the deck in charge, and the ones
+ * after it can mix. Everything the planner refuses crossfades as it did.
  *
  * Anything that is not playing straight forwards hands the track back: a pause,
  * a seek, a skip, a queue that moved. The element is put where the buffer had
@@ -122,8 +160,13 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
     const deckRef = useRef<BufferDeck | null>(null);
     const ownsRef = args.ownsRef;
     const engagedRef = useRef(false);
-    /** A join that has been committed to the audio clock and not yet arrived. */
+    /** A hand-over that has been committed to the audio clock and not yet arrived. */
     const planned = useRef<null | string>(null);
+    /**
+     * A blend from an element: the incoming buffer is on the clock, the
+     * outgoing element's fader is ridden by hand until the boundary.
+     */
+    const elementBlend = useRef<null | { seconds: number; startAt: number }>(null);
     /** The boundary is being given back to the element; leave it to the timers. */
     const handingBack = useRef(false);
     const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -172,7 +215,10 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
             const deck = deckRef.current;
             clearTimers();
             planned.current = null;
+            const wasBlendingFromElement = elementBlend.current !== null;
+            elementBlend.current = null;
             ownsRef.current = false;
+            djStatusStore.set(null);
             if (!deck) return;
 
             const wasEngaged = engagedRef.current;
@@ -186,6 +232,11 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
 
             engagedRef.current = false;
             setEngaged(false);
+            // An element blend was riding the outgoing element's fader down;
+            // whatever it had reached, the element gets its volume back.
+            if (wasBlendingFromElement && !wasEngaged) {
+                latest.current.playerRef.current?.setVolume(latest.current.volume);
+            }
             if (!wasEngaged) return;
 
             const { num, playerRef, volume } = latest.current;
@@ -213,13 +264,17 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
      * element that was going to play this track is stopped and muted before it
      * plays a note of it.
      *
-     * Called from the timer armed at the join and from the outgoing element's
-     * own `ended`, whichever notices first. It runs once either way, because a
-     * queue advanced twice is a track skipped.
+     * Called from the timer armed at the hand-over and from the outgoing
+     * element's own `ended`, whichever notices first. It runs once either way,
+     * because a queue advanced twice is a track skipped. For a mix or a blend
+     * this is the moment the incoming record becomes audible, not the moment
+     * the outgoing one stops — what the player says is playing is what is
+     * loudest, as on the phone.
      */
     const takeOver = useCallback(() => {
         if (!planned.current) return;
         planned.current = null;
+        elementBlend.current = null;
         clearTimers();
 
         const outgoingSlot = latest.current.num;
@@ -233,11 +288,12 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
         mediaAutoNext();
 
         // The queue ran out, or a pause was armed for exactly this boundary.
-        // The join is already committed to the audio clock, so take it back
-        // rather than engage on top of a player that has stopped.
+        // The hand-over is already committed to the audio clock, so take it
+        // back rather than engage on top of a player that has stopped.
         if (usePlayerStoreBase.getState().player.status !== PlayerStatus.PLAYING) {
             latest.current.playerRef.current?.setVolume(latest.current.volume);
             deckRef.current?.release();
+            djStatusStore.set(null);
             ownsRef.current = false;
             engagedRef.current = false;
             setEngaged(false);
@@ -284,6 +340,82 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
     );
 
     /**
+     * Try for a mix from the record on the deck into the decoded one. Null
+     * when there is no mix to be had — no grid, no arrangement, a planner
+     * that refused, a stretch not ready — or the booking is not yet due.
+     * Only ever called with a buffer outgoing that can be mixed out of.
+     */
+    const bookMix = useCallback(
+        (outgoing: OutgoingPlayback, incomingSlot: 1 | 2): 'booked' | 'no-mix' | 'waiting' => {
+            const state = latest.current;
+            const context = state.webAudio?.context;
+            const deck = deckRef.current;
+            const next = state.nextSong;
+            if (!context || !deck || !next) return 'no-mix';
+            const { incoming, outgoing: playing } = state.dj;
+            if (!playing.grid || !incoming.grid) return 'no-mix';
+            if (playing.arrangement === undefined || incoming.arrangement === undefined) {
+                return 'no-mix';
+            }
+
+            const now = context.currentTime;
+            const position = deck.positionSec(now);
+            if (position === null) return 'no-mix';
+
+            const plan = planMix({
+                incoming: incoming.grid,
+                incomingArrangement: incoming.arrangement,
+                notBeforeMs: (position + PLAN_LEAD_SECONDS) * 1000,
+                outgoing: playing.grid,
+                outgoingArrangement: playing.arrangement,
+            });
+            if (!plan) return 'no-mix';
+
+            const mixStart = endsAt(outgoing, plan.outgoingStartMs / 1000);
+            if (mixStart === null) return 'no-mix';
+
+            if (!deck.ready(next._uniqueId)) {
+                const url = incomingSlot === 1 ? state.player1Url : state.player2Url;
+                if (url && shouldDecode(mixStart - now) && !deck.isPreparing(next._uniqueId)) {
+                    void deck.prepare(next._uniqueId, url, next.duration / 1000);
+                    void deck.prepareStretch(incomingSlot - 1);
+                }
+                return 'waiting';
+            }
+
+            const latency = deck.stretchLatencySec(incomingSlot - 1);
+            if (latency === null) {
+                void deck.prepareStretch(incomingSlot - 1);
+                return 'waiting';
+            }
+
+            const booking = planMixBooking({
+                incomingDurationSec: deck.decodedDurationSec() ?? Number.NaN,
+                now,
+                outgoing,
+                plan,
+                stretchLatencySec: latency,
+            });
+            if (booking.kind !== 'mix') return booking.reason === 'early' ? 'waiting' : 'no-mix';
+
+            const voice = deck.schedule({
+                gainIndex: incomingSlot - 1,
+                handover: { booking: booking.booking, kind: 'mix' },
+                id: next._uniqueId,
+                offsetSec: booking.booking.offsetSec,
+                startAtContextTime: booking.booking.startAtContextTime,
+            });
+            if (!voice) return 'no-mix';
+
+            planned.current = next._uniqueId;
+            ownsRef.current = true;
+            after(booking.booking.startAtContextTime - context.currentTime, takeOver);
+            return 'booked';
+        },
+        [after, ownsRef, takeOver],
+    );
+
+    /**
      * One pass at the boundary in front of whatever is playing: decode when it
      * is close, commit when it is closer, and give it back when the decode did
      * not arrive.
@@ -295,6 +427,9 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
             const deck = deckRef.current;
             if (!context || !deck) return;
             if (planned.current || handingBack.current) return;
+            // The outgoing side of a mix or a blend is still sounding: a third
+            // buffer would be the price of booking anything now.
+            if (deck.isSettling()) return;
 
             const boundary = outgoingEnd === null ? null : endsAt(outgoing, outgoingEnd);
             if (boundary === null || outgoingEnd === null) return;
@@ -302,19 +437,16 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
 
             // With no plan the player pre-starts the next element, which is a
             // boundary with no overlap in it — exactly what the deck can take
-            // over. Feishin's own crossfade used to be able to say otherwise
-            // here; it is gone, and a blend now only ever arrives as a plan.
-            const exact = state.mix
-                ? state.mix.kind === 'gapless' || state.mix.kind === 'cut'
-                : true;
+            // over. A planned blend is the deck's only when Auto DJ is on.
+            const kind = handoverKind(state.mix, state.dj.enabled);
             const next = state.nextSong;
             const usable =
-                exact &&
+                kind !== null &&
                 Boolean(next) &&
                 state.repeat !== PlayerRepeat.ONE &&
                 !usePlayerStoreBase.getState().player.pauseOnNextSongEnd;
 
-            if (!usable || !next) {
+            if (!usable || !next || !kind) {
                 if (engagedRef.current && boundary - now <= ELEMENT_HANDBACK_SECONDS) {
                     handBackAtBoundary(boundary);
                 }
@@ -323,9 +455,21 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
 
             const incomingSlot: 1 | 2 = state.num === 1 ? 2 : 1;
 
+            // A mix first, when the record playing is on the deck. Nothing is
+            // decided here: the planner says whether the pair may be mixed and
+            // where, and the booking arithmetic says when.
+            if (state.dj.enabled && outgoing.kind === 'buffer' && deck.canMixOut()) {
+                const attempt = bookMix(outgoing, incomingSlot);
+                if (attempt !== 'no-mix') return;
+            }
+
+            const overlap = kind === 'blend' && state.mix ? state.mix.overlapSeconds : 0;
+            const startSec = outgoingEnd - overlap;
+            const startAt = boundary - overlap;
+
             if (!deck.ready(next._uniqueId)) {
                 const url = incomingSlot === 1 ? state.player1Url : state.player2Url;
-                if (url && shouldDecode(boundary - now) && !deck.isPreparing(next._uniqueId)) {
+                if (url && shouldDecode(startAt - now) && !deck.isPreparing(next._uniqueId)) {
                     void deck.prepare(next._uniqueId, url, next.duration / 1000);
                 }
                 if (engagedRef.current && boundary - now <= ELEMENT_HANDBACK_SECONDS) {
@@ -335,7 +479,7 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
             }
 
             const join = planJoin({
-                endSec: outgoingEnd,
+                endSec: startSec,
                 incomingDurationSec: deck.decodedDurationSec() ?? Number.NaN,
                 incomingStartSec: incomingSlot === 1 ? state.trim.start1 : state.trim.start2,
                 now,
@@ -353,8 +497,11 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
                 return;
             }
 
+            const handover: Handover =
+                kind === 'blend' ? { kind: 'blend', seconds: overlap } : { kind: 'join' };
             const voice = deck.schedule({
                 gainIndex: incomingSlot - 1,
+                handover,
                 id: next._uniqueId,
                 offsetSec: join.offsetSec,
                 startAtContextTime: join.startAtContextTime,
@@ -363,9 +510,18 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
 
             planned.current = next._uniqueId;
             ownsRef.current = true;
-            after(join.startAtContextTime - context.currentTime, takeOver);
+            if (kind === 'blend' && outgoing.kind === 'element') {
+                // The element keeps playing under the incoming buffer until
+                // the boundary, its fader ridden down by the progress ticks;
+                // the queue moves on when it stops, as Feishin's own
+                // crossfade has always had it.
+                elementBlend.current = { seconds: overlap, startAt: join.startAtContextTime };
+                after(boundary - context.currentTime, takeOver);
+            } else {
+                after(join.startAtContextTime - context.currentTime, takeOver);
+            }
         },
-        [after, handBackAtBoundary, ownsRef, takeOver],
+        [after, bookMix, handBackAtBoundary, ownsRef, takeOver],
     );
 
     const onElementProgress = useCallback(
@@ -376,6 +532,19 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
 
             const element = mediaElementFor(slot);
             if (!element) return;
+
+            // A blend from this element is under way: ride its fader down on
+            // the equal-power curve the incoming buffer is coming up on.
+            const blend = elementBlend.current;
+            if (blend) {
+                const progress = (context.currentTime - blend.startAt) / blend.seconds;
+                if (progress >= 0) {
+                    elementFor(slot)?.setVolume(
+                        crossfadeOutgoing(Math.min(1, progress)) * state.volume,
+                    );
+                }
+                return;
+            }
 
             // Read the two clocks one after the other: work between them is an
             // error in the join of exactly that length.
@@ -388,7 +557,7 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
                 outgoingEndSec(trimmedEnd, element.duration),
             );
         },
-        [advanceBoundary, mediaElementFor],
+        [advanceBoundary, elementFor, mediaElementFor],
     );
 
     const onElementEnded = useCallback(
@@ -405,14 +574,22 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
         if (!webAudio) return undefined;
         const deck = new BufferDeck(webAudio.context, webAudio.gains);
         deck.setVolume(deckVolume(latest.current.volume, latest.current.isMuted), 0);
+        deck.setAutoDj(latest.current.dj.enabled);
         deckRef.current = deck;
         return () => {
             deckRef.current = null;
             ownsRef.current = false;
             engagedRef.current = false;
+            djStatusStore.set(null);
             deck.stop();
         };
     }, [ownsRef, webAudio]);
+
+    // Voices made from now on carry the bass swap's filter, or do not.
+    const autoDj = args.dj.enabled;
+    useEffect(() => {
+        deckRef.current?.setAutoDj(autoDj);
+    }, [autoDj]);
 
     // The person's slider and their mute, mirrored onto the deck's own fader —
     // the element's `volume` property by another name, in front of the gain node
@@ -435,7 +612,8 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
     });
 
     // The deck's clock while the deck is the player: the progress bar, the
-    // boundary in front of it, and an element held quiet behind it.
+    // boundary in front of it, the indicator, and an element held quiet
+    // behind it.
     useEffect(() => {
         if (!engaged) return undefined;
 
@@ -448,14 +626,15 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
             // flight over a deck that has already been given away.
             if (!context || !deck || !engagedRef.current) return;
 
-            const outgoing = deck.outgoing();
+            djStatusStore.set(deck.mixStatus(context.currentTime));
+
             const position = deck.positionSec(context.currentTime);
-            if (!outgoing || position === null) {
-                // The track ran out. A committed join or an armed hand-back
-                // owns this boundary and is holding timers against the audio
-                // clock; this tick is a quarter-second grid and must not race
-                // them for it — clearing their timers would strand the queue on
-                // a track that has finished.
+            if (position === null) {
+                // The track ran out. A committed hand-over or an armed
+                // hand-back owns this boundary and is holding timers against
+                // the audio clock; this tick is a quarter-second grid and must
+                // not race them for it — clearing their timers would strand
+                // the queue on a track that has finished.
                 if (planned.current || handingBack.current) return;
                 const playing =
                     usePlayerStoreBase.getState().player.status === PlayerStatus.PLAYING;
@@ -467,6 +646,10 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
 
             const element = mediaElementFor(state.num);
             if (element && !element.paused) element.pause();
+
+            // No pair to plan against while a bend is still easing back.
+            const outgoing = deck.outgoing();
+            if (!outgoing) return;
 
             const trimmedEnd = state.num === 1 ? state.trim.end1 : state.trim.end2;
             advanceBoundary(
@@ -522,9 +705,9 @@ export const useBufferDeck = (args: BufferDeckArgs): BufferDeckHandle => {
         if (deckRef.current?.currentId() !== currentId) relinquish({ resume: true });
     }, [currentId, engaged, relinquish]);
 
-    // Repeat One is an element looping on itself, and a blend is the
-    // crossfade's to make. Either takes the boundary back.
-    const blending = args.mix?.kind === 'blend';
+    // Repeat One is an element looping on itself, and with Auto DJ off a
+    // blend is the crossfade's to make. Either takes the boundary back.
+    const blending = args.mix?.kind === 'blend' && !args.dj.enabled;
     const repeatingOne = args.repeat === PlayerRepeat.ONE;
     useEffect(() => {
         if ((blending || repeatingOne) && (engagedRef.current || planned.current)) {

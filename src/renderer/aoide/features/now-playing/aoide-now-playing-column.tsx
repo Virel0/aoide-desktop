@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import styles from './aoide-now-playing-column.module.css';
 import { parseNowPlayingTab, useNowPlayingTab, useNowPlayingTabStore } from './use-now-playing-tab';
 
+import { AoideDJIndicator } from '/@/renderer/aoide/features/now-playing/aoide-dj-indicator';
 import { AoideNowPlayingLyrics } from '/@/renderer/aoide/features/now-playing/aoide-now-playing-lyrics';
 import { ItemImage, useItemImageUrl } from '/@/renderer/components/item-image/item-image';
 import { ItemListHandle } from '/@/renderer/components/item-list/types';
@@ -104,6 +105,7 @@ export const AoideNowPlayingColumn = forwardRef(
                     </div>
                     <div className={styles.controls}>
                         <CenterControls />
+                        <AoideDJIndicator />
                     </div>
                 </div>
                 <div className={styles.tabs}>

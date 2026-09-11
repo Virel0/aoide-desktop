@@ -166,3 +166,42 @@
     min-height: 0;
     overflow: hidden;
 }
+
+/*
+ * Auto DJ: one line and a bar under the controls. Muted while the mix is
+ * booked and counting down; the accent while it is happening, because a mix
+ * under way is the one thing on this page that is active.
+ */
+.dj-indicator {
+    display: flex;
+    flex-direction: column;
+    gap: var(--theme-spacing-xs);
+    width: 100%;
+}
+
+.dj-label {
+    text-align: center;
+}
+
+.dj-bar {
+    width: 100%;
+    height: 3px;
+    overflow: hidden;
+    background: alpha(var(--theme-colors-foreground-muted), 0.25);
+    border-radius: 2px;
+}
+
+.dj-fill-ready,
+.dj-fill-mixing {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.25s linear;
+}
+
+.dj-fill-ready {
+    background: var(--theme-colors-foreground-muted);
+}
+
+.dj-fill-mixing {
+    background: var(--theme-colors-primary);
+}

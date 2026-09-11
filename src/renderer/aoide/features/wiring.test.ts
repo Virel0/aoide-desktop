@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { RESUME_GRID_LIMIT } from './home/recent-contexts';
 import { INACTIVE_LINE_OPACITY } from './now-playing/now-playing-column';
+import { DEFAULT_AOIDE_AUTO_DJ } from './playback/auto-dj';
 import { DEFAULT_AOIDE_ALBUM_LOCK, DEFAULT_AOIDE_CROSSFADE } from './playback/crossfade';
 import { DEFAULT_AOIDE_LOUDNESS_NORMALISATION } from './playback/loudness-normalisation';
 import { syncOutcome } from './sync/sync-report';
@@ -1146,19 +1147,22 @@ describe('the exact join: a buffer deck takes the boundary, or the elements keep
         expect(hook).toContain('setTimestamp(position)');
     });
 
-    // Only the handovers that have no overlap in them. A blend is the
-    // crossfade's, and Repeat One is an element looping on itself.
-    it('takes gapless and cut, and leaves a blend to the crossfade', () => {
-        expect(hook).toContain("state.mix.kind === 'gapless' || state.mix.kind === 'cut'");
+    // Only the handovers that have no overlap in them, unless Auto DJ is on.
+    // A blend is the crossfade's, and Repeat One is an element looping on
+    // itself.
+    it('takes gapless and cut, and leaves a blend to the crossfade unless Auto DJ has it', () => {
+        expect(hook).toContain(
+            "if (plan.kind === 'gapless' || plan.kind === 'cut') return 'join';",
+        );
         // And with no plan at all the boundary is the player's own pre-start,
         // which has no overlap in it either — so the deck may have it. Feishin's
         // crossfade setting used to be able to say otherwise here; it is gone,
-        // and nothing may quietly put a `false` back in its place.
-        expect(hook).toMatch(
-            /\? state\.mix\.kind === 'gapless' \|\| state\.mix\.kind === 'cut'\s*\n\s*: true;/,
-        );
+        // and nothing may quietly put a `null` back in its place.
+        expect(hook).toContain("if (!plan) return 'join';");
+        expect(hook).toContain("return autoDj ? 'blend' : null;");
+        expect(hook).toContain('const kind = handoverKind(state.mix, state.dj.enabled);');
         expect(hook).toContain('state.repeat !== PlayerRepeat.ONE');
-        expect(hook).toContain("const blending = args.mix?.kind === 'blend'");
+        expect(hook).toContain("const blending = args.mix?.kind === 'blend' && !args.dj.enabled;");
     });
 
     // Anything that is not playing straight forwards puts the element back
@@ -1242,7 +1246,7 @@ describe('the exact join: a buffer deck takes the boundary, or the elements keep
     // restates them.
     it('the wiring asks the arithmetic rather than repeating it', () => {
         expect(hook).toContain('planJoin({');
-        expect(hook).toContain('shouldDecode(boundary - now)');
+        expect(hook).toContain('shouldDecode(startAt - now)');
         expect(hook).toContain('outgoingEndSec(trimmedEnd, element.duration)');
         expect(deck).toContain('fitsInMemory(durationSec, this.context.sampleRate)');
         expect(hook).not.toMatch(/0\.116[\s\S]{0,40}0\.065/);
@@ -1252,10 +1256,16 @@ describe('the exact join: a buffer deck takes the boundary, or the elements keep
     // levelling and the visualiser already are.
     it('routes the buffer through the graph the elements already use', () => {
         expect(deck).toContain('const sink = this.gains[gainIndex]');
-        expect(deck).toContain('gain.connect(sink)');
-        expect(deck).toContain('node.connect(gain)');
-        expect(deck).toContain('node.start(startAtContextTime, offsetSec)');
-        expect(deck).toContain('this.current.node.stop(startAtContextTime)');
+        expect(deck).toContain('fader.connect(sink)');
+        expect(deck).toContain('mixGain.connect(fader)');
+        // Straight into the mix gain unless Auto DJ has put a filter in front.
+        expect(deck).toContain('let tail: AudioNode = mixGain;');
+        expect(deck).toContain('node.connect(tail)');
+        // Started and stopped on the source clock, which is the audible clock
+        // less whatever the voice's stretch adds — nothing, for a join.
+        expect(deck).toContain('node.start(startAtContextTime - latencySec, offsetSec)');
+        expect(deck).toContain('this.current.node.stop(stopOutgoingAt - this.current.latencySec)');
+        expect(deck).toContain('let stopOutgoingAt = startAtContextTime;');
         expect(hook).toContain('gainIndex: incomingSlot - 1');
     });
 });
@@ -1505,6 +1515,203 @@ describe('Crossfade decides the handover, and only when it is on', () => {
         expect(sourceOf('settings/crossfade-settings.tsx')).toContain(
             'aoideAlbumLock: e.currentTarget.checked',
         );
+    });
+});
+
+describe('Auto DJ: the deck mixes when the planner says it may, and only then', () => {
+    const hook = sourceOf('playback/use-buffer-deck.ts');
+    const deck = sourceOf('playback/buffer-deck.ts');
+    const schedule = sourceOf('playback/dj-schedule.ts');
+    const stretch = sourceOf('playback/pitch-stretch.ts');
+    const gridStore = sourceOf('playback/beat-grid-store.ts');
+    const arrangementStore = sourceOf('playback/arrangement-store.ts');
+    const prefetch = sourceOf('playback/use-dj-prefetch.ts');
+    const indicator = sourceOf('now-playing/aoide-dj-indicator.tsx');
+    const column = sourceOf('now-playing/aoide-now-playing-column.tsx');
+    const client = sourceOf('../sync/sidecar-client.ts');
+    const webPlayer = readFileSync(
+        join(import.meta.dirname, '../../features/player/audio-player/web-player.tsx'),
+        'utf8',
+    );
+    const settings = readFileSync(
+        join(import.meta.dirname, '../../store/settings.store.ts'),
+        'utf8',
+    );
+    const strings = JSON.parse(
+        readFileSync(join(import.meta.dirname, '../../../i18n/locales/en.json'), 'utf8'),
+    ) as { aoide: { nowPlaying: Record<string, string>; settings: Record<string, string> } };
+
+    // The whole promise of a default-off feature: someone who never turns
+    // Auto DJ on hears the player they had. The stores are gated, so nothing
+    // is even asked for; the deck reads the flag, so no filter is put in
+    // anyone's chain.
+    it('is off by default, beside Crossfade, and gates everything it fetches', () => {
+        expect(DEFAULT_AOIDE_AUTO_DJ).toBe(false);
+        expect(settings).toContain('aoideAutoDj: AoideAutoDjSchema');
+        expect(settings).toContain('aoideAutoDj: DEFAULT_AOIDE_AUTO_DJ');
+        expect(sourceOf('settings/crossfade-settings.tsx')).toContain(
+            'aoideAutoDj: e.currentTarget.checked',
+        );
+        expect(gridStore).toContain(
+            'useMeasurement(beatGridStore, trackId, useAoideAutoDjEnabled())',
+        );
+        expect(arrangementStore).toContain(
+            'useMeasurement(arrangementStore, trackId, useAoideAutoDjEnabled())',
+        );
+        expect(hook).toContain('deck.setAutoDj(latest.current.dj.enabled);');
+        expect(hook).toContain('deckRef.current?.setAutoDj(autoDj);');
+        expect(deck).toContain('if (this.autoDj) {');
+        expect(strings.aoide.settings.autoDj).toBe('Auto DJ');
+        expect(strings.aoide.settings.autoDj_description).toContain('crossfades');
+    });
+
+    it('the player hands the deck the grids and arrangements of the pair, and asks ahead', () => {
+        expect(webPlayer).toContain('const autoDj = useAoideAutoDjEnabled();');
+        expect(webPlayer).toContain('const outgoingGrid = useBeatGrid(currentSong?.id);');
+        expect(webPlayer).toContain('const outgoingArrangement = useArrangement(currentSong?.id);');
+        expect(webPlayer).toContain('const incomingGrid = useBeatGrid(nextSong?.id);');
+        expect(webPlayer).toContain('const incomingArrangement = useArrangement(nextSong?.id);');
+        expect(webPlayer).toContain('useDjPrefetch();');
+        expect(webPlayer).toMatch(/dj: \{\s*enabled: autoDj,/);
+        expect(prefetch).toContain('useBeatGridPrefetch(list);');
+        expect(prefetch).toContain('useArrangementPrefetch(list);');
+        expect(prefetch).toContain('upcomingTrackIds({');
+        // Both endpoints, by their contract paths.
+        expect(client).toContain(
+            "this.measurements('aoide/beat-grid', 'grids', ids, readBeatGrid)",
+        );
+        expect(client).toMatch(/'aoide\/arrangement',\s*'arrangements',\s*ids,\s*readArrangement/);
+    });
+
+    // A mix needs the outgoing side automated, and an <audio> element cannot
+    // be. Everything the planner decides is decided by the shared planner.
+    it('mixes only out of a record already on the deck, and asks the shared planner', () => {
+        expect(hook).toContain(
+            "state.dj.enabled && outgoing.kind === 'buffer' && deck.canMixOut()",
+        );
+        expect(hook).toContain('planMix({');
+        expect(hook).toContain('notBeforeMs: (position + PLAN_LEAD_SECONDS) * 1000,');
+        expect(hook).toContain('planMixBooking({');
+        expect(hook).toContain("handover: { booking: booking.booking, kind: 'mix' },");
+        // Nothing here invents a bar, a length or a curve.
+        expect(hook).not.toMatch(/\b(16|32)\s*\*\s*bar|outgoingGain\(|incomingGain\(/);
+        expect(deck).not.toMatch(/Math\.(cos|sin|log2)/);
+    });
+
+    // A record whose arrangement or grid the server has not answered about
+    // is not mixed. Undefined is "not known yet"; null is "measured, nothing
+    // to say", which the planner refuses for itself.
+    it('does not mix a pair the server has not answered about', () => {
+        expect(hook).toContain("if (!playing.grid || !incoming.grid) return 'no-mix';");
+        expect(hook).toContain(
+            'if (playing.arrangement === undefined || incoming.arrangement === undefined) {',
+        );
+    });
+
+    // The memory model: the outgoing side of a mix keeps sounding for the
+    // length of the mix, and a third buffer would be the price of booking
+    // anything while it does.
+    it('books nothing and decodes nothing while the outgoing record is still sounding', () => {
+        expect(hook).toContain('if (deck.isSettling()) return;');
+        expect(deck).toContain('return this.retired.length > 0;');
+        expect(sourceOf('playback/gapless-schedule.ts')).toContain(
+            'export const DECODE_LEAD_SECONDS = 12;',
+        );
+    });
+
+    // Every curve is booked on the audio clock in advance, on the param it
+    // names, by the shapes Web Audio provides. The deck applies and decides
+    // nothing.
+    it('books the automation on AudioParams rather than driving it from a timer', () => {
+        expect(deck).toContain('param.exponentialRampToValueAtTime(event.value, event.time);');
+        expect(deck).toContain('param.linearRampToValueAtTime(event.value, event.time);');
+        expect(deck).toContain('param.setValueAtTime(event.value, event.time);');
+        expect(deck).toContain('voice.stretch?.scheduleSemitones(event.time, event.value);');
+        expect(deck).toContain('return voice.node.playbackRate;');
+        expect(deck).toContain('return outgoing?.filter?.frequency ?? null;');
+        expect(hook).not.toMatch(/setInterval\([^)]*mix/);
+        // The bass swap is a log sweep: an exponential ramp, never a linear one.
+        expect(schedule).toMatch(/shape: 'exponential',\s*target: 'outgoingHz'/);
+        expect(schedule).toMatch(/shape: 'exponential',\s*target: 'incomingHz'/);
+    });
+
+    // The chain per voice, from the source forwards: stretch (incoming side
+    // of a mix only), high-pass (Auto DJ on), mix gain, fader, the slot's own
+    // gain. The high-pass is Butterworth in Web Audio's decibel Q.
+    it('builds the phone’s chain on Web Audio', () => {
+        expect(deck).toContain("filter.type = 'highpass';");
+        expect(deck).toContain('filter.Q.value = HIGH_PASS_Q_DB;');
+        expect(deck).toContain('filter.frequency.value = BASS_OPEN_HZ;');
+        expect(deck).toContain('node.connect(stretch.node);');
+        expect(deck).toContain('stretch.node.connect(tail);');
+        expect(deck).toContain('filter.connect(mixGain);');
+        expect(schedule).toContain('export const HIGH_PASS_Q_DB = 20 * Math.log10(Math.SQRT1_2);');
+    });
+
+    // The bend must preserve pitch: playbackRate on the source does the tempo
+    // and the stretch undoes what that does to the pitch, in live mode, with
+    // its latency subtracted from every source-side time.
+    it('holds the pitch through a maintained worklet, loaded as an asset', () => {
+        expect(stretch).toContain("import SignalsmithStretch from 'signalsmith-stretch';");
+        expect(stretch).toContain("import workletUrl from 'signalsmith-stretch?url';");
+        expect(stretch).toContain('SignalsmithStretch.moduleUrl = workletUrl;');
+        expect(stretch).toContain('const latencySec = await node.latency();');
+        // The library prunes against `outputTime`, not `output`; both go.
+        expect(stretch).toContain(
+            'void node.schedule({ output: outputTime, outputTime, semitones });',
+        );
+        // Live input, kept live: never the library's own buffer mode.
+        expect(stretch).toContain('const keepLive = context.createConstantSource();');
+        expect(stretch).not.toMatch(/addBuffers|dropBuffers/);
+        expect(schedule).toContain(
+            'const sourceStartAtContextTime = startAtContextTime - stretchLatencySec;',
+        );
+        expect(schedule).toContain("target: 'incomingSemitones'");
+        expect(schedule).toContain('export const semitonesFor = (rate: number): number =>');
+        // One per slot, kept for the life of the deck.
+        expect(deck).toContain('const existing = this.stretches[gainIndex];');
+        expect(deck).toContain('async prepareStretch(gainIndex: number)');
+    });
+
+    // The bend eases back over eight seconds after the mix, as on the phone,
+    // and the deck's idea of where the record is follows it.
+    it('eases the bend back after the mix and integrates it into the position', () => {
+        expect(schedule).toMatch(
+            /target: 'incomingRate',\s*time: sourceEnd \+ plan\.restoreSeconds,\s*value: 1,/,
+        );
+        expect(deck).toContain('restoreSeconds: booking.plan.restoreSeconds,');
+        expect(deck).toContain('voicePositionAt(');
+        expect(deck).toContain('settledPlayback(');
+        expect(hook).toContain(
+            'const outgoing = deck.outgoing();\n            if (!outgoing) return;',
+        );
+    });
+
+    // With Auto DJ on the deck performs blends too, so it is in charge by the
+    // first boundary and can mix at the second. From an element the outgoing
+    // fader is ridden by hand on the same curve the buffer comes up on.
+    it('performs a planned blend on the deck when Auto DJ is on', () => {
+        expect(hook).toContain(
+            "kind === 'blend' ? { kind: 'blend', seconds: overlap } : { kind: 'join' };",
+        );
+        expect(hook).toContain("if (kind === 'blend' && outgoing.kind === 'element') {");
+        expect(hook).toContain('crossfadeOutgoing(Math.min(1, progress)) * state.volume,');
+        expect(hook).toContain('after(boundary - context.currentTime, takeOver);');
+        expect(hook).toContain('if (wasBlendingFromElement && !wasEngaged) {');
+    });
+
+    // The indicator reads what the deck publishes on its tick, and nothing
+    // else; the column mounts it under the controls.
+    it('shows "Mix ready · N bars" and "Mixing" from the deck’s own tick', () => {
+        expect(hook).toContain('djStatusStore.set(deck.mixStatus(context.currentTime));');
+        expect(hook).toContain('djStatusStore.set(null);');
+        expect(indicator).toContain('const status = useDJStatus();');
+        expect(indicator).toContain("t('aoide.nowPlaying.mixReady', { count: status.bars })");
+        expect(indicator).toContain("t('aoide.nowPlaying.mixing')");
+        expect(indicator).toContain('role="progressbar"');
+        expect(column).toContain('<AoideDJIndicator />');
+        expect(strings.aoide.nowPlaying.mixReady_other).toBe('Mix ready · {{count}} bars');
+        expect(strings.aoide.nowPlaying.mixing).toBe('Mixing');
     });
 });
 
