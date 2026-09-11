@@ -1084,6 +1084,21 @@ describe('the exact join: a buffer deck takes the boundary, or the elements keep
     const deck = sourceOf('playback/buffer-deck.ts');
     const trimPlayers = sourceOf('playback/use-trim-players.ts');
 
+    // Twice in two releases the deck left a track restarting over the one that
+    // had just begun, and a third report followed the second fix. Until a
+    // boundary has been heard right, the deck is opt-in: without the graph it
+    // is never built, and every path through it is a no-op.
+    it('is off unless somebody turns it on', () => {
+        expect(sourceOf('playback/crossfade.ts')).toContain(
+            'export const DEFAULT_AOIDE_EXACT_JOINS = false;',
+        );
+        expect(webPlayer).toContain('webAudio: exactJoins ? webAudio : undefined,');
+        expect(webPlayer).toContain('const exactJoins = useAoideExactJoinsEnabled();');
+        expect(sourceOf('settings/crossfade-settings.tsx')).toContain(
+            "t('aoide.settings.exactJoins')",
+        );
+    });
+
     // A decoded track is around a hundred megabytes. Holding one for a record
     // nobody is listening to is the difference somebody watched their process
     // manager and asked about.

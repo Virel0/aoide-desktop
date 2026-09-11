@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
     useAoideAlbumLockEnabled,
     useAoideCrossfadeEnabled,
+    useAoideExactJoinsEnabled,
 } from '/@/renderer/aoide/features/playback/use-crossfade';
 import { isAoideAvailable } from '/@/renderer/aoide/features/shared/aoide-bridge';
 import {
@@ -27,6 +28,7 @@ export const CrossfadeSettings = memo(() => {
     const { t } = useTranslation();
     const crossfade = useAoideCrossfadeEnabled();
     const albumLock = useAoideAlbumLockEnabled();
+    const exactJoins = useAoideExactJoinsEnabled();
     const { setSettings } = useSettingsStoreActions();
 
     if (!isAoideAvailable()) return null;
@@ -57,6 +59,19 @@ export const CrossfadeSettings = memo(() => {
             ),
             description: t('aoide.settings.albumLock', { context: 'description' }),
             title: t('aoide.settings.albumLock'),
+        },
+        {
+            control: (
+                <Switch
+                    aria-label={t('aoide.settings.exactJoins')}
+                    checked={exactJoins}
+                    onChange={(e) => {
+                        setSettings({ general: { aoideExactJoins: e.currentTarget.checked } });
+                    }}
+                />
+            ),
+            description: t('aoide.settings.exactJoins', { context: 'description' }),
+            title: t('aoide.settings.exactJoins'),
         },
     ];
 

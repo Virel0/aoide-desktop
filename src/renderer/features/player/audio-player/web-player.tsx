@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useBufferDeck } from '/@/renderer/aoide/features/playback/use-buffer-deck';
+import { useAoideExactJoinsEnabled } from '/@/renderer/aoide/features/playback/use-crossfade';
 import { useLoudnessGain } from '/@/renderer/aoide/features/playback/use-loudness-gain';
 import { useAoideLoudnessNormalisationEnabled } from '/@/renderer/aoide/features/playback/use-loudness-normalisation';
 import { useMixTransition } from '/@/renderer/aoide/features/playback/use-mix-transition';
@@ -66,7 +67,10 @@ export function WebPlayer() {
     const player2Url = useSongUrl(player2, num === 2, transcode);
 
     // Aoide's exact join. It only takes a boundary it can be sample-accurate
-    // about; everything below is what happens when it does not.
+    // about; everything below is what happens when it does not. Without the
+    // graph the deck is never built, and every path through it is a no-op —
+    // which is how it is switched off.
+    const exactJoins = useAoideExactJoinsEnabled();
     const deck = useBufferDeck({
         currentSong,
         isMuted,
@@ -80,7 +84,7 @@ export function WebPlayer() {
         repeat,
         trim,
         volume,
-        webAudio,
+        webAudio: exactJoins ? webAudio : undefined,
     });
 
     const [localPlayerStatus, setLocalPlayerStatus] = useState<PlayerStatus>(status);

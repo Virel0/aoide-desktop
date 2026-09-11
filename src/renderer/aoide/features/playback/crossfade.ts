@@ -25,3 +25,15 @@ export const DEFAULT_AOIDE_CROSSFADE = false;
  * still an ordinary handover.
  */
 export const DEFAULT_AOIDE_ALBUM_LOCK = true;
+
+export const AoideExactJoinsSchema = z.boolean();
+
+/**
+ * Off, for now. The buffer deck joins two tracks on the audio clock to the
+ * sample, which is a truer gapless than the element's early start — and in its
+ * first two releases it twice left a track restarting over the one that had
+ * just begun. Both were fixed; a third report arrived after. Until somebody's
+ * ears say the boundary is right, the deck is a thing you turn on, and the
+ * player's older, cruder join is what everyone gets by default.
+ */
+export const DEFAULT_AOIDE_EXACT_JOINS = false;

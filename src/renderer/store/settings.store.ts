@@ -18,8 +18,10 @@ import {
 import {
     AoideAlbumLockSchema,
     AoideCrossfadeSchema,
+    AoideExactJoinsSchema,
     DEFAULT_AOIDE_ALBUM_LOCK,
     DEFAULT_AOIDE_CROSSFADE,
+    DEFAULT_AOIDE_EXACT_JOINS,
 } from '/@/renderer/aoide/features/playback/crossfade';
 import {
     AoideLoudnessNormalisationSchema,
@@ -406,6 +408,7 @@ export const GeneralSettingsSchema = z.object({
     albumGroupVerticalLayout: z.boolean(),
     aoideAlbumLock: AoideAlbumLockSchema,
     aoideCrossfade: AoideCrossfadeSchema,
+    aoideExactJoins: AoideExactJoinsSchema,
     aoideLoudnessNormalisation: AoideLoudnessNormalisationSchema,
     aoideNowPlayingColumn: AoideNowPlayingColumnSchema,
     aoidePlaylistSurface: AoidePlaylistSurfaceSchema,
@@ -981,6 +984,7 @@ const initialState: SettingsState = {
         albumGroupVerticalLayout: true,
         aoideAlbumLock: DEFAULT_AOIDE_ALBUM_LOCK,
         aoideCrossfade: DEFAULT_AOIDE_CROSSFADE,
+        aoideExactJoins: DEFAULT_AOIDE_EXACT_JOINS,
         aoideLoudnessNormalisation: DEFAULT_AOIDE_LOUDNESS_NORMALISATION,
         aoideNowPlayingColumn: DEFAULT_AOIDE_NOW_PLAYING_COLUMN,
         aoidePlaylistSurface: DEFAULT_AOIDE_PLAYLIST_SURFACE,
@@ -2477,6 +2481,15 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     }
                 }
 
+                if (version < 50) {
+                    // The exact join became opt-in. Nobody had a stored answer
+                    // for it, so nobody's choice is overridden here — only a
+                    // default is supplied where the shape gained a field.
+                    if (state.general.aoideExactJoins === undefined) {
+                        state.general.aoideExactJoins = DEFAULT_AOIDE_EXACT_JOINS;
+                    }
+                }
+
                 if (version < 47) {
                     // The external-link row of icons under an album — Last.fm,
                     // ListenBrainz, MusicBrainz, Qobuz, Spotify — and the seven
@@ -2531,7 +2544,7 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                 return persistedState;
             },
             name: 'store_settings',
-            version: 49,
+            version: 50,
         },
     ),
 );
