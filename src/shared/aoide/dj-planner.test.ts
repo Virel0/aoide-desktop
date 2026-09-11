@@ -287,9 +287,11 @@ describe('planning a mix', () => {
 });
 
 describe('what a mix can see, now that it can see the music', () => {
-    it('a mix starts on a phrase, not merely on a bar', () => {
-        // Mix-out at bar 115; thirty-two back is bar 83 — a bar line and not a
-        // phrase line — so the start goes back to 80.
+    it('a mix starts on a phrase when one is close, and on the bar when it is not', () => {
+        // Mix-out at bar 115; thirty-two back is bar 83 — three bars past the
+        // phrase line, further than the two the server itself allows a
+        // boundary to move — so the start stays on bar 83 and the mix ends
+        // where the record's mix-out says, not seven bars into it.
         const crooked = { ...grid(), mixOutMs: bar * 115 };
         const plan = planMix({
             incoming: grid(),
@@ -298,7 +300,17 @@ describe('what a mix can see, now that it can see the music', () => {
             outgoingArrangement: plain,
         });
         expect(plan?.bars).toBe(32);
-        expect(plan?.outgoingStartMs).toBeCloseTo(bar * 80, 2);
+        expect(plan?.outgoingStartMs).toBeCloseTo(bar * 83, 2);
+
+        // Two bars past a phrase line, the start does move onto it.
+        const nearly = { ...grid(), mixOutMs: bar * 114 };
+        const snapped = planMix({
+            incoming: grid(),
+            incomingArrangement: plain,
+            outgoing: nearly,
+            outgoingArrangement: plain,
+        });
+        expect(snapped?.outgoingStartMs).toBeCloseTo(bar * 80, 2);
 
         // Mix-in at bar 11 would come in three bars into a phrase, so it comes
         // in at 0.

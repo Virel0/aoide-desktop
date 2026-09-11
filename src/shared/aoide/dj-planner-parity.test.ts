@@ -420,7 +420,7 @@ const TABLE: ParityCase[] = [
         bars: 32,
         incomingRate: 1,
         incomingStartMs: 0,
-        outgoingStartMs: 150_000,
+        outgoingStartMs: 155_625,
         plan: {
             incoming: grid(),
             incomingArrangement: plain,
@@ -429,7 +429,7 @@ const TABLE: ParityCase[] = [
         },
         style: 'blend',
         total: 0.7600000000000001,
-        why: 'a mix starts on a phrase, not merely on a bar',
+        why: 'a mix starts on the bar when the phrase line is more than two bars back',
     },
     {
         bars: 32,
@@ -445,6 +445,21 @@ const TABLE: ParityCase[] = [
         style: 'blend',
         total: 0.7600000000000001,
         why: 'and comes in on one',
+    },
+    {
+        bars: 32,
+        incomingRate: 1,
+        incomingStartMs: 30_000,
+        outgoingStartMs: 150_000,
+        plan: {
+            incoming: grid({ mixInMs: bar * 15 }),
+            incomingArrangement: plain,
+            outgoing: grid(),
+            outgoingArrangement: plain,
+        },
+        style: 'blend',
+        total: 0.8000000000000002,
+        why: 'an entry a bar short of a phrase line moves forward onto it',
     },
     {
         bars: 32,
@@ -474,8 +489,8 @@ const TABLE: ParityCase[] = [
     {
         bars: 8,
         incomingRate: 1,
-        incomingStartMs: 0,
-        outgoingStartMs: 180_000,
+        incomingStartMs: 15_000,
+        outgoingStartMs: 195_000,
         plan: {
             incoming: grid(),
             incomingArrangement: singsLater,
@@ -499,8 +514,8 @@ const TABLE: ParityCase[] = [
     {
         bars: 8,
         incomingRate: 1,
-        incomingStartMs: 0,
-        outgoingStartMs: 180_000,
+        incomingStartMs: 15_000,
+        outgoingStartMs: 195_000,
         plan: {
             incoming: grid(),
             incomingArrangement: instrumental,
@@ -514,8 +529,8 @@ const TABLE: ParityCase[] = [
     {
         bars: 8,
         incomingRate: 1,
-        incomingStartMs: 0,
-        outgoingStartMs: 180_000,
+        incomingStartMs: 15_000,
+        outgoingStartMs: 195_000,
         plan: {
             incoming: grid(),
             incomingArrangement: dropIn,
@@ -590,7 +605,7 @@ const TABLE: ParityCase[] = [
         bars: 8,
         incomingRate: 1,
         incomingStartMs: 0,
-        outgoingStartMs: 180_000,
+        outgoingStartMs: 195_000,
         plan: {
             incoming: grid({ key: '10B' }),
             incomingArrangement: buildThenDrop,
@@ -665,6 +680,6 @@ describe('DJ planner parity', () => {
     });
 
     it('answers every case in the table', () => {
-        expect(TABLE).toHaveLength(40);
+        expect(TABLE).toHaveLength(41);
     });
 });

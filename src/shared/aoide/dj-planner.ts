@@ -2,7 +2,7 @@ import type { Arrangement, SectionKind } from './arrangement';
 import type { BeatGrid } from './beat-grid';
 import type { MixScore } from './mix-score';
 
-import { maySing, phraseStartAtOrBefore, sectionAt } from './arrangement';
+import { maySing, phraseLineAtOrBefore, phraseLineNear, sectionAt } from './arrangement';
 import { barMsAt, camelotCompatible, canLock, downbeatAtOrBefore, segmentAt } from './beat-grid';
 import {
     energyFactor,
@@ -140,7 +140,7 @@ const entryPoint = (
     arrangement: Arrangement | null | undefined,
     barMs: number,
 ): number =>
-    (arrangement ? phraseStartAtOrBefore(arrangement, ms, barMs) : null) ??
+    (arrangement ? phraseLineNear(arrangement, ms, barMs) : null) ??
     downbeatAtOrBefore(grid, ms) ??
     ms;
 
@@ -264,13 +264,16 @@ const planEntry = (args: {
     for (const bars of MIX_LENGTHS) {
         const seconds = (outBar * bars) / 1000;
         // Back from the mix-out point a whole number of bars, then onto the
-        // phrase line if the record has them. The mix may end a little before
-        // the mix-out point as a result; it will not start mid-phrase.
+        // phrase line if one is close, else the bar line. The mix may end a
+        // little before the mix-out point as a result — never seven bars
+        // before it, which would fade the hook out under the new record.
         const counted = outMixOut - outBar * bars;
         const startMs =
             (outgoingArrangement
-                ? phraseStartAtOrBefore(outgoingArrangement, counted, outBar)
-                : null) ?? counted;
+                ? phraseLineAtOrBefore(outgoingArrangement, counted, outBar)
+                : null) ??
+            downbeatAtOrBefore(outgoing, counted) ??
+            counted;
 
         if (startMs < notBeforeMs) continue;
         if (!canLock(outgoing, startMs, seconds)) continue;

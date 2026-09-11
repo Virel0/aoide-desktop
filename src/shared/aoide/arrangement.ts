@@ -97,6 +97,40 @@ export const maySing = (arrangement: Arrangement, from: number, to: number): boo
     return arrangement.vocals.some((span) => span.startMs < to && span.endMs > from);
 };
 
+/**
+ * How far a moment may be moved to sit on a phrase line: two bars, the
+ * server's own rule for its section boundaries. Further than that and the
+ * line is not where the music changes — a section boundary five bars past a
+ * phrase line is on a bar line for a reason, and dragging it back seven bars
+ * puts the exit inside the hook it was meant to end.
+ */
+export const PHRASE_REACH_BARS = 2;
+
+/** The phrase line at or before `ms` if one is within reach, else null. For moments that must not move later: an exit. */
+export const phraseLineAtOrBefore = (
+    arrangement: Arrangement,
+    ms: number,
+    barMs: number,
+): null | number => {
+    const line = phraseStartAtOrBefore(arrangement, ms, barMs);
+    if (line === null) return null;
+    return ms - line <= PHRASE_REACH_BARS * barMs + 0.5 ? line : null;
+};
+
+/** The nearest phrase line to `ms`, either side, if one is within reach; else null. For moments that may move either way: an entry. */
+export const phraseLineNear = (
+    arrangement: Arrangement,
+    ms: number,
+    barMs: number,
+): null | number => {
+    const { phraseBars } = arrangement;
+    const before = phraseStartAtOrBefore(arrangement, ms, barMs);
+    if (phraseBars === null || !(barMs > 0) || before === null) return null;
+    const after = before + barMs * phraseBars;
+    const nearest = ms - before <= after - ms ? before : after;
+    return Math.abs(ms - nearest) <= PHRASE_REACH_BARS * barMs + 0.5 ? nearest : null;
+};
+
 /** The phrase boundary at or before `ms`, when the track counts phrases. */
 export const phraseStartAtOrBefore = (
     arrangement: Arrangement,
